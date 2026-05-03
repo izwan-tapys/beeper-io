@@ -74,18 +74,23 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // Wait timer & Polling fallback
   useEffect(() => {
-    if (status === 'waiting') {
-      if (!waitTimerRef.current) {
+    if (status === 'waiting' || status === 'called') {
+      // Timer only for waiting state
+      if (status === 'waiting' && !waitTimerRef.current) {
         waitTimerRef.current = setInterval(() => setWaitTime(t => t + 1), 1000)
       }
       
+      // Polling for both waiting and called states
       if (!pollingRef.current) {
         pollingRef.current = setInterval(() => {
           setLastChecked(prev => prev + 1)
           fetchSession()
         }, 3000)
       }
-    } else {
+    }
+
+    // Cleanup if status is completed, archived or error
+    if (status === 'completed' || status === 'error') {
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
     }
