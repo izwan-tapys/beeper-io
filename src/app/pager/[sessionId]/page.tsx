@@ -295,14 +295,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
           )}
           <span className="font-bold text-white text-xl">{merchantName}</span>
         </div>
-        {/* Connection Dot */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/20 border border-white/5">
-          <div className={`w-2 h-2 rounded-full ${
-            connStatus === 'online' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 
-            connStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
-          }`} />
-          <span className="text-[8px] text-white/50 font-mono uppercase">{connStatus}</span>
-        </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
