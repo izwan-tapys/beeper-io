@@ -25,6 +25,7 @@ type Merchant = {
   is_open: boolean
   logo_url: string | null
   loyverse_token: string | null
+  gmb_url: string | null
 }
 
 const supabase = createClient()
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   const [settingsName, setSettingsName] = useState('')
   const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
+  const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
@@ -111,6 +113,7 @@ export default function DashboardPage() {
       setSettingsName(m.name || '')
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
+      setSettingsGmbUrl(m.gmb_url || '')
     }
   }, [router])
 
@@ -243,7 +246,8 @@ export default function DashboardPage() {
       .update({ 
         name: settingsName.trim(), 
         logo_url: settingsLogo.trim() || null,
-        loyverse_token: settingsLoyverseToken.trim() || null 
+        loyverse_token: settingsLoyverseToken.trim() || null,
+        gmb_url: settingsGmbUrl.trim() || null 
       })
       .eq('id', merchant.id)
     
@@ -255,7 +259,8 @@ export default function DashboardPage() {
         ...merchant, 
         name: settingsName.trim(), 
         logo_url: settingsLogo.trim() || null,
-        loyverse_token: settingsLoyverseToken.trim() || null 
+        loyverse_token: settingsLoyverseToken.trim() || null,
+        gmb_url: settingsGmbUrl.trim() || null 
       })
       setIsSettingsOpen(false)
       fetchMerchant()
@@ -552,6 +557,20 @@ export default function DashboardPage() {
                   />
                   <p className="text-[10px] text-slate-600">
                     Get this from Loyverse &gt; Settings &gt; Access Tokens.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-400">Google My Business URL</label>
+                  <input
+                    type="text"
+                    value={settingsGmbUrl}
+                    onChange={(e) => setSettingsGmbUrl(e.target.value)}
+                    placeholder="https://g.page/r/your-id/review"
+                    className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
+                  />
+                  <p className="text-[10px] text-slate-600">
+                    Customers will see this after their order is completed.
                   </p>
                 </div>
 

@@ -17,6 +17,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [status, setStatus] = useState<PagerStatus>('loading')
   const [merchantName, setMerchantName] = useState('')
   const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
+  const [gmbUrl, setGmbUrl] = useState<string | null>(null)
   const [receiptNumber, setReceiptNumber] = useState('')
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
@@ -35,7 +36,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   useEffect(() => { statusRef.current = status }, [status])
 
   const fetchSession = useCallback(async () => {
-    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url)').eq('id', sessionId).single()
+    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url, gmb_url)').eq('id', sessionId).single()
     if (error || !data) { 
       if (statusRef.current === 'loading') setStatus('error')
       return 
@@ -47,6 +48,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     if (merchantData) {
       setMerchantName(merchantData.name || 'Store')
       setMerchantLogo(merchantData.logo_url)
+      setGmbUrl(merchantData.gmb_url)
     }
     
     setReceiptNumber(data.receipt_number)
@@ -214,7 +216,18 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         <div className="animate-bounce-in">
           <div className="text-6xl mb-6">🙏</div>
           <h1 className="text-2xl font-bold text-white mb-2">Thank You!</h1>
-          <p className="text-slate-400">Order #{receiptNumber} collected.</p>
+          <p className="text-slate-400 mb-8">Order #{receiptNumber} collected.</p>
+
+          {gmbUrl && (
+            <a 
+              href={gmbUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#ea4335]/10 border border-[#ea4335]/30 text-[#ea4335] font-bold hover:bg-[#ea4335]/20 transition-all animate-slide-up"
+            >
+              ⭐ Rate us on Google
+            </a>
+          )}
         </div>
       </div>
     )
