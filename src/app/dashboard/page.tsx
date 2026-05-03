@@ -47,6 +47,8 @@ export default function DashboardPage() {
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
+  const [latestReceipts, setLatestReceipts] = useState<any[]>([])
+  const [isSyncing, setIsSyncing] = useState(false)
   const qrSessionRef = useRef<Session | null>(null)
 
   useEffect(() => {
@@ -133,16 +135,34 @@ export default function DashboardPage() {
     return () => { supabase.removeChannel(channel) }
   }, [merchant, fetchSessions])
 
-  const createSession = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!receiptInput.trim() || !merchant) return
+  const syncLoyverse = async () => {
+    if (!merchant) return
+    setIsSyncing(true)
+    try {
+      const res = await fetch(`/api/loyverse/receipts?merchant_id=${merchant.id}`)
+      const data = await res.json()
+      if (data.receipts) {
+        setLatestReceipts(data.receipts)
+      } else if (data.error) {
+        alert('Sync Error: ' + data.error)
+      }
+    } catch (err) {
+      console.error('Sync failed:', err)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const createSession = async (rNum?: string) => {
+    const finalReceiptNumber = rNum || receiptInput.trim()
+    if (!merchant || !finalReceiptNumber) return
     setCreating(true)
     
     const { data, error } = await supabase
       .from('sessions')
       .insert({ 
         merchant_id: merchant.id, 
-        receipt_number: receiptInput.trim(), 
+        receipt_number: finalReceiptNumber, 
         status: 'waiting' 
       })
       .select()
@@ -153,7 +173,7 @@ export default function DashboardPage() {
       alert('Gagal buat pager: ' + error.message)
     } else if (data) {
       setReceiptInput('')
-      setQrSession(data) // TERUS BUKA QR MODAL!
+      setQrSession(data)
     }
     setCreating(false)
   }
@@ -304,7 +324,7 @@ export default function DashboardPage() {
           <>
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
               <h2 className="text-lg font-semibold text-white mb-4">Issue New Pager</h2>
-              <form onSubmit={createSession} className="flex gap-3">
+              <form onSubmit={(e) => { e.preventDefault(); createSession() }} className="flex gap-2">
                 <input
                   id="receipt-input"
                   type="text"
@@ -324,7 +344,47 @@ export default function DashboardPage() {
                   {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                   Issue
                 </button>
+                <button
+                  type="button"
+                  onClick={syncLoyverse}
+                  disabled={isSyncing || !merchant?.loyverse_token}
+                  className="px-4 py-3 rounded-xl border flex items-center justify-center transition-all"
+                  style={{ 
+                    background: 'rgba(234,179,8,0.1)', 
+                    borderColor: merchant?.loyverse_token ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
+                    color: merchant?.loyverse_token ? '#eab308' : '#475569'
+                  }}
+                  title="Sync with Loyverse"
+                >
+                  {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
+                </button>
               </form>
+
+              {/* Latest Receipts List */}
+              {latestReceipts.length > 0 && (
+                <div className="mt-4 p-4 rounded-2xl animate-fade-in" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.1)' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Latest from Loyverse</h4>
+                    <button onClick={() => setLatestReceipts([])} className="text-slate-500 hover:text-white"><X size={14}/></button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {latestReceipts.slice(0, 5).map((r, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setReceiptInput(r.receipt_number)
+                          createSession(r.receipt_number)
+                          setLatestReceipts([])
+                        }}
+                        className="p-3 rounded-xl bg-black border border-white/5 hover:border-indigo-500/50 transition-all text-center group"
+                      >
+                        <p className="text-xs text-slate-400 group-hover:text-indigo-400 font-mono">#{r.receipt_number}</p>
+                        <p className="text-[10px] font-bold text-white mt-1">RM{r.total}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-2xl border overflow-hidden" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
