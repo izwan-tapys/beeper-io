@@ -83,11 +83,13 @@ export default function DashboardPage() {
       m = newMerchant
     }
     
-    setMerchant(m)
-    setSettingsName(m.name)
-    setSettingsLogo(m.logo_url || '')
-    setSettingsLoyverseToken(m.loyverse_token || '')
-  }, [router])
+    if (m) {
+      setMerchant(m)
+      setSettingsName(m.name || '')
+      setSettingsLogo(m.logo_url || '')
+      setSettingsLoyverseToken(m.loyverse_token || '')
+    }
+  }, [router, fetchSessions])
 
   const fetchSessions = useCallback(async () => {
     if (!merchant) return
