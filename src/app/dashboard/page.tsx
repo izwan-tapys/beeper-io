@@ -355,7 +355,7 @@ export default function DashboardPage() {
                               </span>
                             ) : (
                               <span className="bg-green-500 text-black text-[10px] px-2 py-1 rounded font-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                                CUSTOMER READY
+                                CUSTOMER WAITING
                               </span>
                             )}
                           </div>
