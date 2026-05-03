@@ -442,14 +442,34 @@ export default function DashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>Logo URL</label>
-                <input
-                  type="text"
-                  value={settingsLogo}
-                  onChange={(e) => setSettingsLogo(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-white outline-none"
-                  style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
-                />
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-400">Logo URL</label>
+                  <input
+                    type="text"
+                    value={settingsLogo}
+                    onChange={(e) => setSettingsLogo(e.target.value)}
+                    placeholder="https://..."
+                    className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-white/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Loyverse Integration</h4>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-black border border-white/5 space-y-2">
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Webhook URL (Receipt Created)</p>
+                    <div className="group relative">
+                      <code className="block text-[11px] text-indigo-400 break-all p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 select-all cursor-pointer font-mono">
+                        {baseUrl}/api/webhooks/loyverse?merchant_id={merchant.id}
+                      </code>
+                    </div>
+                    <p className="text-[9px] text-slate-600 italic leading-relaxed">
+                      Copy this URL to your Loyverse Back Office > Settings > Webhooks.
+                    </p>
+                  </div>
+                </div>
               </div>
               <button
                 type="submit"
