@@ -167,35 +167,43 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     await acquireWakeLock()
     
     // Set confirmed in database
-    await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
+    const { error: confirmError } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
     
-    setStatus('waiting')
+    if (confirmError) {
+      console.error('Confirm error:', confirmError)
+      alert('Gagal sambung ke kedai: ' + confirmError.message)
+    } else {
+      console.log('Order confirmed successfully!')
+      setStatus('waiting')
+    }
 
     // Clean up existing channel if any
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current)
     }
 
-    // Subscribe to realtime
-    const channel = supabase.channel(`session-${sessionId}`)
+    // Subscribe to realtime (Simple version without filter for maximum reliability)
+    const channel = supabase.channel(`public:sessions`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
-        table: 'sessions', 
-        filter: `id=eq.${sessionId}` 
+        table: 'sessions'
       }, (payload) => {
-        console.log('Realtime update received:', payload.new.status)
-        const newStatus = payload.new.status
-        if (newStatus === 'called') {
-          setStatus('called')
-          triggerAlert()
-        } else if (newStatus === 'completed' || newStatus === 'archived') {
-          setStatus('completed')
-          releaseWakeLock()
+        // Filter in JS instead of in the subscription
+        if (payload.new.id === sessionId) {
+          console.log('Update for this session!', payload.new.status)
+          const newStatus = payload.new.status
+          if (newStatus === 'called') {
+            setStatus('called')
+            triggerAlert()
+          } else if (newStatus === 'completed' || newStatus === 'archived') {
+            setStatus('completed')
+            releaseWakeLock()
+          }
         }
       })
       .subscribe((status) => {
-        console.log('Subscription status:', status)
+        console.log('Realtime connection status:', status)
       })
     
     channelRef.current = channel
