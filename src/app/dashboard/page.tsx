@@ -466,7 +466,7 @@ export default function DashboardPage() {
                       </code>
                     </div>
                     <p className="text-[9px] text-slate-600 italic leading-relaxed">
-                      Copy this URL to your Loyverse Back Office > Settings > Webhooks.
+                      Copy this URL to your Loyverse Back Office &gt; Settings &gt; Webhooks.
                     </p>
                   </div>
                 </div>
