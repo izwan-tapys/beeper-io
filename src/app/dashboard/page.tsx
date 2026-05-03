@@ -152,7 +152,7 @@ export default function DashboardPage() {
       const data = await res.json()
       if (data.receipts) {
         setLatestReceipts(data.receipts)
-        setSyncCooldown(5) // 5 saat cooldown
+        setSyncCooldown(2) // 2 saat cooldown (Loyverse limit: 1 req/sec)
       } else if (data.error) {
         alert('Sync Error: ' + data.error)
       }
