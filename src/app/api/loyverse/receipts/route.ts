@@ -40,8 +40,11 @@ export async function GET(request: Request) {
 
     const data = await response.json()
     
+    // Tapis manual untuk pastikan HANYA SALE sahaja (Loyverse kadang-kadang hantar semua)
+    const salesOnly = (data.receipts || []).filter((r: any) => r.receipt_type === 'SALE')
+
     // 3. Filter data yang penting saja (Receipt Number & Created At)
-    const receipts = data.receipts.map((r: any) => ({
+    const receipts = salesOnly.map((r: any) => ({
       receipt_number: r.receipt_number,
       created_at: r.receipt_date,
       total: r.total_money
