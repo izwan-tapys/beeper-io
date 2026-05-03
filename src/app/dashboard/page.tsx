@@ -44,6 +44,11 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
+  const qrSessionRef = useRef<Session | null>(null)
+
+  useEffect(() => {
+    qrSessionRef.current = qrSession
+  }, [qrSession])
 
   useEffect(() => {
     setBaseUrl(window.location.origin)
@@ -94,9 +99,24 @@ export default function DashboardPage() {
     if (!merchant) return
     const channel = supabase
       .channel('dashboard-sessions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, () => {
-        fetchSessions()
-      })
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
+        (payload: any) => {
+          fetchSessions()
+          // AUTO-CLOSE QR MODAL IF CONFIRMED
+          if (qrSessionRef.current?.id === payload.new.id && payload.new.is_confirmed) {
+            setQrSession(null)
+          }
+        }
+      )
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
+        () => fetchSessions()
+      )
+      .on('postgres_changes', 
+        { event: 'DELETE', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
+        () => fetchSessions()
+      )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [merchant, fetchSessions])
