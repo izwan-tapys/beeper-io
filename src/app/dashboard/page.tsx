@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [now, setNow] = useState(Date.now())
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
+  const [syncCooldown, setSyncCooldown] = useState(0)
   const qrSessionRef = useRef<Session | null>(null)
 
   useEffect(() => {
@@ -64,6 +65,14 @@ export default function DashboardPage() {
   useEffect(() => {
     setBaseUrl(window.location.origin)
   }, [])
+
+  // Sync Cooldown Timer
+  useEffect(() => {
+    if (syncCooldown > 0) {
+      const timer = setTimeout(() => setSyncCooldown(syncCooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [syncCooldown])
 
   const fetchSessions = useCallback(async () => {
     if (!merchant) return
@@ -143,6 +152,7 @@ export default function DashboardPage() {
       const data = await res.json()
       if (data.receipts) {
         setLatestReceipts(data.receipts)
+        setSyncCooldown(5) // 5 saat cooldown
       } else if (data.error) {
         alert('Sync Error: ' + data.error)
       }
@@ -347,16 +357,16 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={syncLoyverse}
-                  disabled={isSyncing || !merchant?.loyverse_token}
-                  className="px-4 py-3 rounded-xl border flex items-center justify-center transition-all"
+                  disabled={isSyncing || syncCooldown > 0 || !merchant?.loyverse_token}
+                  className="px-4 py-3 rounded-xl border flex items-center justify-center transition-all min-w-[50px]"
                   style={{ 
                     background: 'rgba(234,179,8,0.1)', 
-                    borderColor: merchant?.loyverse_token ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
-                    color: merchant?.loyverse_token ? '#eab308' : '#475569'
+                    borderColor: (merchant?.loyverse_token && syncCooldown === 0) ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
+                    color: (merchant?.loyverse_token && syncCooldown === 0) ? '#eab308' : '#475569'
                   }}
-                  title="Sync with Loyverse"
+                  title={syncCooldown > 0 ? `Cooldown: ${syncCooldown}s` : "Sync with Loyverse"}
                 >
-                  {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
+                  {isSyncing ? <Loader2 size={18} className="animate-spin" /> : syncCooldown > 0 ? <span className="text-xs font-bold">{syncCooldown}</span> : <Zap size={18} />}
                 </button>
               </form>
 
