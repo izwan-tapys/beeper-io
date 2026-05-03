@@ -277,18 +277,24 @@ export default function DashboardPage() {
                     <div key={session.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] animate-slide-up">
                       <div className="w-2 h-2 rounded-full" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
                       <div className="flex-1">
-                        <p className="font-semibold text-white">Order #{session.receipt_number}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-white text-lg">Order #{session.receipt_number}</p>
+                          {!session.is_confirmed ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 animate-pulse font-bold uppercase tracking-wider">
+                              Waiting...
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/30 font-bold uppercase tracking-wider">
+                              Ready & Listening
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                          {session.status === 'called' ? '🔔 Called' : '⏳ Waiting'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {session.status === 'called' ? '🔔 Called' : '⏳ Preparing'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       
-                      <div className="flex items-center gap-4">
-                        {!session.is_confirmed && (
-                          <span className="text-[10px] px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 animate-pulse">
-                            Wait for Customer...
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2">
                         <button
                           id={`qr-btn-${session.id}`}
                           onClick={() => setQrSession(session)}
