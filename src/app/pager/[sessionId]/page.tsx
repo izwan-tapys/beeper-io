@@ -247,8 +247,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       <main className="flex-1 flex flex-col items-center justify-center p-6">
         {status === 'confirm' && (
           <div className="w-full max-w-sm text-center animate-slide-up">
-            <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(79,70,229,0.4)]">
-              <span className="text-4xl">🛎️</span>
+            <div className="w-24 h-24 rounded-3xl overflow-hidden mx-auto mb-6 shadow-[0_0_40px_rgba(79,70,229,0.4)] border border-white/10">
+              <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Order #{receiptNumber}</h1>
             <p className="text-slate-400 mb-8 text-sm">We&apos;ll alert you when your order is ready.</p>
@@ -258,9 +258,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
         {status === 'waiting' && (
           <div className="w-full max-w-sm text-center animate-fade-in">
-            <div className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center rounded-full border-2 border-indigo-500/30">
-              <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500/20" />
-              <span className="text-5xl">⏳</span>
+            <div className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_40px_rgba(79,70,229,0.2)]">
+              <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500/10" />
+              <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover relative z-10" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">Preparing Order</h1>
             <p className="text-slate-400 mb-6 text-sm">Order #{receiptNumber}</p>

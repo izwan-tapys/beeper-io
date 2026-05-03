@@ -236,8 +236,8 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 border-b" style={{ background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', borderColor: 'var(--card-border)' }}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              <Zap size={16} className="text-white" fill="white" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
+              <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-white text-lg">Beeper</span>
             {merchant && (
