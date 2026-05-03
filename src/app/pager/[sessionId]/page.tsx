@@ -22,6 +22,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [volume, setVolume] = useState(0.8)
   const [isFlashing, setIsFlashing] = useState(false)
   const [lastChecked, setLastChecked] = useState(0)
+  const [isAudioReady, setIsAudioReady] = useState(false)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -148,9 +149,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     })
   }
 
-  const handleConfirm = async () => {
+  const initAudio = async () => {
     try {
-      const ctx = new AudioContext()
+      if (audioCtxRef.current) {
+        await audioCtxRef.current.resume()
+        setIsAudioReady(true)
+        return
+      }
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       await ctx.resume()
       audioCtxRef.current = ctx
       
@@ -159,18 +165,22 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       source.buffer = buffer
       source.connect(ctx.destination)
       source.start()
-
-      await acquireWakeLock()
       
-      const { error } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
-      if (error) {
-        alert('Gagal sambung: ' + error.message)
-      } else {
-        setStatus('waiting')
-        fetchSession() // Refresh data immediately
-      }
-    } catch (e: any) {
-      alert('Error: ' + e.message)
+      setIsAudioReady(true)
+      await acquireWakeLock()
+    } catch (e) {
+      console.error('Audio init error:', e)
+    }
+  }
+
+  const handleConfirm = async () => {
+    await initAudio()
+    const { error } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
+    if (error) {
+      alert('Gagal sambung: ' + error.message)
+    } else {
+      setStatus('waiting')
+      fetchSession()
     }
   }
 
@@ -244,9 +254,18 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">Preparing Order</h1>
             <p className="text-slate-400 mb-6 text-sm">Order #{receiptNumber}</p>
-            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-3xl inline-block">
+            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-3xl inline-block mb-8">
               <p className="text-indigo-400 text-3xl font-black font-mono">{formatWaitTime(waitTime)}</p>
             </div>
+
+            {!isAudioReady && (
+              <button 
+                onClick={initAudio}
+                className="block mx-auto px-6 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold text-sm animate-pulse"
+              >
+                🔊 Tap to Enable Sound
+              </button>
+            )}
           </div>
         )}
       </main>
