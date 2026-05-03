@@ -55,13 +55,25 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
 
-  // Wait timer
+  // Wait timer & Polling fallback
   useEffect(() => {
+    let pollingInterval: NodeJS.Timeout | null = null
+
     if (status === 'waiting') {
+      // Regular wait timer for UI
       waitTimerRef.current = setInterval(() => setWaitTime(t => t + 1), 1000)
+      
+      // Polling fallback every 3s (in case Realtime fails)
+      pollingInterval = setInterval(() => {
+        checkStatus()
+      }, 3000)
     }
-    return () => { if (waitTimerRef.current) clearInterval(waitTimerRef.current) }
-  }, [status])
+
+    return () => { 
+      if (waitTimerRef.current) clearInterval(waitTimerRef.current) 
+      if (pollingInterval) clearInterval(pollingInterval)
+    }
+  }, [status, checkStatus])
 
   // Visibility change handler — check status when user returns to tab
   const checkStatus = useCallback(async () => {
