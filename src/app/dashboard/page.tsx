@@ -119,11 +119,19 @@ export default function DashboardPage() {
   }
 
   const callSession = async (id: string) => {
-    await supabase.from('sessions').update({ status: 'called', updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await supabase.from('sessions').update({ status: 'called', updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) {
+      console.error('Call session error:', error)
+      alert('Gagal panggil: ' + error.message)
+    }
   }
 
   const doneSession = async (id: string) => {
-    await supabase.from('sessions').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await supabase.from('sessions').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) {
+      console.error('Done session error:', error)
+      alert('Gagal set selesai: ' + error.message)
+    }
   }
 
   const toggleStore = async () => {
