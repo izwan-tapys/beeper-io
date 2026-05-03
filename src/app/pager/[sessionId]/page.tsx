@@ -50,6 +50,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     
     setReceiptNumber(data.receipt_number)
 
+    // Calculate initial wait time from database timestamp
+    if (data.created_at) {
+      const createdAt = new Date(data.created_at).getTime()
+      const now = new Date().getTime()
+      const diffInSeconds = Math.floor((now - createdAt) / 1000)
+      setWaitTime(diffInSeconds > 0 ? diffInSeconds : 0)
+    }
+
     if (data.status === 'called') {
       if (statusRef.current !== 'called') {
         setStatus('called')
