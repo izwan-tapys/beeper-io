@@ -15,6 +15,7 @@ type Session = {
   id: string
   receipt_number: string
   status: 'waiting' | 'called' | 'completed' | 'archived'
+  is_confirmed: boolean
   created_at: string
 }
 
@@ -148,9 +149,14 @@ export default function DashboardPage() {
       .update({ name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
       .eq('id', merchant.id)
     
-    if (!error) {
+    if (error) {
+      console.error('Error saving settings:', error)
+      alert('Gagal simpan: ' + error.message)
+    } else {
       setMerchant({ ...merchant, name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
       setIsSettingsOpen(false)
+      // Re-fetch to be 100% sure
+      fetchMerchant()
     }
     setSavingSettings(false)
   }
@@ -322,17 +328,33 @@ export default function DashboardPage() {
                           >
                             <Phone size={12} />
                             CALL
-                          </button>
+                      <div className="flex items-center gap-4">
+                        {!session.is_confirmed && (
+                          <span className="text-[10px] px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 animate-pulse">
+                            Waiting for Customer...
+                          </span>
                         )}
-
-                        {/* Done */}
+                        {session.is_confirmed && (
+                          <span className="text-[10px] px-2 py-1 rounded-md bg-green-500/10 text-green-500 border border-green-500/20">
+                            Customer Connected
+                          </span>
+                        )}
                         <button
-                          id={`done-btn-${session.id}`}
-                          onClick={() => doneSession(session.id)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs transition-all"
-                          style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}
+                          onClick={() => callSession(session.id)}
+                          disabled={session.status === 'called' || !session.is_confirmed}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all disabled:opacity-30 disabled:grayscale"
+                          style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
                         >
-                          <CheckCircle size={12} />
+                          <Phone size={14} />
+                          {session.status === 'called' ? 'CALLED' : 'CALL'}
+                        </button>
+                        <button
+                          onClick={() => doneSession(session.id)}
+                          disabled={!session.is_confirmed}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all disabled:opacity-30 disabled:grayscale"
+                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
+                        >
+                          <CheckCircle size={14} />
                           DONE
                         </button>
                       </div>

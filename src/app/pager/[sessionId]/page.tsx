@@ -8,9 +8,10 @@ import { use } from 'react'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
+const supabase = createClient()
+
 export default function PagerPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params)
-  const supabase = createClient()
 
   const [status, setStatus] = useState<PagerStatus>('loading')
   const [merchantName, setMerchantName] = useState('')
@@ -25,16 +26,24 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const waitTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch initial session status
   useEffect(() => {
     const fetchSession = async () => {
       const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url)').eq('id', sessionId).single()
-      if (error || !data) { setStatus('error'); return }
+      if (error || !data) { 
+        setStatus('error')
+        return 
+      }
       
-      const merchantData = data.merchants as unknown as { name: string, logo_url: string | null }
-      setMerchantName(merchantData.name)
-      setMerchantLogo(merchantData.logo_url)
+      const rawMerchant = data.merchants
+      const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
+      
+      if (merchantData) {
+        setMerchantName(merchantData.name || 'Store')
+        setMerchantLogo(merchantData.logo_url)
+      }
       
       setReceiptNumber(data.receipt_number)
       if (data.status === 'called') { setStatus('called'); triggerAlert() }
@@ -70,8 +79,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       if (!document.hidden && status === 'waiting') { checkStatus() }
     }
     document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
-  }, [checkStatus, status])
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+    }
+  }, [checkStatus, status, supabase])
 
   const acquireWakeLock = async () => {
     try {
@@ -87,14 +101,29 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   const triggerAlert = () => {
-    // Vibration
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate([500, 250, 500, 250, 500, 250, 500])
-    }
-    // Audio chime
-    playChime()
-    // Visual flash
+    if (alertIntervalRef.current) return // Already alerting
+    
     setIsFlashing(true)
+    
+    const runAlert = () => {
+      // Vibration
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate([500, 200, 500, 200, 500])
+      }
+      // Audio
+      playChime()
+    }
+
+    runAlert() // Initial run
+    alertIntervalRef.current = setInterval(runAlert, 3000) // Repeat every 3s
+  }
+
+  const stopAlert = () => {
+    setIsFlashing(false)
+    if (alertIntervalRef.current) {
+      clearInterval(alertIntervalRef.current)
+      alertIntervalRef.current = null
+    }
   }
 
   const playChime = () => {
@@ -136,11 +165,26 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     source.start()
 
     await acquireWakeLock()
+    
+    // Set confirmed in database
+    await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
+    
     setStatus('waiting')
 
+    // Clean up existing channel if any
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+    }
+
     // Subscribe to realtime
-    channelRef.current = supabase.channel(`session-${sessionId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, (payload) => {
+    const channel = supabase.channel(`session-${sessionId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'sessions', 
+        filter: `id=eq.${sessionId}` 
+      }, (payload) => {
+        console.log('Realtime update received:', payload.new.status)
         const newStatus = payload.new.status
         if (newStatus === 'called') {
           setStatus('called')
@@ -150,7 +194,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
           releaseWakeLock()
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+      })
+    
+    channelRef.current = channel
   }
 
   const formatWaitTime = (seconds: number) => {
@@ -198,7 +246,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer"
         style={{ background: '#22c55e', animation: 'flash-green 0.8s ease-in-out infinite' }}
-        onClick={() => setIsFlashing(false)}
+        onClick={stopAlert}
       >
         <div className="animate-bounce-in">
           <div className="text-8xl mb-4">🔔</div>
@@ -210,7 +258,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             <p className="text-white text-5xl font-black">#{receiptNumber}</p>
           </div>
           <p className="text-white/70 text-lg">Please collect at the counter</p>
-          <p className="text-white/50 text-sm mt-6">Tap anywhere to dismiss</p>
+          <p className="text-white text-sm mt-6 px-6 py-2 rounded-full bg-black/20 font-bold border border-white/20">
+            TAP ANYWHERE TO SILENCE
+          </p>
         </div>
       </div>
     )
