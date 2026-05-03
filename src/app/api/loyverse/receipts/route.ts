@@ -26,8 +26,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Loyverse token not found' }, { status: 404 })
     }
 
-    // 2. Tarik resit dari Loyverse API (Latest 10)
-    const response = await fetch('https://api.loyverse.com/v1.0/receipts?limit=10', {
+    // 2. Tarik resit dari Loyverse API (Latest 10 SALES only)
+    const response = await fetch('https://api.loyverse.com/v1.0/receipts?limit=10&receipt_type=SALE', {
       headers: {
         'Authorization': `Bearer ${merchant.loyverse_token}`
       }
