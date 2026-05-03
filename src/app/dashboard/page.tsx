@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode,
-  LogOut, Power, PowerOff, X, Clock, Loader2
+  LogOut, Power, PowerOff, X, Clock, Loader2, Settings
 } from 'lucide-react'
 
 type Session = {
@@ -51,12 +51,24 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    let { data: m } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
+    let { data: m, error: fetchError } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error fetching merchant:', fetchError)
+    }
+
     if (!m) {
+      console.log('Merchant not found, creating new one...')
       const storeName = user.email?.split('@')[0] || 'My Store'
-      const { data: newMerchant } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName }).select().single()
+      const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName }).select().single()
+      if (insertError) {
+        console.error('Error creating merchant:', insertError)
+        return
+      }
       m = newMerchant
     }
+    
+    console.log('Merchant loaded:', m)
     setMerchant(m)
     setSettingsName(m.name)
     setSettingsLogo(m.logo_url || '')
@@ -114,10 +126,16 @@ export default function DashboardPage() {
       await supabase.from('sessions').update({ status: 'archived' }).eq('merchant_id', merchant.id).in('status', ['waiting', 'called', 'completed'])
     }
     const newState = !merchant.is_open
-    await supabase.from('merchants').update({ is_open: newState }).eq('id', merchant.id)
-    setMerchant({ ...merchant, is_open: newState })
-    if (newState) fetchSessions()
-    else setSessions([])
+    const { error: updateError } = await supabase.from('merchants').update({ is_open: newState }).eq('id', merchant.id)
+    
+    if (updateError) {
+      console.error('Error toggling store:', updateError)
+      alert('Failed to update store status. Please try again.')
+    } else {
+      setMerchant({ ...merchant, is_open: newState })
+      if (newState) fetchSessions()
+      else setSessions([])
+    }
     setTogglingStore(false)
   }
 
@@ -187,7 +205,7 @@ export default function DashboardPage() {
               style={{ color: 'var(--muted-foreground)' }} 
               title="Settings"
             >
-              <Plus className="rotate-45" size={18} />
+              <Settings size={18} />
             </button>
             <button id="logout-btn" onClick={handleLogout} className="p-2 rounded-xl transition-colors hover:bg-white/5" style={{ color: 'var(--muted-foreground)' }} title="Logout">
               <LogOut size={16} />
