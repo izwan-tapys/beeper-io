@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
+import { Loader2 } from 'lucide-react'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -19,7 +20,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [receiptNumber, setReceiptNumber] = useState('')
   const [waitTime, setWaitTime] = useState(0)
   const [volume, setVolume] = useState(0.8)
-  const [vibrationEnabled, setVibrationEnabled] = useState(true)
   const [isFlashing, setIsFlashing] = useState(false)
   const [lastChecked, setLastChecked] = useState(0)
 
@@ -29,55 +29,71 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch initial session status
-  useEffect(() => {
-    const fetchSession = async () => {
-      const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url)').eq('id', sessionId).single()
-      if (error || !data) { 
-        setStatus('error')
-        return 
-      }
-      
-      const rawMerchant = data.merchants
-      const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
-      
-      if (merchantData) {
-        setMerchantName(merchantData.name || 'Store')
-        setMerchantLogo(merchantData.logo_url)
-      }
-      
-      setReceiptNumber(data.receipt_number)
-      if (data.status === 'called') { setStatus('called'); triggerAlert() }
-      else if (data.status === 'completed' || data.status === 'archived') { setStatus('completed') }
-      else { setStatus('confirm') }
+  // Use a ref for status to avoid closure issues in polling
+  const statusRef = useRef<PagerStatus>('loading')
+  useEffect(() => { statusRef.current = status }, [status])
+
+  const fetchSession = useCallback(async () => {
+    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url)').eq('id', sessionId).single()
+    if (error || !data) { 
+      if (statusRef.current === 'loading') setStatus('error')
+      return 
     }
-    fetchSession()
+    
+    const rawMerchant = data.merchants
+    const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
+    
+    if (merchantData) {
+      setMerchantName(merchantData.name || 'Store')
+      setMerchantLogo(merchantData.logo_url)
+    }
+    
+    setReceiptNumber(data.receipt_number)
+
+    // Log logic to decide status
+    if (data.status === 'called') {
+      if (statusRef.current !== 'called') {
+        setStatus('called')
+        triggerAlert()
+      }
+    } else if (data.status === 'completed' || data.status === 'archived') {
+      setStatus('completed')
+    } else if (data.is_confirmed) {
+      // IF ALREADY CONFIRMED, GO TO WAITING
+      setStatus('waiting')
+    } else {
+      setStatus('confirm')
+    }
   }, [sessionId])
+
+  // Initial Fetch
+  useEffect(() => {
+    fetchSession()
+  }, [fetchSession])
 
   // Wait timer & Polling fallback
   useEffect(() => {
     if (status === 'waiting') {
-      // Timer for UI
-      waitTimerRef.current = setInterval(() => setWaitTime(t => t + 1), 1000)
+      if (!waitTimerRef.current) {
+        waitTimerRef.current = setInterval(() => setWaitTime(t => t + 1), 1000)
+      }
       
-      // Polling for status updates (The "Brute Force" way)
-      pollingRef.current = setInterval(async () => {
-        setLastChecked(prev => prev + 1)
-        const { data } = await supabase.from('sessions').select('status').eq('id', sessionId).single()
-        if (data?.status === 'called') {
-          setStatus('called')
-          triggerAlert()
-        } else if (data?.status === 'completed' || data?.status === 'archived') {
-          setStatus('completed')
-        }
-      }, 3000)
+      if (!pollingRef.current) {
+        pollingRef.current = setInterval(() => {
+          setLastChecked(prev => prev + 1)
+          fetchSession()
+        }, 3000)
+      }
+    } else {
+      if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
     }
 
     return () => { 
-      if (waitTimerRef.current) clearInterval(waitTimerRef.current) 
-      if (pollingRef.current) clearInterval(pollingRef.current)
+      if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
     }
-  }, [status, sessionId])
+  }, [status, fetchSession])
 
   const acquireWakeLock = async () => {
     try {
@@ -116,7 +132,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const playChime = () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
-    const vol = volume
     const tones = [523.25, 659.25, 783.99, 1046.5]
     tones.forEach((freq, i) => {
       const osc = ctx.createOscillator()
@@ -126,7 +141,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       osc.type = 'sine'
       osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.18)
       gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.18)
-      gainNode.gain.linearRampToValueAtTime(vol, ctx.currentTime + i * 0.18 + 0.05)
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.18 + 0.05)
       gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.5)
       osc.start(ctx.currentTime + i * 0.18)
       osc.stop(ctx.currentTime + i * 0.18 + 0.6)
@@ -134,24 +149,28 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   const handleConfirm = async () => {
-    const ctx = new AudioContext()
-    await ctx.resume()
-    audioCtxRef.current = ctx
-    
-    // Unlocking audio
-    const buffer = ctx.createBuffer(1, 1, 22050)
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-    source.connect(ctx.destination)
-    source.start()
+    try {
+      const ctx = new AudioContext()
+      await ctx.resume()
+      audioCtxRef.current = ctx
+      
+      const buffer = ctx.createBuffer(1, 1, 22050)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(ctx.destination)
+      source.start()
 
-    await acquireWakeLock()
-    
-    const { error } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
-    if (error) {
-      alert('Connection error. Please try again.')
-    } else {
-      setStatus('waiting')
+      await acquireWakeLock()
+      
+      const { error } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
+      if (error) {
+        alert('Gagal sambung: ' + error.message)
+      } else {
+        setStatus('waiting')
+        fetchSession() // Refresh data immediately
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message)
     }
   }
 
@@ -187,7 +206,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         <div className="text-8xl mb-4">🔔</div>
         <h1 className="text-4xl font-black text-white mb-3">YOUR ORDER IS READY!</h1>
         <p className="text-white text-5xl font-black mb-6">#{receiptNumber}</p>
-        <p className="text-white text-sm font-bold border border-white/40 px-6 py-2 rounded-full">TAP TO SILENCE</p>
+        <p className="text-white text-sm font-bold border border-white/40 px-6 py-2 rounded-full uppercase">Tap to stop sound</p>
       </div>
     )
   }
@@ -234,7 +253,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
       <footer className="p-4 text-center">
         <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
-          {status === 'waiting' ? `Auto-check active (${lastChecked})` : 'Beeper.io'}
+          {status === 'waiting' ? `Auto-check: ${lastChecked}` : 'Beeper.io'}
         </p>
       </footer>
     </div>
