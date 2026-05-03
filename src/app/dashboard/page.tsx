@@ -22,6 +22,7 @@ type Merchant = {
   id: string
   name: string
   is_open: boolean
+  logo_url: string | null
 }
 
 export default function DashboardPage() {
@@ -36,6 +37,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [togglingStore, setTogglingStore] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settingsName, setSettingsName] = useState('')
+  const [settingsLogo, setSettingsLogo] = useState('')
+  const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
 
   useEffect(() => {
@@ -53,6 +58,8 @@ export default function DashboardPage() {
       m = newMerchant
     }
     setMerchant(m)
+    setSettingsName(m.name)
+    setSettingsLogo(m.logo_url || '')
   }, [supabase, router])
 
   const fetchSessions = useCallback(async () => {
@@ -114,6 +121,22 @@ export default function DashboardPage() {
     setTogglingStore(false)
   }
 
+  const saveSettings = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!merchant || !settingsName.trim()) return
+    setSavingSettings(true)
+    const { error } = await supabase
+      .from('merchants')
+      .update({ name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
+      .eq('id', merchant.id)
+    
+    if (!error) {
+      setMerchant({ ...merchant, name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
+      setIsSettingsOpen(false)
+    }
+    setSavingSettings(false)
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
@@ -157,7 +180,16 @@ export default function DashboardPage() {
               {togglingStore ? <Loader2 size={14} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={14} /> : <Power size={14} />}
               {merchant?.is_open ? 'Close Store' : 'Open Store'}
             </button>
-            <button id="logout-btn" onClick={handleLogout} className="p-2 rounded-xl transition-colors" style={{ color: 'var(--muted-foreground)' }} title="Logout">
+            <button 
+              id="settings-btn" 
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 rounded-xl transition-colors hover:bg-white/5" 
+              style={{ color: 'var(--muted-foreground)' }} 
+              title="Settings"
+            >
+              <Plus className="rotate-45" size={18} />
+            </button>
+            <button id="logout-btn" onClick={handleLogout} className="p-2 rounded-xl transition-colors hover:bg-white/5" style={{ color: 'var(--muted-foreground)' }} title="Logout">
               <LogOut size={16} />
             </button>
           </div>
@@ -316,6 +348,70 @@ export default function DashboardPage() {
             <p className="text-xs font-mono px-3 py-2 rounded-lg mt-2 break-all" style={{ background: '#0a0b0f', color: 'var(--muted-foreground)', border: '1px solid var(--card-border)' }}>
               {pagerUrl(qrSession.id)}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-md rounded-2xl p-8 border animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-white text-lg">Store Settings</h3>
+              <button id="close-settings-btn" onClick={() => setIsSettingsOpen(false)} className="p-1 rounded-lg" style={{ color: 'var(--muted-foreground)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={saveSettings} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>Store Name</label>
+                <input
+                  id="settings-name-input"
+                  type="text"
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  placeholder="e.g. Nasi Lemak Royale"
+                  required
+                  className="w-full px-4 py-3 rounded-xl text-white outline-none"
+                  style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>Logo URL</label>
+                <input
+                  id="settings-logo-input"
+                  type="text"
+                  value={settingsLogo}
+                  onChange={(e) => setSettingsLogo(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full px-4 py-3 rounded-xl text-white outline-none"
+                  style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                />
+                <p className="text-[10px] mt-2" style={{ color: 'var(--muted)' }}>Tip: Upload to Imgur or postimages.org and paste the direct link here.</p>
+              </div>
+
+              {settingsLogo && (
+                <div className="pt-2">
+                  <p className="text-xs mb-2" style={{ color: 'var(--muted-foreground)' }}>Preview Logo:</p>
+                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={settingsLogo} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'} />
+                  </div>
+                </div>
+              )}
+
+              <button
+                id="save-settings-btn"
+                type="submit"
+                disabled={savingSettings || !settingsName.trim()}
+                className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 mt-4 transition-all"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: savingSettings ? 0.7 : 1 }}
+              >
+                {savingSettings ? <Loader2 size={16} className="animate-spin" /> : 'Save Changes'}
+              </button>
+            </form>
           </div>
         </div>
       )}

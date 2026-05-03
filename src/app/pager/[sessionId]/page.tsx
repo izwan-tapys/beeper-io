@@ -13,6 +13,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const supabase = createClient()
 
   const [status, setStatus] = useState<PagerStatus>('loading')
+  const [merchantName, setMerchantName] = useState('')
+  const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
   const [receiptNumber, setReceiptNumber] = useState('')
   const [waitTime, setWaitTime] = useState(0)
   const [volume, setVolume] = useState(0.8)
@@ -27,8 +29,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // Fetch initial session status
   useEffect(() => {
     const fetchSession = async () => {
-      const { data, error } = await supabase.from('sessions').select('*, merchants(name)').eq('id', sessionId).single()
+      const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url)').eq('id', sessionId).single()
       if (error || !data) { setStatus('error'); return }
+      
+      const merchantData = data.merchants as unknown as { name: string, logo_url: string | null }
+      setMerchantName(merchantData.name)
+      setMerchantLogo(merchantData.logo_url)
+      
       setReceiptNumber(data.receipt_number)
       if (data.status === 'called') { setStatus('called'); triggerAlert() }
       else if (data.status === 'completed' || data.status === 'archived') { setStatus('completed') }
@@ -214,11 +221,18 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     <div className="min-h-screen flex flex-col" style={{ background: 'radial-gradient(ellipse at top, #1a1b2e 0%, #0a0b0f 70%)' }}>
       {/* Header */}
       <header className="p-6 text-center">
-        <div className="inline-flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            <span className="text-white text-xs font-bold">B</span>
-          </div>
-          <span className="font-bold text-white">Beeper</span>
+        <div className="flex flex-col items-center gap-3">
+          {merchantLogo ? (
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={merchantLogo} alt={merchantName} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <span className="text-white text-lg font-bold">{merchantName?.[0] || 'B'}</span>
+            </div>
+          )}
+          <span className="font-bold text-white text-xl">{merchantName}</span>
         </div>
       </header>
 
