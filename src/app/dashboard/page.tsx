@@ -462,7 +462,7 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Webhook URL (Receipt Created)</p>
                     <div className="group relative">
                       <code className="block text-[11px] text-indigo-400 break-all p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 select-all cursor-pointer font-mono">
-                        {baseUrl}/api/webhooks/loyverse?merchant_id={merchant.id}
+                        {baseUrl}/api/webhooks/loyverse?merchant_id={merchant?.id}
                       </code>
                     </div>
                     <p className="text-[9px] text-slate-600 italic leading-relaxed">
