@@ -470,11 +470,15 @@ export default function DashboardPage() {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-slate-400">Loyverse Access Token</label>
                   <input
-                    type="password"
+                    type="text"
                     value={settingsLoyverseToken}
                     onChange={(e) => setSettingsLoyverseToken(e.target.value)}
+                    onPaste={(e) => {
+                      // Paksa paste masuk kalau ada isu focus
+                    }}
                     placeholder="Masukkan Personal Access Token..."
                     className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all font-mono text-sm"
+                    style={{ WebkitTextSecurity: 'disc' } as any} 
                   />
                   <p className="text-[10px] text-slate-600">
                     Get this from Loyverse &gt; Settings &gt; Access Tokens.
