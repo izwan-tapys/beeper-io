@@ -277,7 +277,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
       <footer className="p-4 text-center">
         <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
-          {status === 'waiting' ? `Auto-check: ${lastChecked}` : 'Beeper.io'}
+          Beeper.io
         </p>
       </footer>
     </div>

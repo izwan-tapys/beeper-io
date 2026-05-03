@@ -195,8 +195,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
               <Zap size={16} className="text-white" fill="white" />
             </div>
-            <span className="text-white text-lg font-bold">Beeper</span>
-            <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-mono animate-pulse">v1.2-DEBUG</span>
+            <span className="font-bold text-white text-lg">Beeper</span>
             {merchant && (
               <span className="text-sm px-2 py-0.5 rounded-full" style={{ background: 'var(--card)', color: 'var(--muted-foreground)', border: '1px solid var(--card-border)' }}>
                 {merchant.name}
