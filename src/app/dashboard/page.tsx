@@ -181,7 +181,8 @@ export default function DashboardPage() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
               <Zap size={16} className="text-white" fill="white" />
             </div>
-            <span className="font-bold text-white text-lg">Beeper</span>
+            <span className="text-white text-lg font-bold">Beeper</span>
+            <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-mono animate-pulse">v1.2-DEBUG</span>
             {merchant && (
               <span className="text-sm px-2 py-0.5 rounded-full" style={{ background: 'var(--card)', color: 'var(--muted-foreground)', border: '1px solid var(--card-border)' }}>
                 {merchant.name}
@@ -276,23 +277,25 @@ export default function DashboardPage() {
                   {filteredSessions.map((session) => (
                     <div key={session.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] animate-slide-up">
                       <div className="w-2 h-2 rounded-full" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-white text-lg">Order #{session.receipt_number}</p>
-                          {!session.is_confirmed ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 animate-pulse font-bold uppercase tracking-wider">
-                              Waiting...
-                            </span>
-                          ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/30 font-bold uppercase tracking-wider">
-                              Ready & Listening
-                            </span>
-                          )}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-3">
+                            <p className="font-black text-white text-xl">Order #{session.receipt_number}</p>
+                            <div className="flex shrink-0">
+                              {!session.is_confirmed ? (
+                                <span className="bg-yellow-500 text-black text-[10px] px-2 py-1 rounded font-black animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+                                  WAITING FOR CUSTOMER
+                                </span>
+                              ) : (
+                                <span className="bg-green-500 text-black text-[10px] px-2 py-1 rounded font-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                                  CUSTOMER READY
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                            {session.status === 'called' ? '🔔 CALLED' : '⏳ PREPARING'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
-                        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                          {session.status === 'called' ? '🔔 Called' : '⏳ Preparing'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
                       
                       <div className="flex items-center gap-2">
                         <button
