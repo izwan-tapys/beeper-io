@@ -18,7 +18,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [merchantName, setMerchantName] = useState('')
   const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
   const [receiptNumber, setReceiptNumber] = useState('')
-  const [waitTime, setWaitTime] = useState(0)
+  const [createdAt, setCreatedAt] = useState<string | null>(null)
+  const [now, setNow] = useState(Date.now())
   const [volume, setVolume] = useState(0.8)
   const [isFlashing, setIsFlashing] = useState(false)
   const [isAudioReady, setIsAudioReady] = useState(false)
@@ -50,13 +51,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     
     setReceiptNumber(data.receipt_number)
 
-    // Calculate initial wait time from database timestamp
-    if (data.created_at) {
-      const createdAt = new Date(data.created_at).getTime()
-      const now = new Date().getTime()
-      const diffInSeconds = Math.floor((now - createdAt) / 1000)
-      setWaitTime(diffInSeconds > 0 ? diffInSeconds : 0)
-    }
+    setReceiptNumber(data.receipt_number)
+    setCreatedAt(data.created_at)
 
     if (data.status === 'called') {
       if (statusRef.current !== 'called') {
@@ -81,9 +77,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // Wait timer & Polling fallback
   useEffect(() => {
     if (status === 'waiting' || status === 'called') {
-      // Timer only for waiting state
-      if (status === 'waiting' && !waitTimerRef.current) {
-        waitTimerRef.current = setInterval(() => setWaitTime(t => t + 1), 1000)
+      // Live timer tick
+      if (!waitTimerRef.current) {
+        waitTimerRef.current = setInterval(() => setNow(Date.now()), 1000)
       }
       
       // Polling for both waiting and called states
@@ -194,9 +190,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
   }
 
-  const formatWaitTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0')
-    const s = (seconds % 60).toString().padStart(2, '0')
+  const formatWaitTime = () => {
+    if (!createdAt) return '0:00'
+    const start = new Date(createdAt).getTime()
+    const seconds = Math.floor((now - start) / 1000)
+    const totalSeconds = seconds > 0 ? seconds : 0
+    const m = Math.floor(totalSeconds / 60)
+    const s = (totalSeconds % 60).toString().padStart(2, '0')
     return `${m}:${s}`
   }
 
@@ -265,7 +265,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             <h1 className="text-2xl font-bold text-white mb-1">Preparing Order</h1>
             <p className="text-slate-400 mb-6 text-sm">Order #{receiptNumber}</p>
             <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-3xl inline-block mb-8">
-              <p className="text-indigo-400 text-3xl font-black font-mono">{formatWaitTime(waitTime)}</p>
+              <p className="text-indigo-400 text-3xl font-black font-mono">{formatWaitTime()}</p>
             </div>
 
             {!isAudioReady && (
