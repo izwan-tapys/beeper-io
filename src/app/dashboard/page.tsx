@@ -44,7 +44,6 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
-  const [connStatus, setConnStatus] = useState<'offline' | 'connecting' | 'online'>('offline')
 
   useEffect(() => {
     setBaseUrl(window.location.origin)
@@ -61,7 +60,6 @@ export default function DashboardPage() {
     }
 
     if (!m) {
-      console.log('Merchant not found, creating new one...')
       const storeName = user.email?.split('@')[0] || 'My Store'
       const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName }).select().single()
       if (insertError) {
@@ -71,7 +69,6 @@ export default function DashboardPage() {
       m = newMerchant
     }
     
-    console.log('Merchant loaded:', m)
     setMerchant(m)
     setSettingsName(m.name)
     setSettingsLogo(m.logo_url || '')
@@ -95,17 +92,12 @@ export default function DashboardPage() {
   // Realtime subscription for dashboard
   useEffect(() => {
     if (!merchant) return
-    setConnStatus('connecting')
     const channel = supabase
       .channel('dashboard-sessions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, () => {
         fetchSessions()
       })
-      .subscribe((status) => {
-        console.log('Dashboard Realtime:', status)
-        if (status === 'SUBSCRIBED') setConnStatus('online')
-        else setConnStatus('offline')
-      })
+      .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [merchant, fetchSessions])
 

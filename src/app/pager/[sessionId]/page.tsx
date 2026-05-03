@@ -21,7 +21,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [waitTime, setWaitTime] = useState(0)
   const [volume, setVolume] = useState(0.8)
   const [isFlashing, setIsFlashing] = useState(false)
-  const [lastChecked, setLastChecked] = useState(0)
   const [isAudioReady, setIsAudioReady] = useState(false)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -51,7 +50,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     
     setReceiptNumber(data.receipt_number)
 
-    // Log logic to decide status
     if (data.status === 'called') {
       if (statusRef.current !== 'called') {
         setStatus('called')
@@ -83,7 +81,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       // Polling for both waiting and called states
       if (!pollingRef.current) {
         pollingRef.current = setInterval(() => {
-          setLastChecked(prev => prev + 1)
           fetchSession()
         }, 3000)
       }
