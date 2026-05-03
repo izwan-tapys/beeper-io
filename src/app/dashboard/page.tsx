@@ -105,8 +105,24 @@ export default function DashboardPage() {
     e.preventDefault()
     if (!receiptInput.trim() || !merchant) return
     setCreating(true)
-    await supabase.from('sessions').insert({ merchant_id: merchant.id, receipt_number: receiptInput.trim(), status: 'waiting' })
-    setReceiptInput('')
+    
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({ 
+        merchant_id: merchant.id, 
+        receipt_number: receiptInput.trim(), 
+        status: 'waiting' 
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create session error:', error)
+      alert('Gagal buat pager: ' + error.message)
+    } else if (data) {
+      setReceiptInput('')
+      setQrSession(data) // TERUS BUKA QR MODAL!
+    }
     setCreating(false)
   }
 
