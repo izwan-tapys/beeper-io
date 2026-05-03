@@ -63,6 +63,18 @@ export default function DashboardPage() {
     setBaseUrl(window.location.origin)
   }, [])
 
+  const fetchSessions = useCallback(async () => {
+    if (!merchant) return
+    const { data } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('merchant_id', merchant.id)
+      .in('status', ['waiting', 'called'])
+      .order('created_at', { ascending: true })
+    setSessions(data || [])
+    setLoading(false)
+  }, [merchant])
+
   const fetchMerchant = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
@@ -90,18 +102,6 @@ export default function DashboardPage() {
       setSettingsLoyverseToken(m.loyverse_token || '')
     }
   }, [router, fetchSessions])
-
-  const fetchSessions = useCallback(async () => {
-    if (!merchant) return
-    const { data } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('merchant_id', merchant.id)
-      .in('status', ['waiting', 'called'])
-      .order('created_at', { ascending: true })
-    setSessions(data || [])
-    setLoading(false)
-  }, [merchant])
 
   useEffect(() => { fetchMerchant() }, [fetchMerchant])
   useEffect(() => { if (merchant) fetchSessions() }, [merchant, fetchSessions])
@@ -477,7 +477,7 @@ export default function DashboardPage() {
                     className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all font-mono text-sm"
                   />
                   <p className="text-[10px] text-slate-600">
-                    Get this from Loyverse > Settings > Access Tokens.
+                    Get this from Loyverse &gt; Settings &gt; Access Tokens.
                   </p>
                 </div>
 
