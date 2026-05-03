@@ -19,10 +19,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
+    console.log('--- LOYVERSE WEBHOOK RECEIVED ---')
+    console.log('Merchant ID:', merchantId)
+    console.log('Payload:', JSON.stringify(body, null, 2))
 
     // Semak jika ini adalah webhook RECEIPT CREATED
     if (body.entity === 'RECEIPT' && body.action === 'CREATED') {
       const receiptNumber = body.receipt_number
+      console.log('Processing Receipt #', receiptNumber)
 
       // Masukkan ke dalam database sessions
       const { data, error } = await supabase
