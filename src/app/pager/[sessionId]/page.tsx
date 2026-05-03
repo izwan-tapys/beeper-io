@@ -21,6 +21,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [volume, setVolume] = useState(0.8)
   const [vibrationEnabled, setVibrationEnabled] = useState(true)
   const [isFlashing, setIsFlashing] = useState(false)
+  const [connStatus, setConnStatus] = useState<'offline' | 'connecting' | 'online'>('offline')
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -182,16 +183,16 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       supabase.removeChannel(channelRef.current)
     }
 
-    // Subscribe to realtime (Simple version without filter for maximum reliability)
-    const channel = supabase.channel(`public:sessions`)
+    // Subscribe to realtime
+    setConnStatus('connecting')
+    const channel = supabase.channel(`any-name-${sessionId}`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'sessions'
       }, (payload) => {
-        // Filter in JS instead of in the subscription
+        console.log('Change detected:', payload.new.status)
         if (payload.new.id === sessionId) {
-          console.log('Update for this session!', payload.new.status)
           const newStatus = payload.new.status
           if (newStatus === 'called') {
             setStatus('called')
@@ -203,7 +204,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         }
       })
       .subscribe((status) => {
-        console.log('Realtime connection status:', status)
+        console.log('Connection:', status)
+        if (status === 'SUBSCRIBED') setConnStatus('online')
+        else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setConnStatus('offline')
       })
     
     channelRef.current = channel
@@ -291,6 +294,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             </div>
           )}
           <span className="font-bold text-white text-xl">{merchantName}</span>
+        </div>
+        {/* Connection Dot */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/20 border border-white/5">
+          <div className={`w-2 h-2 rounded-full ${
+            connStatus === 'online' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 
+            connStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+          }`} />
+          <span className="text-[8px] text-white/50 font-mono uppercase">{connStatus}</span>
         </div>
       </header>
 
