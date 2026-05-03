@@ -1,0 +1,583 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "eslint.config.mjs",
+      "file_type": "code",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1",
+      "id": "eslint_config_mjs",
+      "community": 8,
+      "norm_label": "eslint.config.mjs"
+    },
+    {
+      "label": "next-env.d.ts",
+      "file_type": "code",
+      "source_file": "next-env.d.ts",
+      "source_location": "L1",
+      "id": "next_env_d_ts",
+      "community": 9,
+      "norm_label": "next-env.d.ts"
+    },
+    {
+      "label": "next.config.ts",
+      "file_type": "code",
+      "source_file": "next.config.ts",
+      "source_location": "L1",
+      "id": "next_config_ts",
+      "community": 10,
+      "norm_label": "next.config.ts"
+    },
+    {
+      "label": "postcss.config.mjs",
+      "file_type": "code",
+      "source_file": "postcss.config.mjs",
+      "source_location": "L1",
+      "id": "postcss_config_mjs",
+      "community": 11,
+      "norm_label": "postcss.config.mjs"
+    },
+    {
+      "label": "proxy.ts",
+      "file_type": "code",
+      "source_file": "src\\proxy.ts",
+      "source_location": "L1",
+      "id": "src_proxy_ts",
+      "community": 2,
+      "norm_label": "proxy.ts"
+    },
+    {
+      "label": "proxy()",
+      "file_type": "code",
+      "source_file": "src\\proxy.ts",
+      "source_location": "L4",
+      "id": "src_proxy_proxy",
+      "community": 2,
+      "norm_label": "proxy()"
+    },
+    {
+      "label": "layout.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\layout.tsx",
+      "source_location": "L1",
+      "id": "src_app_layout_tsx",
+      "community": 3,
+      "norm_label": "layout.tsx"
+    },
+    {
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "src\\app\\layout.tsx",
+      "source_location": "L9",
+      "id": "app_layout_rootlayout",
+      "community": 3,
+      "norm_label": "rootlayout()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_page_tsx",
+      "community": 4,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "HomePage()",
+      "file_type": "code",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L3",
+      "id": "app_page_homepage",
+      "community": 4,
+      "norm_label": "homepage()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_dashboard_page_tsx",
+      "community": 1,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "createSession()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L104",
+      "id": "dashboard_page_createsession",
+      "community": 1,
+      "norm_label": "createsession()"
+    },
+    {
+      "label": "callSession()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L113",
+      "id": "dashboard_page_callsession",
+      "community": 1,
+      "norm_label": "callsession()"
+    },
+    {
+      "label": "doneSession()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L121",
+      "id": "dashboard_page_donesession",
+      "community": 1,
+      "norm_label": "donesession()"
+    },
+    {
+      "label": "toggleStore()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L129",
+      "id": "dashboard_page_togglestore",
+      "community": 1,
+      "norm_label": "togglestore()"
+    },
+    {
+      "label": "saveSettings()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L150",
+      "id": "dashboard_page_savesettings",
+      "community": 1,
+      "norm_label": "savesettings()"
+    },
+    {
+      "label": "handleLogout()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L170",
+      "id": "dashboard_page_handlelogout",
+      "community": 1,
+      "norm_label": "handlelogout()"
+    },
+    {
+      "label": "pagerUrl()",
+      "file_type": "code",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L179",
+      "id": "dashboard_page_pagerurl",
+      "community": 1,
+      "norm_label": "pagerurl()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\login\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_login_page_tsx",
+      "community": 5,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "handleSubmit()",
+      "file_type": "code",
+      "source_file": "src\\app\\login\\page.tsx",
+      "source_location": "L18",
+      "id": "login_page_handlesubmit",
+      "community": 5,
+      "norm_label": "handlesubmit()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_pager_sessionid_page_tsx",
+      "community": 0,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "acquireWakeLock()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L101",
+      "id": "sessionid_page_acquirewakelock",
+      "community": 0,
+      "norm_label": "acquirewakelock()"
+    },
+    {
+      "label": "releaseWakeLock()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L109",
+      "id": "sessionid_page_releasewakelock",
+      "community": 0,
+      "norm_label": "releasewakelock()"
+    },
+    {
+      "label": "triggerAlert()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L114",
+      "id": "sessionid_page_triggeralert",
+      "community": 0,
+      "norm_label": "triggeralert()"
+    },
+    {
+      "label": "stopAlert()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L127",
+      "id": "sessionid_page_stopalert",
+      "community": 0,
+      "norm_label": "stopalert()"
+    },
+    {
+      "label": "playChime()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L135",
+      "id": "sessionid_page_playchime",
+      "community": 0,
+      "norm_label": "playchime()"
+    },
+    {
+      "label": "initAudio()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L154",
+      "id": "sessionid_page_initaudio",
+      "community": 0,
+      "norm_label": "initaudio()"
+    },
+    {
+      "label": "handleConfirm()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L178",
+      "id": "sessionid_page_handleconfirm",
+      "community": 0,
+      "norm_label": "handleconfirm()"
+    },
+    {
+      "label": "formatWaitTime()",
+      "file_type": "code",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L189",
+      "id": "sessionid_page_formatwaittime",
+      "community": 0,
+      "norm_label": "formatwaittime()"
+    },
+    {
+      "label": "client.ts",
+      "file_type": "code",
+      "source_file": "src\\lib\\supabase\\client.ts",
+      "source_location": "L1",
+      "id": "src_lib_supabase_client_ts",
+      "community": 6,
+      "norm_label": "client.ts"
+    },
+    {
+      "label": "createClient()",
+      "file_type": "code",
+      "source_file": "src\\lib\\supabase\\client.ts",
+      "source_location": "L3",
+      "id": "supabase_client_createclient",
+      "community": 6,
+      "norm_label": "createclient()"
+    },
+    {
+      "label": "server.ts",
+      "file_type": "code",
+      "source_file": "src\\lib\\supabase\\server.ts",
+      "source_location": "L1",
+      "id": "src_lib_supabase_server_ts",
+      "community": 7,
+      "norm_label": "server.ts"
+    },
+    {
+      "label": "createClient()",
+      "file_type": "code",
+      "source_file": "src\\lib\\supabase\\server.ts",
+      "source_location": "L4",
+      "id": "supabase_server_createclient",
+      "community": 7,
+      "norm_label": "createclient()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\proxy.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_src": "src_proxy_ts",
+      "_tgt": "src_proxy_proxy",
+      "source": "src_proxy_ts",
+      "target": "src_proxy_proxy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\layout.tsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_src": "src_app_layout_tsx",
+      "_tgt": "app_layout_rootlayout",
+      "source": "src_app_layout_tsx",
+      "target": "app_layout_rootlayout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "src_app_page_tsx",
+      "_tgt": "app_page_homepage",
+      "source": "src_app_page_tsx",
+      "target": "app_page_homepage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L104",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_createsession",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_createsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L113",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_callsession",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_callsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L121",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_donesession",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_donesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L129",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_togglestore",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_togglestore",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L150",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_savesettings",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_savesettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L170",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_handlelogout",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_handlelogout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\dashboard\\page.tsx",
+      "source_location": "L179",
+      "weight": 1.0,
+      "_src": "src_app_dashboard_page_tsx",
+      "_tgt": "dashboard_page_pagerurl",
+      "source": "src_app_dashboard_page_tsx",
+      "target": "dashboard_page_pagerurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\login\\page.tsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_src": "src_app_login_page_tsx",
+      "_tgt": "login_page_handlesubmit",
+      "source": "src_app_login_page_tsx",
+      "target": "login_page_handlesubmit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L101",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_acquirewakelock",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_acquirewakelock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L109",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_releasewakelock",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_releasewakelock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_triggeralert",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_triggeralert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L127",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_stopalert",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_stopalert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L135",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_playchime",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_playchime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L154",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_initaudio",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_initaudio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L178",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_handleconfirm",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_handleconfirm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L189",
+      "weight": 1.0,
+      "_src": "src_app_pager_sessionid_page_tsx",
+      "_tgt": "sessionid_page_formatwaittime",
+      "source": "src_app_pager_sessionid_page_tsx",
+      "target": "sessionid_page_formatwaittime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L172",
+      "weight": 1.0,
+      "_src": "sessionid_page_initaudio",
+      "_tgt": "sessionid_page_acquirewakelock",
+      "source": "sessionid_page_acquirewakelock",
+      "target": "sessionid_page_initaudio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\pager\\[sessionId]\\page.tsx",
+      "source_location": "L179",
+      "weight": 1.0,
+      "_src": "sessionid_page_handleconfirm",
+      "_tgt": "sessionid_page_initaudio",
+      "source": "sessionid_page_initaudio",
+      "target": "sessionid_page_handleconfirm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\lib\\supabase\\client.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "src_lib_supabase_client_ts",
+      "_tgt": "supabase_client_createclient",
+      "source": "src_lib_supabase_client_ts",
+      "target": "supabase_client_createclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\lib\\supabase\\server.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_src": "src_lib_supabase_server_ts",
+      "_tgt": "supabase_server_createclient",
+      "source": "src_lib_supabase_server_ts",
+      "target": "supabase_server_createclient",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}

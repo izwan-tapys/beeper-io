@@ -220,7 +220,13 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {!merchant?.is_open ? (
+        {/* Only show content if merchant data is loaded */}
+        {!merchant ? (
+          <div className="flex flex-col items-center justify-center py-32">
+            <Loader2 size={32} className="animate-spin text-indigo-500 mb-4" />
+            <p className="text-slate-500 animate-pulse text-sm">Synchronizing dashboard...</p>
+          </div>
+        ) : !merchant.is_open ? (
           <div className="text-center py-24 animate-fade-in">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
               <Power size={32} style={{ color: 'var(--muted)' }} />
