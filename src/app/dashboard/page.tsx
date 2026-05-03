@@ -101,7 +101,7 @@ export default function DashboardPage() {
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
     }
-  }, [router, fetchSessions])
+  }, [router])
 
   useEffect(() => { fetchMerchant() }, [fetchMerchant])
   useEffect(() => { if (merchant) fetchSessions() }, [merchant, fetchSessions])
