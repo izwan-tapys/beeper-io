@@ -185,7 +185,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
     // Subscribe to realtime
     setConnStatus('connecting')
-    const channel = supabase.channel(`any-name-${sessionId}`)
+    const channel = supabase.channel('p' + sessionId.slice(0, 8))
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
