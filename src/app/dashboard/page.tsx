@@ -24,6 +24,7 @@ type Merchant = {
   name: string
   is_open: boolean
   logo_url: string | null
+  loyverse_token: string | null
 }
 
 const supabase = createClient()
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settingsName, setSettingsName] = useState('')
   const [settingsLogo, setSettingsLogo] = useState('')
+  const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
@@ -84,6 +86,7 @@ export default function DashboardPage() {
     setMerchant(m)
     setSettingsName(m.name)
     setSettingsLogo(m.logo_url || '')
+    setSettingsLoyverseToken(m.loyverse_token || '')
   }, [router])
 
   const fetchSessions = useCallback(async () => {
@@ -205,14 +208,23 @@ export default function DashboardPage() {
     setSavingSettings(true)
     const { error } = await supabase
       .from('merchants')
-      .update({ name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
+      .update({ 
+        name: settingsName.trim(), 
+        logo_url: settingsLogo.trim() || null,
+        loyverse_token: settingsLoyverseToken.trim() || null 
+      })
       .eq('id', merchant.id)
     
     if (error) {
       console.error('Error saving settings:', error)
       alert('Gagal simpan: ' + error.message)
     } else {
-      setMerchant({ ...merchant, name: settingsName.trim(), logo_url: settingsLogo.trim() || null })
+      setMerchant({ 
+        ...merchant, 
+        name: settingsName.trim(), 
+        logo_url: settingsLogo.trim() || null,
+        loyverse_token: settingsLoyverseToken.trim() || null 
+      })
       setIsSettingsOpen(false)
       fetchMerchant()
     }
@@ -451,6 +463,20 @@ export default function DashboardPage() {
                     placeholder="https://..."
                     className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all"
                   />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-400">Loyverse Access Token</label>
+                  <input
+                    type="password"
+                    value={settingsLoyverseToken}
+                    onChange={(e) => setSettingsLoyverseToken(e.target.value)}
+                    placeholder="Masukkan Personal Access Token..."
+                    className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all font-mono text-sm"
+                  />
+                  <p className="text-[10px] text-slate-600">
+                    Get this from Loyverse > Settings > Access Tokens.
+                  </p>
                 </div>
 
                 <div className="pt-4 border-t border-white/10 space-y-3">
