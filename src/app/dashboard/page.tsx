@@ -44,11 +44,18 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
+  const [now, setNow] = useState(Date.now())
   const qrSessionRef = useRef<Session | null>(null)
 
   useEffect(() => {
     qrSessionRef.current = qrSession
   }, [qrSession])
+
+  // Live timer tick
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     setBaseUrl(window.location.origin)
@@ -152,6 +159,15 @@ export default function DashboardPage() {
       console.error('Call session error:', error)
       alert('Gagal panggil: ' + error.message)
     }
+  }
+
+  const getWaitTime = (createdAt: string) => {
+    const start = new Date(createdAt).getTime()
+    const seconds = Math.floor((now - start) / 1000)
+    if (seconds < 0) return '0:00'
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const doneSession = async (id: string) => {
@@ -324,25 +340,30 @@ export default function DashboardPage() {
                   {filteredSessions.map((session) => (
                     <div key={session.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] animate-slide-up">
                       <div className="w-2 h-2 rounded-full" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-3">
-                            <p className="font-black text-white text-xl">Order #{session.receipt_number}</p>
-                            <div className="flex shrink-0">
-                              {!session.is_confirmed ? (
-                                <span className="bg-yellow-500 text-black text-[10px] px-2 py-1 rounded font-black animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.4)]">
-                                  WAITING FOR CUSTOMER
-                                </span>
-                              ) : (
-                                <span className="bg-green-500 text-black text-[10px] px-2 py-1 rounded font-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                                  CUSTOMER READY
-                                </span>
-                              )}
-                            </div>
+                      <div className="flex-1 flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                          <p className="font-black text-white text-xl">Order #{session.receipt_number}</p>
+                          {session.status === 'waiting' && (
+                            <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-400/20 animate-pulse">
+                              {getWaitTime(session.created_at)}
+                            </span>
+                          )}
+                          <div className="flex shrink-0">
+                            {!session.is_confirmed ? (
+                              <span className="bg-yellow-500 text-black text-[10px] px-2 py-1 rounded font-black animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+                                WAITING FOR CUSTOMER
+                              </span>
+                            ) : (
+                              <span className="bg-green-500 text-black text-[10px] px-2 py-1 rounded font-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                                CUSTOMER READY
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
-                            {session.status === 'called' ? '🔔 CALLED' : '⏳ PREPARING'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
                         </div>
+                        <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                          {session.status === 'called' ? '🔔 CALLED' : '⏳ PREPARING'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                       
                       <div className="flex items-center gap-2">
                         <button
