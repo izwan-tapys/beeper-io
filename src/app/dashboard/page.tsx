@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
+  const [connStatus, setConnStatus] = useState<'offline' | 'connecting' | 'online'>('offline')
 
   useEffect(() => {
     setBaseUrl(window.location.origin)
@@ -94,12 +95,17 @@ export default function DashboardPage() {
   // Realtime subscription for dashboard
   useEffect(() => {
     if (!merchant) return
+    setConnStatus('connecting')
     const channel = supabase
       .channel('dashboard-sessions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, () => {
         fetchSessions()
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Dashboard Realtime:', status)
+        if (status === 'SUBSCRIBED') setConnStatus('online')
+        else setConnStatus('offline')
+      })
     return () => { supabase.removeChannel(channel) }
   }, [merchant, fetchSessions])
 
