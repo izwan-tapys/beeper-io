@@ -440,8 +440,9 @@ export default function DashboardPage() {
         alert('Failed to save: ' + error.message)
       }
     } else {
-      setMerchant({ ...merchant, phone: cleanedPhone })
-      setIsOnboarding(false)
+      // Update local state with phone but KEEP onboarding open
+      // The UI will automatically switch to the "Verify via WhatsApp" screen
+      setMerchant({ ...merchant, phone: cleanedPhone, is_verified: false })
     }
     setSavingOnboarding(false)
   }
