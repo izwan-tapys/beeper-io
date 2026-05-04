@@ -73,6 +73,16 @@ export default function DashboardPage() {
     }
   }, [isSettingsOpen, merchant])
 
+  // Auto-close QR Modal after 30 seconds
+  useEffect(() => {
+    if (qrSession) {
+      const timer = setTimeout(() => {
+        setQrSession(null)
+      }, 30000) // 30 seconds
+      return () => clearTimeout(timer)
+    }
+  }, [qrSession])
+
   // Live timer tick
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000)
