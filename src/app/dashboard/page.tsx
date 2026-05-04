@@ -57,21 +57,29 @@ export default function DashboardPage() {
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
   const qrSessionRef = useRef<Session | null>(null)
+  const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
 
   const toggleSection = (section: string) => {
     setOpenSection(prev => prev === section ? null : section)
   }
 
-  // Auto-close QR Modal when customer confirms
+  // Auto-close QR Modal when customer confirms (only if it wasn't confirmed when opened)
   useEffect(() => {
     if (qrSession) {
       const activeSession = sessions.find(s => s.id === qrSession.id)
-      if (activeSession?.is_confirmed) {
+      if (activeSession?.is_confirmed && !qrWasConfirmedRef.current) {
         setQrSession(null)
       }
     }
   }, [sessions, qrSession])
+
+  // Track initial confirmation state when modal opens
+  useEffect(() => {
+    if (qrSession) {
+      qrWasConfirmedRef.current = qrSession.is_confirmed || false
+    }
+  }, [qrSession])
 
   // Reset settings state when modal opens
   useEffect(() => {
