@@ -102,7 +102,7 @@ export default function DashboardPage() {
       setSettingsLogo(merchant.logo_url || '')
       setSettingsLoyverseToken(merchant.loyverse_token || '')
       setSettingsGmbUrl(merchant.gmb_url || '')
-      setOpenSection(null) // Also reset accordion state
+      // Note: openSection is NOT reset here so it can be pre-set before opening
     }
   }, [isSettingsOpen, merchant])
 
