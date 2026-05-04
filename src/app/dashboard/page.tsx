@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
+  const [monthlyCount, setMonthlyCount] = useState(0)
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -153,6 +154,27 @@ export default function DashboardPage() {
     setLoading(false)
   }, [merchant])
 
+  const fetchMonthlyCount = useCallback(async () => {
+    if (!merchant) return
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { count, error } = await supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('merchant_id', merchant.id)
+      .gte('created_at', startOfMonth.toISOString())
+
+    if (!error && count !== null) {
+      setMonthlyCount(count)
+    }
+  }, [merchant])
+
+  useEffect(() => {
+    fetchMonthlyCount()
+  }, [fetchMonthlyCount, sessions])
+
   const fetchMerchant = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
@@ -234,6 +256,15 @@ export default function DashboardPage() {
   const createSession = async (rNum?: string) => {
     const finalReceiptNumber = rNum || receiptInput.trim()
     if (!merchant || !finalReceiptNumber) return
+
+    // Check monthly limit for free users
+    if (merchant.plan_type !== 'pro' && monthlyCount >= 20) {
+      alert('Quota limit reached! You have used your 20 free monthly orders. Please upgrade to Beeper Pro for unlimited pagers.')
+      setIsSettingsOpen(true)
+      setOpenSection('subscription')
+      return
+    }
+
     setCreating(true)
     
     const { data, error } = await supabase
@@ -487,6 +518,26 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </form>
+
+              {/* Monthly Usage Counter */}
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    {merchant?.plan_type === 'pro' ? 'Beeper Pro Usage' : 'Monthly Order Quota'}
+                  </span>
+                  <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                    {merchant?.plan_type === 'pro' ? 'Unlimited' : `${monthlyCount} / 20`}
+                  </span>
+                </div>
+                {merchant?.plan_type !== 'pro' && (
+                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${monthlyCount >= 15 ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                      style={{ width: `${Math.min((monthlyCount / 20) * 100, 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Latest Receipts List */}
               {latestReceipts.length > 0 && (
