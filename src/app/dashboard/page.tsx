@@ -55,16 +55,11 @@ export default function DashboardPage() {
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncCooldown, setSyncCooldown] = useState(0)
-  const [openSections, setOpenSections] = useState({
-    profile: true,
-    integrations: false,
-    subscription: false,
-    account: false
-  })
+  const [openSection, setOpenSection] = useState<string | null>(null)
   const qrSessionRef = useRef<Session | null>(null)
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  const toggleSection = (section: string) => {
+    setOpenSection(prev => prev === section ? null : section)
   }
 
   // Live timer tick
@@ -594,10 +589,10 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Store Profile</span>
                   </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.profile ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'profile' ? 'rotate-90' : ''}`} />
                 </button>
                 
-                {openSections.profile && (
+                {openSection === 'profile' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Store Name</label>
@@ -632,10 +627,10 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Integrations</span>
                   </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.integrations ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'integrations' ? 'rotate-90' : ''}`} />
                 </button>
 
-                {openSections.integrations && (
+                {openSection === 'integrations' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Loyverse Access Token</label>
@@ -677,10 +672,10 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Subscription Plan</span>
                   </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.subscription ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'subscription' ? 'rotate-90' : ''}`} />
                 </button>
 
-                {openSections.subscription && (
+                {openSection === 'subscription' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
                       <div className="flex flex-col">
@@ -723,10 +718,10 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Account Control</span>
                   </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.account ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'account' ? 'rotate-90' : ''}`} />
                 </button>
 
-                {openSections.account && (
+                {openSection === 'account' && (
                   <div className="p-4 pt-0 animate-fade-in">
                     <button 
                       onClick={handleLogout} 
