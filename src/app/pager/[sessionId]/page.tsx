@@ -141,19 +141,21 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const playChime = () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
-    const tones = [523.25, 659.25, 783.99, 1046.5]
+    // Higher, more piercing frequencies (C6, E6, G6, C7)
+    const tones = [1046.50, 1318.51, 1567.98, 2093.00]
     tones.forEach((freq, i) => {
       const osc = ctx.createOscillator()
       const gainNode = ctx.createGain()
       osc.connect(gainNode)
       gainNode.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.18)
-      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.18)
-      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.18 + 0.05)
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.5)
-      osc.start(ctx.currentTime + i * 0.18)
-      osc.stop(ctx.currentTime + i * 0.18 + 0.6)
+      // Triangle wave is sharper than sine but less harsh than square
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12)
+      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.12)
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.12 + 0.03)
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4)
+      osc.start(ctx.currentTime + i * 0.12)
+      osc.stop(ctx.currentTime + i * 0.12 + 0.5)
     })
   }
 
