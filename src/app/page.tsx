@@ -126,29 +126,64 @@ export default function LandingPage() {
 
       {/* Pricing Section */}
       <section id="pricing" className="py-32">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-5xl font-black mb-6">Simple, fair pricing.</h2>
-          <p className="text-slate-400 mb-16">Free during beta. No credit card required.</p>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-black mb-6">Simple, fair pricing.</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">Choose the plan that fits your business scale. No hidden fees.</p>
+          </div>
 
-          <div className="max-w-md mx-auto p-8 md:p-12 rounded-[40px] bg-gradient-to-b from-indigo-600 to-indigo-800 border border-white/20 shadow-2xl relative overflow-hidden text-left">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              <Zap size={120} />
-            </div>
-            <div className="relative">
-              <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-black uppercase tracking-widest mb-6 inline-block">Beta Special</span>
-              <h3 className="text-4xl font-black mb-2">FREE</h3>
-              <p className="text-indigo-200 mb-8 font-medium">Limited time only. Full features.</p>
-              
-              <ul className="space-y-4 mb-10">
-                <PricingItem text="Unlimited Pager Sessions" />
-                <PricingItem text="Loyverse POS Integration" />
-                <PricingItem text="Google Review Booster" />
-                <PricingItem text="Custom Branding & Logo" />
-                <PricingItem text="Real-time Dashboard" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Free Plan */}
+            <div className="p-10 rounded-[40px] bg-white/[0.03] border border-white/5 flex flex-col hover:border-indigo-500/30 transition-all">
+              <h3 className="text-xl font-bold mb-2">Free</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">RM0</span>
+                <span className="text-slate-500 text-sm">/month</span>
+              </div>
+              <ul className="space-y-4 mb-10 flex-1">
+                <PricingItem text="20 Monthly Orders" />
+                <PricingItem text="Standard Web Pager" />
+                <PricingItem text="Loyverse Integration" />
               </ul>
-              
-              <Link href="/login" className="block w-full py-5 rounded-2xl bg-white text-indigo-600 font-black text-center text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-xl">
-                Get Started Now
+              <Link href="/login" className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-center hover:bg-white/10 transition-all">
+                Get Started
+              </Link>
+            </div>
+
+            {/* Basic Plan */}
+            <div className="p-10 rounded-[40px] bg-white/[0.03] border border-white/5 flex flex-col hover:border-indigo-500/30 transition-all">
+              <h3 className="text-xl font-bold mb-2">Basic</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">RM30</span>
+                <span className="text-slate-500 text-sm">/month</span>
+              </div>
+              <ul className="space-y-4 mb-10 flex-1">
+                <PricingItem text="500 Monthly Orders" />
+                <PricingItem text="Custom Store Branding" />
+                <PricingItem text="Loyverse Integration" />
+                <PricingItem text="Dashboard Analytics" />
+              </ul>
+              <Link href="/login" className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-center hover:bg-white/10 transition-all">
+                Select Basic
+              </Link>
+            </div>
+
+            {/* Unlimited Plan */}
+            <div className="p-10 rounded-[40px] bg-indigo-600 border border-white/20 flex flex-col shadow-2xl shadow-indigo-600/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-white text-indigo-600 text-[10px] font-black px-4 py-1 uppercase rounded-bl-xl tracking-widest">Best Value</div>
+              <h3 className="text-xl font-bold mb-2 text-white">Unlimited</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">RM49</span>
+                <span className="text-indigo-200 text-sm">/month</span>
+              </div>
+              <ul className="space-y-4 mb-10 flex-1">
+                <PricingItem text="Unlimited Monthly Orders" />
+                <PricingItem text="Everything in Basic" />
+                <PricingItem text="Priority 24/7 Support" />
+                <PricingItem text="Future Beta Features" />
+              </ul>
+              <Link href="/login" className="w-full py-4 rounded-2xl bg-white text-indigo-600 font-black text-center shadow-xl hover:scale-[1.02] transition-all">
+                Upgrade Now
               </Link>
             </div>
           </div>
