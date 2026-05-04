@@ -26,7 +26,7 @@ type Merchant = {
   logo_url: string | null
   loyverse_token: string | null
   gmb_url: string | null
-  plan_type: 'free' | 'pro'
+  plan_type: 'free' | 'basic' | 'pro'
   subscription_status: 'active' | 'expired' | 'trial'
   expiry_date: string | null
 }
@@ -257,9 +257,13 @@ export default function DashboardPage() {
     const finalReceiptNumber = rNum || receiptInput.trim()
     if (!merchant || !finalReceiptNumber) return
 
-    // Check monthly limit for free users
-    if (merchant.plan_type !== 'pro' && monthlyCount >= 20) {
-      alert('Quota limit reached! You have used your 20 free monthly orders. Please upgrade to Beeper Pro for unlimited pagers.')
+    // Check monthly limit based on plan
+    let limit = 20
+    if (merchant.plan_type === 'basic') limit = 500
+    if (merchant.plan_type === 'pro') limit = 9999999 // Effectively unlimited
+
+    if (merchant.plan_type !== 'pro' && monthlyCount >= limit) {
+      alert(`Quota limit reached! You have used your ${limit} monthly orders. Please upgrade your plan for more pagers.`)
       setIsSettingsOpen(true)
       setOpenSection('subscription')
       return
@@ -383,15 +387,15 @@ export default function DashboardPage() {
     setSavingSettings(false)
   }
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
     try {
       setSavingSettings(true)
       const response = await fetch('/api/payment/toyyibpay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: 50.00, // Example price RM50
-          planName: 'Pro Monthly'
+          amount: price,
+          planName: `Beeper ${plan.charAt(0).toUpperCase() + plan.slice(1)}`
         })
       })
       const data = await response.json()
@@ -526,14 +530,14 @@ export default function DashboardPage() {
                     {merchant?.plan_type === 'pro' ? 'Beeper Pro Usage' : 'Monthly Order Quota'}
                   </span>
                   <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                    {merchant?.plan_type === 'pro' ? 'Unlimited' : `${monthlyCount} / 20`}
+                    {merchant?.plan_type === 'pro' ? 'Unlimited' : `${monthlyCount} / ${merchant?.plan_type === 'basic' ? '500' : '20'}`}
                   </span>
                 </div>
                 {merchant?.plan_type !== 'pro' && (
                   <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full transition-all duration-1000 ${monthlyCount >= 15 ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                      style={{ width: `${Math.min((monthlyCount / 20) * 100, 100)}%` }}
+                      className={`h-full transition-all duration-1000 ${monthlyCount >= (merchant?.plan_type === 'basic' ? 450 : 15) ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                      style={{ width: `${Math.min((monthlyCount / (merchant?.plan_type === 'basic' ? 500 : 20)) * 100, 100)}%` }}
                     />
                   </div>
                 )}
@@ -816,59 +820,92 @@ export default function DashboardPage() {
 
                 {openSection === 'subscription' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
-                            <span className="text-white font-bold uppercase text-sm">
-                              {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
-                            </span>
-                          </div>
-                          {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
-                            <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
-                          )}
+                    {/* Current Plan Status */}
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type !== 'free' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
+                          <span className="text-white font-bold uppercase text-sm">
+                            Beeper {merchant?.plan_type || 'Free'}
+                          </span>
                         </div>
-                        {merchant?.plan_type === 'pro' && (
-                          <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase">Active</span>
+                        {merchant?.expiry_date && (
+                          <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                      {merchant?.plan_type !== 'free' && (
+                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase tracking-widest">Active</span>
+                      )}
+                    </div>
+
+                    {/* Plan Selector */}
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* Basic Plan Card */}
+                      <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'basic' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-white/[0.02] border-white/5'}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="text-white font-bold text-sm">Beeper Basic</h3>
+                            <p className="text-[10px] text-slate-500">For small cafes & trucks</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-white font-bold text-sm">RM30</span>
+                            <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
+                          </div>
+                        </div>
+                        <ul className="space-y-1.5 mb-4">
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> 500 Monthly Orders
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> Custom Branding
+                          </li>
+                        </ul>
+                        {merchant?.plan_type !== 'basic' && merchant?.plan_type !== 'pro' && (
+                          <button 
+                            onClick={() => handleUpgrade('basic', 30)}
+                            disabled={savingSettings}
+                            className="w-full py-2.5 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-indigo-600 transition-all flex items-center justify-center gap-2"
+                          >
+                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                            Select Basic
+                          </button>
                         )}
                       </div>
 
-                      {merchant?.plan_type !== 'pro' && (
-                        <div className="pt-2 border-t border-white/5 space-y-3">
-                          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Why Upgrade to Pro?</p>
-                          <ul className="space-y-2">
-                            {[
-                              { icon: <Zap size={12} />, text: 'Unlimited Active Pagers' },
-                              { icon: <Settings size={12} />, text: 'Custom Store Logo & Branding' },
-                              { icon: <CheckCircle size={12} />, text: 'Faster Loyverse Sync' },
-                              { icon: <Phone size={12} />, text: 'WhatsApp Notifications (Soon)' }
-                            ].map((item, i) => (
-                              <li key={i} className="flex items-center gap-2 text-xs text-slate-400">
-                                <span className="text-indigo-500">{item.icon}</span>
-                                {item.text}
-                              </li>
-                            ))}
-                          </ul>
-                          
-                          <div className="pt-4 flex items-center justify-between gap-4">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Price</span>
-                              <span className="text-xl font-black text-white">RM30.00<span className="text-xs font-normal text-slate-500">/mo</span></span>
-                            </div>
-                            <button 
-                              onClick={handleUpgrade}
-                              type="button"
-                              disabled={savingSettings}
-                              className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-indigo-500/20"
-                            >
-                              {savingSettings ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-                              Upgrade Now
-                            </button>
+                      {/* Pro Plan Card */}
+                      <div className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${merchant?.plan_type === 'pro' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
+                        <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[8px] font-black px-2 py-1 uppercase rounded-bl-lg">Best Value</div>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="text-white font-bold text-sm">Beeper Unlimited</h3>
+                            <p className="text-[10px] text-slate-500">For busy restaurants</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-white font-bold text-sm">RM49</span>
+                            <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
                           </div>
                         </div>
-                      )}
+                        <ul className="space-y-1.5 mb-4">
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> Unlimited Orders
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> Priority Support
+                          </li>
+                        </ul>
+                        {merchant?.plan_type !== 'pro' && (
+                          <button 
+                            onClick={() => handleUpgrade('pro', 49)}
+                            disabled={savingSettings}
+                            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                          >
+                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                            Upgrade to Unlimited
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    
                     <p className="text-[9px] text-slate-600 italic px-1 text-center">*Secure payment via ToyyibPay. RM1.00 fee applies.</p>
                   </div>
                 )}
