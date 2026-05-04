@@ -337,6 +337,23 @@ export default function DashboardPage() {
     setTogglingStore(false)
   }
 
+  const resetSessions = async () => {
+    if (!merchant) return
+    if (!confirm('Are you absolutely sure? This will PERMANENTLY delete all your order history and reset your quota.')) return
+    if (!confirm('FINAL WARNING: This action cannot be undone. Delete everything?')) return
+
+    const { error } = await supabase.from('sessions').delete().eq('merchant_id', merchant.id)
+    
+    if (error) {
+      alert('Failed to reset: ' + error.message)
+    } else {
+      setSessions([])
+      setMonthlyCount(0)
+      alert('All order history has been cleared.')
+      setIsSettingsOpen(false)
+    }
+  }
+
   const hasSettingsChanged = () => {
     if (!merchant) return false
     return (
@@ -925,7 +942,20 @@ export default function DashboardPage() {
                 </button>
 
                 {openSection === 'account' && (
-                  <div className="p-4 pt-0 animate-fade-in">
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
+                      <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Danger Zone</h4>
+                      <p className="text-[10px] text-slate-500 leading-relaxed">
+                        Deleting your order history will reset your monthly quota and permanently remove all past records.
+                      </p>
+                      <button 
+                        onClick={resetSessions}
+                        type="button"
+                        className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-500 font-bold text-xs hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                      >
+                        Clear All Order History
+                      </button>
+                    </div>
                     <button 
                       onClick={handleLogout} 
                       type="button"
