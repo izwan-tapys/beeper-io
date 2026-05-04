@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
-  LogOut, Power, PowerOff, X, Clock, Loader2, Settings
+  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck
 } from 'lucide-react'
 
 type Session = {
