@@ -62,6 +62,17 @@ export default function DashboardPage() {
     setOpenSection(prev => prev === section ? null : section)
   }
 
+  // Reset settings state when modal opens
+  useEffect(() => {
+    if (isSettingsOpen && merchant) {
+      setSettingsName(merchant.name || '')
+      setSettingsLogo(merchant.logo_url || '')
+      setSettingsLoyverseToken(merchant.loyverse_token || '')
+      setSettingsGmbUrl(merchant.gmb_url || '')
+      setOpenSection(null) // Also reset accordion state
+    }
+  }, [isSettingsOpen, merchant])
+
   // Live timer tick
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000)
@@ -592,13 +603,18 @@ export default function DashboardPage() {
                 </div>
                 <h2 className="text-xl font-bold text-white">Settings</h2>
               </div>
-              <button onClick={closeSettings} className="text-slate-500 hover:text-white transition-colors">
+              <button 
+                type="button"
+                onClick={closeSettings} 
+                className="text-slate-500 hover:text-white transition-colors p-2 -mr-2"
+              >
                 <X size={24} />
               </button>
             </div>
 
-            {/* Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <form onSubmit={saveSettings} className="flex-1 flex flex-col overflow-hidden">
+              {/* Content (Scrollable) */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {/* 1. Store Profile */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
@@ -755,29 +771,29 @@ export default function DashboardPage() {
               </section>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-3">
-              <button 
-                onClick={closeSettings} 
-                type="button"
-                className="flex-1 py-3.5 rounded-2xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-all"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={saveSettings} 
-                type="button"
-                disabled={savingSettings || !hasSettingsChanged()} 
-                className={`flex-[2] py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
-                  savingSettings || !hasSettingsChanged() 
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
-                }`}
-              >
-                {savingSettings && <Loader2 size={16} className="animate-spin" />}
-                Save Changes
-              </button>
-            </div>
+              {/* Footer Buttons */}
+              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-3">
+                <button 
+                  onClick={closeSettings} 
+                  type="button"
+                  className="flex-1 py-3.5 rounded-2xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={savingSettings || !hasSettingsChanged()} 
+                  className={`flex-[2] py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
+                    savingSettings || !hasSettingsChanged() 
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
+                  }`}
+                >
+                  {savingSettings && <Loader2 size={16} className="animate-spin" />}
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
