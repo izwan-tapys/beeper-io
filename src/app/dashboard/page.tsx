@@ -353,17 +353,24 @@ export default function DashboardPage() {
 
   const resetSessions = async () => {
     if (!merchant) return
-    if (!confirm('Are you absolutely sure? This will PERMANENTLY delete all your order history and reset your quota.')) return
-    if (!confirm('FINAL WARNING: This action cannot be undone. Delete everything?')) return
+    if (!confirm('Are you absolutely sure? This will permanently delete all order history from previous months.')) return
 
-    const { error } = await supabase.from('sessions').delete().eq('merchant_id', merchant.id)
+    // Only delete sessions from BEFORE this month — current month stays to preserve quota
+    const firstOfMonth = new Date()
+    firstOfMonth.setDate(1)
+    firstOfMonth.setHours(0, 0, 0, 0)
+
+    const { error } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('merchant_id', merchant.id)
+      .lt('created_at', firstOfMonth.toISOString())
     
     if (error) {
       alert('Failed to reset: ' + error.message)
     } else {
-      setSessions([])
-      setMonthlyCount(0)
-      alert('All order history has been cleared.')
+      setSessions(prev => prev.filter(s => s.created_at >= firstOfMonth.toISOString()))
+      alert('Previous months order history has been cleared. Current month orders are preserved.')
       setIsSettingsOpen(false)
     }
   }
