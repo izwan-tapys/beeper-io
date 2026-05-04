@@ -61,6 +61,10 @@ export default function DashboardPage() {
   const [monthlyCount, setMonthlyCount] = useState(0)
   const [onboardingPhone, setOnboardingPhone] = useState('')
   const [savingOnboarding, setSavingOnboarding] = useState(false)
+  const [mfaEnrollData, setMfaEnrollData] = useState<any>(null)
+  const [mfaCode, setMfaCode] = useState('')
+  const [isMfaChallenge, setIsMfaChallenge] = useState(false)
+  const [mfaError, setMfaError] = useState('')
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -205,6 +209,12 @@ export default function DashboardPage() {
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
       setSettingsGmbUrl(m.gmb_url || '')
+
+      // Check for MFA Challenge
+      const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
+        setIsMfaChallenge(true)
+      }
     }
   }, [router])
 
@@ -441,6 +451,66 @@ export default function DashboardPage() {
     setSavingOnboarding(false)
   }
 
+  const enrollMfa = async () => {
+    setMfaError('')
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp'
+    })
+
+    if (error) {
+      setMfaError(error.message)
+      return
+    }
+
+    setMfaEnrollData(data)
+  }
+
+  const verifyMfa = async () => {
+    if (!mfaEnrollData || !mfaCode) return
+    setMfaError('')
+    
+    const { error } = await supabase.auth.mfa.verify({
+      factorId: mfaEnrollData.id,
+      challengeCode: mfaCode
+    })
+
+    if (error) {
+      setMfaError(error.message)
+    } else {
+      alert('2FA successfully enabled!')
+      setMfaEnrollData(null)
+      setMfaCode('')
+      fetchMerchant()
+    }
+  }
+
+  const challengeMfa = async () => {
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
+    if (factorsError || !factors.totp[0]) return
+
+    const factorId = factors.totp[0].id
+    const { data, error } = await supabase.auth.mfa.challenge({ factorId })
+    
+    if (error) {
+      setMfaError(error.message)
+      return
+    }
+
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: data.id,
+      challengeCode: mfaCode
+    })
+
+    if (verifyError) {
+      setMfaError(verifyError.message)
+    } else {
+      setIsMfaChallenge(false)
+      setMfaCode('')
+      fetchMerchant()
+    }
+  }
+
   const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
     try {
       setSavingSettings(true)
@@ -480,7 +550,39 @@ export default function DashboardPage() {
   const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
 
   return (
-    <div className={`min-h-screen ${showOnboarding ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+    <div className={`min-h-screen ${showOnboarding || isMfaChallenge ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+      {/* MFA Challenge Modal */}
+      {isMfaChallenge && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80 animate-fade-in">
+          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center animate-bounce-in">
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
+              <ShieldCheck size={40} className="text-white" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2">2FA Required</h2>
+            <p className="text-slate-400 mb-8 text-sm">Enter the 6-digit code from your authenticator app to continue.</p>
+            
+            <input 
+              type="text"
+              placeholder="000000"
+              maxLength={6}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
+              className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-3xl text-center outline-none focus:border-indigo-500 transition-all tracking-[0.5em] mb-6"
+            />
+
+            {mfaError && <p className="text-rose-500 text-xs font-bold mb-6">{mfaError}</p>}
+
+            <button 
+              onClick={challengeMfa}
+              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
+            >
+              Verify & Login
+            </button>
+            <button onClick={handleLogout} className="mt-6 text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest">Logout</button>
+          </div>
+        </div>
+      )}
+
       {/* Onboarding Modal (Forced) */}
       {showOnboarding && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
@@ -1079,7 +1181,66 @@ export default function DashboardPage() {
                 )}
               </section>
 
-              {/* 4. Account */}
+               {/* 4. Security */}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  type="button"
+                  onClick={() => toggleSection('security')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Security (2FA)</span>
+                  </div>
+                  <ShieldCheck size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'security' ? 'rotate-90' : ''}`} />
+                </button>
+
+                {openSection === 'security' && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    {!mfaEnrollData ? (
+                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                            <ShieldCheck size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Google Authenticator</p>
+                            <p className="text-[10px] text-slate-500 text-left">Protect your account with an extra layer of security.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={enrollMfa}
+                          className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                          Enable 2FA
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-6">
+                        <p className="text-xs font-bold text-white">Scan this QR Code</p>
+                        <div className="bg-white p-4 rounded-2xl inline-block">
+                          <QRCodeSVG value={mfaEnrollData.totp.qr_code} size={160} />
+                        </div>
+                        <p className="text-[10px] text-slate-400">Scan with Google Authenticator or Authy, then enter the code below:</p>
+                        <input 
+                          type="text"
+                          placeholder="000000"
+                          maxLength={6}
+                          value={mfaCode}
+                          onChange={(e) => setMfaCode(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xl text-center outline-none focus:border-indigo-500 transition-all tracking-widest"
+                        />
+                        {mfaError && <p className="text-rose-500 text-[10px] font-bold">{mfaError}</p>}
+                        <div className="flex gap-2">
+                          <button onClick={() => setMfaEnrollData(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-slate-400 text-xs font-bold">Cancel</button>
+                          <button onClick={verifyMfa} className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg shadow-indigo-600/20">Verify & Activate</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* 5. Account */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
                   type="button"
