@@ -8,7 +8,7 @@ import {
   CheckCircle, XCircle, ShieldCheck, 
   Loader2, Search, Smartphone, Store,
   Zap, Clock, BarChart3, Globe, ExternalLink,
-  ChevronRight, ArrowUpRight, TrendingUp, AlertCircle
+  ChevronRight, ArrowUpRight, TrendingUp, AlertCircle, LogOut, ArrowLeft
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -165,6 +165,25 @@ export default function AdminPage() {
                 className="w-full pl-14 pr-6 py-5 rounded-2xl bg-white/[0.03] border border-white/10 outline-none focus:border-indigo-500/50 focus:bg-white/[0.05] transition-all font-medium text-sm text-white placeholder:text-slate-600 backdrop-blur-xl"
               />
             </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+            >
+              <ArrowLeft size={16} />
+              Dashboard
+            </button>
+            <button 
+              onClick={async () => {
+                await supabase.auth.signOut()
+                router.push('/login')
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
           </div>
         </header>
 
