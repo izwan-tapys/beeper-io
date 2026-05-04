@@ -351,29 +351,7 @@ export default function DashboardPage() {
     setTogglingStore(false)
   }
 
-  const resetSessions = async () => {
-    if (!merchant) return
-    if (!confirm('Are you absolutely sure? This will permanently delete all order history from previous months.')) return
 
-    // Only delete sessions from BEFORE this month — current month stays to preserve quota
-    const firstOfMonth = new Date()
-    firstOfMonth.setDate(1)
-    firstOfMonth.setHours(0, 0, 0, 0)
-
-    const { error } = await supabase
-      .from('sessions')
-      .delete()
-      .eq('merchant_id', merchant.id)
-      .lt('created_at', firstOfMonth.toISOString())
-    
-    if (error) {
-      alert('Failed to reset: ' + error.message)
-    } else {
-      setSessions(prev => prev.filter(s => s.created_at >= firstOfMonth.toISOString()))
-      alert('Previous months order history has been cleared. Current month orders are preserved.')
-      setIsSettingsOpen(false)
-    }
-  }
 
   const hasSettingsChanged = () => {
     if (!merchant) return false
@@ -1292,19 +1270,6 @@ export default function DashboardPage() {
 
                 {openSection === 'account' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
-                      <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Danger Zone</h4>
-                      <p className="text-[10px] text-slate-500 leading-relaxed">
-                        Deleting your order history will reset your monthly quota and permanently remove all past records.
-                      </p>
-                      <button 
-                        onClick={resetSessions}
-                        type="button"
-                        className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-500 font-bold text-xs hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                      >
-                        Clear All Order History
-                      </button>
-                    </div>
                     <button 
                       onClick={handleLogout} 
                       type="button"
