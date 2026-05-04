@@ -26,6 +26,9 @@ type Merchant = {
   logo_url: string | null
   loyverse_token: string | null
   gmb_url: string | null
+  plan_type: 'free' | 'pro'
+  subscription_status: 'active' | 'expired' | 'trial'
+  expiry_date: string | null
 }
 
 const supabase = createClient()
@@ -266,6 +269,31 @@ export default function DashboardPage() {
       fetchMerchant()
     }
     setSavingSettings(false)
+  }
+
+  const handleUpgrade = async () => {
+    try {
+      setSavingSettings(true)
+      const response = await fetch('/api/payment/toyyibpay/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 50.00, // Example price RM50
+          planName: 'Pro Monthly'
+        })
+      })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert('Failed to initiate payment: ' + (data.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error)
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setSavingSettings(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -571,9 +599,6 @@ export default function DashboardPage() {
                     type="text"
                     value={settingsLoyverseToken}
                     onChange={(e) => setSettingsLoyverseToken(e.target.value)}
-                    onPaste={(e) => {
-                      // Paksa paste masuk kalau ada isu focus
-                    }}
                     placeholder="Masukkan Personal Access Token..."
                     className="p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all font-mono text-sm"
                     style={{ WebkitTextSecurity: 'disc' } as any} 
@@ -595,6 +620,39 @@ export default function DashboardPage() {
                   <p className="text-[10px] text-slate-600">
                     Customers will see this after their order is completed.
                   </p>
+                </div>
+
+                {/* Subscription Status */}
+                <div className="pt-4 border-t border-white/5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Subscription Plan</label>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-green-500' : 'bg-slate-500'}`} />
+                        <span className="text-white font-bold uppercase text-sm">
+                          {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
+                        </span>
+                      </div>
+                      {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
+                        <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                    
+                    {merchant?.plan_type !== 'pro' ? (
+                      <button 
+                        onClick={handleUpgrade}
+                        type="button"
+                        disabled={savingSettings}
+                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                        Upgrade to Pro
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">ACTIVE</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 italic">*RM1.00 payment fee applies (borne by merchant)</p>
                 </div>
 
                 <div className="pt-4 border-t border-white/10 space-y-3">
