@@ -302,16 +302,15 @@ export default function DashboardPage() {
               id="store-toggle-btn"
               onClick={toggleStore}
               disabled={togglingStore}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300"
+              className="p-2.5 rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center"
               style={{
                 background: merchant?.is_open ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
                 color: merchant?.is_open ? '#4ade80' : '#818cf8',
                 border: `1px solid ${merchant?.is_open ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
               }}
+              title={merchant?.is_open ? 'Close Store' : 'Open Store'}
             >
-              {togglingStore ? <Loader2 size={14} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={14} /> : <Power size={14} />}
-              <span className="hidden xs:inline">{merchant?.is_open ? 'Close Store' : 'Open Store'}</span>
-              <span className="xs:hidden">{merchant?.is_open ? 'Close' : 'Open'}</span>
+              {togglingStore ? <Loader2 size={18} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={18} /> : <Power size={18} />}
             </button>
             <button id="settings-btn" onClick={() => setIsSettingsOpen(true)} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Settings">
               <Settings size={20} />
