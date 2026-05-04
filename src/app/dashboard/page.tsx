@@ -471,7 +471,7 @@ export default function DashboardPage() {
     
     const { error } = await supabase.auth.mfa.verify({
       factorId: mfaEnrollData.id,
-      challengeCode: mfaCode
+      code: mfaCode
     })
 
     if (error) {
@@ -499,7 +499,7 @@ export default function DashboardPage() {
     const { error: verifyError } = await supabase.auth.mfa.verify({
       factorId,
       challengeId: data.id,
-      challengeCode: mfaCode
+      code: mfaCode
     })
 
     if (verifyError) {
