@@ -210,6 +210,8 @@ export default function DashboardPage() {
       // Force onboarding if phone is missing or not verified
       if (!m.phone || !m.is_verified) {
         setIsOnboarding(true)
+      } else {
+        setIsOnboarding(false)
       }
     }
   }, [router])
