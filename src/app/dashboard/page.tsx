@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
   const qrSessionRef = useRef<Session | null>(null)
+  const wakeLockRef = useRef<any>(null)
 
   const toggleSection = (section: string) => {
     setOpenSection(prev => prev === section ? null : section)
@@ -73,15 +74,31 @@ export default function DashboardPage() {
     }
   }, [isSettingsOpen, merchant])
 
-  // Auto-close QR Modal after 30 seconds
   useEffect(() => {
-    if (qrSession) {
-      const timer = setTimeout(() => {
-        setQrSession(null)
-      }, 30000) // 30 seconds
-      return () => clearTimeout(timer)
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
+        }
+      } catch (err) {
+        console.error('Wake Lock error:', err)
+      }
     }
-  }, [qrSession])
+
+    requestWakeLock()
+
+    const handleVisibilityChange = () => {
+      if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (wakeLockRef.current) wakeLockRef.current.release()
+    }
+  }, [])
 
   // Live timer tick
   useEffect(() => {

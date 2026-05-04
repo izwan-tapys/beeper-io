@@ -117,6 +117,23 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     wakeLockRef.current = null
   }
 
+  // Handle Wake Lock
+  useEffect(() => {
+    acquireWakeLock()
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        acquireWakeLock()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      releaseWakeLock()
+    }
+  }, [])
+
   const triggerAlert = () => {
     if (alertIntervalRef.current) return
     setIsFlashing(true)
