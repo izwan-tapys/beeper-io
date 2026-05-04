@@ -556,6 +556,9 @@ export default function DashboardPage() {
     s.receipt_number.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const quota = merchant?.plan_type === 'pro' ? Infinity : merchant?.plan_type === 'basic' ? 500 : 20
+  const isOverQuota = monthlyCount >= quota
+
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
 
   const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
@@ -736,27 +739,42 @@ export default function DashboardPage() {
           <>
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
               <h2 className="text-lg font-semibold text-white mb-4">Issue New Pager</h2>
-              <form onSubmit={(e) => { e.preventDefault(); createSession() }} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  id="receipt-input"
-                  type="text"
-                  value={receiptInput}
-                  onChange={(e) => setReceiptInput(e.target.value)}
-                  placeholder="Enter receipt / order number"
-                  className="w-full sm:flex-1 px-4 py-3 rounded-xl text-white outline-none"
-                  style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
-                />
-                <div className="flex gap-2">
-                  <button
-                    id="create-session-btn"
-                    type="submit"
-                    disabled={creating || !receiptInput.trim()}
-                    className="flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: creating ? 0.7 : 1 }}
-                  >
-                    {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
-                    <span>Issue</span>
-                  </button>
+                <form 
+                  onSubmit={(e) => { 
+                    e.preventDefault(); 
+                    if (isOverQuota) {
+                      setIsSettingsOpen(true);
+                      return;
+                    }
+                    createSession(); 
+                  }} 
+                  className="flex flex-col sm:flex-row gap-3"
+                >
+                  <input
+                    id="receipt-input"
+                    type="text"
+                    value={receiptInput}
+                    onChange={(e) => setReceiptInput(e.target.value)}
+                    placeholder={isOverQuota ? "Quota Reached" : "Enter receipt / order number"}
+                    disabled={isOverQuota}
+                    className="w-full sm:flex-1 px-4 py-3 rounded-xl text-white outline-none"
+                    style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      id="create-session-btn"
+                      type="submit"
+                      disabled={creating || (!isOverQuota && !receiptInput.trim())}
+                      className="flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
+                      style={{ 
+                        background: isOverQuota ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
+                        opacity: creating ? 0.7 : 1,
+                        boxShadow: isOverQuota ? '0 0 15px rgba(245, 158, 11, 0.3)' : 'none'
+                      }}
+                    >
+                      {creating ? <Loader2 size={16} className="animate-spin" /> : isOverQuota ? <Zap size={18} /> : <Plus size={18} />}
+                      <span>{isOverQuota ? 'Upgrade Plan' : 'Issue'}</span>
+                    </button>
                   <button
                     type="button"
                     onClick={syncLoyverse}
