@@ -1,5 +1,6 @@
 'use client'
 
+// VERCEL_FORCE_REBUILD_FINAL_V3
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
