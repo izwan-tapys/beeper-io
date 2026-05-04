@@ -64,6 +64,11 @@ export default function DashboardPage() {
     setOpenSection(prev => prev === section ? null : section)
   }
 
+  const handleOpenQr = (session: any) => {
+    qrWasConfirmedRef.current = session.is_confirmed || false
+    setQrSession(session)
+  }
+
   // Auto-close QR Modal when customer confirms (only if it wasn't confirmed when opened)
   useEffect(() => {
     if (qrSession) {
@@ -583,7 +588,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 md:w-auto md:ml-6">
                         <button
                           id={`qr-btn-${session.id}`}
-                          onClick={() => setQrSession(session)}
+                          onClick={() => handleOpenQr(session)}
                           className="p-3 rounded-xl transition-all active:scale-95 shrink-0"
                           style={{ color: 'var(--muted-foreground)', background: '#0a0b0f', border: '1px solid var(--card-border)' }}
                           title="Show QR Code"
