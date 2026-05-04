@@ -1,4 +1,4 @@
-# 🐝 Beeper Project Roadmap
+# 🐝 Beepme Project Roadmap
 
 ## ✅ Completed (Done)
 - [x] **Supabase Setup**: Authentication & Real-time Database.
@@ -15,9 +15,11 @@
 - [x] **Screen Wake Lock**: Prevent devices from sleeping during operation. 🔋
 - [x] **Verification System**: Mandatory phone registration & WhatsApp Admin Approval. 🛡️
 - [x] **Admin Dashboard**: Verification control at `/admin`. 👑
+- [x] **Custom Domain Setup**: Hubungkan domain `beepme.pro` ke Vercel. 🌐
+- [x] **PWA Support**: Jadikan Beepme boleh install macam apps kat phone. 📲
 
 ## 🚀 Priority: Professional Growth
-- [ ] **Custom Domain Setup**: Hubungkan domain `beeper.io` (atau pilihan bos) ke Vercel. 🌐
+
 - [ ] **Custom Branding (Logo Upload)**: Merchant boleh letak logo kedai sendiri kat pager. 🖼️
 - [ ] **Custom Pager Theme**: Merchant boleh tukar warna skrin pager ikut tema kedai dorang. 🎨
 - [ ] **Custom Domain Email (Resend)**: Gunakan domain profesional untuk email sistem. 📧
@@ -26,7 +28,7 @@
 ## 📋 Secondary Tasks
 - [ ] **Email Notification**: Hantar notifikasi status akaun/pembayaran.
 - [ ] **Multi-language Support**: Bahasa Melayu & English toggle.
-- [ ] **PWA Support**: Jadikan Beeper boleh install macam apps kat phone. 📲
+
 
 ## 📈 Long-term Goals
 - [ ] **Merchant Analytics**: Statistik jualan, waktu puncak, dan purata waktu menunggu.
