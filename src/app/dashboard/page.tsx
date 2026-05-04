@@ -55,11 +55,17 @@ export default function DashboardPage() {
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncCooldown, setSyncCooldown] = useState(0)
+  const [openSections, setOpenSections] = useState({
+    profile: true,
+    integrations: false,
+    subscription: false,
+    account: false
+  })
   const qrSessionRef = useRef<Session | null>(null)
 
-  useEffect(() => {
-    qrSessionRef.current = qrSession
-  }, [qrSession])
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
 
   // Live timer tick
   useEffect(() => {
@@ -578,121 +584,160 @@ export default function DashboardPage() {
             </div>
 
             {/* Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {/* 1. Store Profile */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-400/10 px-2 py-0.5 rounded">Store Profile</span>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Store Name</label>
-                    <input
-                      type="text"
-                      value={settingsName}
-                      onChange={(e) => setSettingsName(e.target.value)}
-                      placeholder="Nama Kedai"
-                      className="w-full p-3.5 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  onClick={() => toggleSection('profile')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-400/10 px-2 py-0.5 rounded">Store Profile</span>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Logo URL</label>
-                    <input
-                      type="text"
-                      value={settingsLogo}
-                      onChange={(e) => setSettingsLogo(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full p-3.5 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.profile ? 'rotate-90' : ''}`} />
+                </button>
+                
+                {openSections.profile && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Store Name</label>
+                      <input
+                        type="text"
+                        value={settingsName}
+                        onChange={(e) => setSettingsName(e.target.value)}
+                        placeholder="Nama Kedai"
+                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Logo URL</label>
+                      <input
+                        type="text"
+                        value={settingsLogo}
+                        onChange={(e) => setSettingsLogo(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
 
               {/* 2. Integrations */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] bg-amber-400/10 px-2 py-0.5 rounded">Integrations</span>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Loyverse Access Token</label>
-                    <input
-                      type="password"
-                      value={settingsLoyverseToken}
-                      onChange={(e) => setSettingsLoyverseToken(e.target.value)}
-                      placeholder="Personal Access Token..."
-                      className="w-full p-3.5 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
-                    />
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  onClick={() => toggleSection('integrations')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] bg-amber-400/10 px-2 py-0.5 rounded">Integrations</span>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">GMB Review URL</label>
-                    <input
-                      type="text"
-                      value={settingsGmbUrl}
-                      onChange={(e) => setSettingsGmbUrl(e.target.value)}
-                      placeholder="https://g.page/..."
-                      className="w-full p-3.5 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.integrations ? 'rotate-90' : ''}`} />
+                </button>
+
+                {openSections.integrations && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Loyverse Access Token</label>
+                      <input
+                        type="password"
+                        value={settingsLoyverseToken}
+                        onChange={(e) => setSettingsLoyverseToken(e.target.value)}
+                        placeholder="Personal Access Token..."
+                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">GMB Review URL</label>
+                      <input
+                        type="text"
+                        value={settingsGmbUrl}
+                        onChange={(e) => setSettingsGmbUrl(e.target.value)}
+                        placeholder="https://g.page/..."
+                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
+                      />
+                    </div>
+                    
+                    <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Webhook Endpoint</p>
+                      <code className="block text-[10px] text-indigo-400 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
+                        {baseUrl}/api/webhooks/loyverse?merchant_id={merchant?.id}
+                      </code>
+                    </div>
                   </div>
-                  
-                  {/* Webhook Tooltip */}
-                  <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 mt-2">
-                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Webhook Endpoint</p>
-                    <code className="block text-[10px] text-indigo-400 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
-                      {baseUrl}/api/webhooks/loyverse?merchant_id={merchant?.id}
-                    </code>
-                  </div>
-                </div>
+                )}
               </section>
 
               {/* 3. Subscription */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-emerald-400/10 px-2 py-0.5 rounded">Subscription Plan</span>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
-                      <span className="text-white font-bold uppercase text-sm">
-                        {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
-                      </span>
-                    </div>
-                    {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
-                      <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
-                    )}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  onClick={() => toggleSection('subscription')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-emerald-400/10 px-2 py-0.5 rounded">Subscription Plan</span>
                   </div>
-                  
-                  {merchant?.plan_type !== 'pro' ? (
-                    <button 
-                      onClick={handleUpgrade}
-                      type="button"
-                      disabled={savingSettings}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-indigo-500/20"
-                    >
-                      {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                      Upgrade
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase">Active</span>
-                  )}
-                </div>
-                <p className="text-[9px] text-slate-600 italic px-1">*RM1.00 fee applied at ToyyibPay (borne by merchant).</p>
+                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.subscription ? 'rotate-90' : ''}`} />
+                </button>
+
+                {openSections.subscription && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                          <span className="text-white font-bold uppercase text-sm">
+                            {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
+                          </span>
+                        </div>
+                        {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
+                          <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                      
+                      {merchant?.plan_type !== 'pro' ? (
+                        <button 
+                          onClick={handleUpgrade}
+                          type="button"
+                          disabled={savingSettings}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2"
+                        >
+                          {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                          Upgrade
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase">Active</span>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-slate-600 italic px-1">*RM1.00 fee applied at ToyyibPay (borne by merchant).</p>
+                  </div>
+                )}
               </section>
 
               {/* 4. Account */}
-              <section className="space-y-4 pb-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] bg-rose-400/10 px-2 py-0.5 rounded">Account</span>
-                </div>
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
-                  onClick={handleLogout} 
-                  type="button"
-                  className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-rose-500/5 border border-rose-500/10 text-rose-500 font-bold text-sm hover:bg-rose-500/10 transition-all active:scale-95"
+                  onClick={() => toggleSection('account')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
-                  <LogOut size={16} />
-                  Sign Out from Beeper
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] bg-rose-400/10 px-2 py-0.5 rounded">Account Control</span>
+                  </div>
+                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.account ? 'rotate-90' : ''}`} />
                 </button>
+
+                {openSections.account && (
+                  <div className="p-4 pt-0 animate-fade-in">
+                    <button 
+                      onClick={handleLogout} 
+                      type="button"
+                      className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 font-bold text-sm hover:bg-rose-500/10 transition-all active:scale-95"
+                    >
+                      <LogOut size={16} />
+                      Sign Out from Beeper
+                    </button>
+                  </div>
+                )}
               </section>
             </div>
 
