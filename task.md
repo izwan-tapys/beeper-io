@@ -8,6 +8,7 @@
 - [x] **Loyverse Manual Sync**: Fetch latest 10 sales with 2s cooldown.
 - [x] **Google My Business**: Integration with GMB link on Thank You page.
 - [x] **Premium Landing Page**: Professional front-facing website.
+- [x] **Mobile UI Optimization**: Improved dashboard & pager responsiveness.
 
 ## 🚀 Priority: Monetization (Next Session)
 - [ ] **Custom Domain Setup**: Hubungkan domain `beeper.io` (atau pilihan bos) ke Vercel. 🌐
