@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
-  Zap, Plus, Search, Phone, CheckCircle, QrCode,
+  Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
   LogOut, Power, PowerOff, X, Clock, Loader2, Settings
 } from 'lucide-react'
 
@@ -26,6 +26,7 @@ type Merchant = {
   logo_url: string | null
   loyverse_token: string | null
   gmb_url: string | null
+  phone: string | null
   plan_type: 'free' | 'basic' | 'pro'
   subscription_status: 'active' | 'expired' | 'trial'
   expiry_date: string | null
@@ -57,6 +58,9 @@ export default function DashboardPage() {
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
   const [monthlyCount, setMonthlyCount] = useState(0)
+  const [onboardingPhone, setOnboardingPhone] = useState('')
+  const [isOnboarding, setIsOnboarding] = useState(false)
+  const [savingOnboarding, setSavingOnboarding] = useState(false)
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -201,6 +205,11 @@ export default function DashboardPage() {
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
       setSettingsGmbUrl(m.gmb_url || '')
+      
+      // Force onboarding if phone is missing
+      if (!m.phone) {
+        setIsOnboarding(true)
+      }
     }
   }, [router])
 
@@ -404,6 +413,38 @@ export default function DashboardPage() {
     setSavingSettings(false)
   }
 
+  const saveOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!merchant || !onboardingPhone.trim()) return
+    
+    // Basic MY Phone Validation
+    const phoneRegex = /^(01)[0-46-9]-*[0-9]{7,8}$/
+    const cleanedPhone = onboardingPhone.replace(/-/g, '').trim()
+    
+    if (!phoneRegex.test(cleanedPhone)) {
+      alert('Please enter a valid Malaysian phone number (e.g. 0123456789)')
+      return
+    }
+
+    setSavingOnboarding(true)
+    const { error } = await supabase
+      .from('merchants')
+      .update({ phone: cleanedPhone })
+      .eq('id', merchant.id)
+
+    if (error) {
+      if (error.message.includes('unique')) {
+        alert('This phone number is already registered with another account. Please use a different number.')
+      } else {
+        alert('Failed to save: ' + error.message)
+      }
+    } else {
+      setMerchant({ ...merchant, phone: cleanedPhone })
+      setIsOnboarding(false)
+    }
+    setSavingOnboarding(false)
+  }
+
   const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
     try {
       setSavingSettings(true)
@@ -441,7 +482,50 @@ export default function DashboardPage() {
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+    <div className={`min-h-screen ${isOnboarding ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+      {/* Onboarding Modal (Forced) */}
+      {isOnboarding && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
+          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 animate-bounce-in">
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
+              <Smartphone size={40} className="text-white" />
+            </div>
+            
+            <h2 className="text-3xl font-black text-white text-center mb-2">Welcome to Beeper!</h2>
+            <p className="text-slate-400 text-center mb-10 text-sm leading-relaxed">
+              To keep our community safe and fair, we require a valid phone number to get started.
+            </p>
+
+            <form onSubmit={saveOnboarding} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Phone Number</label>
+                <input 
+                  type="tel"
+                  placeholder="e.g. 0123456789"
+                  value={onboardingPhone}
+                  onChange={(e) => setOnboardingPhone(e.target.value)}
+                  className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-lg"
+                  required
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={savingOnboarding || !onboardingPhone.trim()}
+                className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {savingOnboarding ? <Loader2 className="animate-spin" /> : <ArrowRight />}
+                Start Issuing Pagers
+              </button>
+            </form>
+            
+            <p className="mt-8 text-[9px] text-slate-600 text-center uppercase tracking-tighter">
+              By continuing, you agree to our terms and fair usage policy.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 border-b" style={{ background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', borderColor: 'var(--card-border)' }}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
