@@ -16,7 +16,7 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
               <img src="/icon.png" alt="Beeper Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-black tracking-tighter uppercase">Beeper</span>
+            <span className="text-xl font-black tracking-tighter uppercase">Beepme</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -198,7 +198,7 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 shadow-lg shadow-indigo-600/20">
                 <img src="/icon.png" alt="Beeper Logo" className="w-full h-full object-cover" />
               </div>
-              <span className="font-black uppercase tracking-tighter">Beeper</span>
+              <span className="font-black uppercase tracking-tighter">Beepme</span>
             </div>
             <p className="text-slate-500 text-sm max-w-xs">
               The modern customer notification system for progressive F&B brands.
@@ -220,7 +220,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-white/5 text-center">
-          <p className="text-xs text-slate-600 font-mono">© 2026 BEEPER.IO - BUILT FOR THE CRAFT.</p>
+          <p className="text-xs text-slate-600 font-mono">© 2026 BEEPME.PRO - BUILT FOR THE CRAFT.</p>
         </div>
       </footer>
 

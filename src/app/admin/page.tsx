@@ -141,7 +141,7 @@ export default function AdminPage() {
             </div>
             <div>
               <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-1">
-                Beeper <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">Core</span>
+                Beepme <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">Core</span>
               </h1>
               <div className="flex items-center gap-3">
                 <span className="flex h-2 w-2 relative">

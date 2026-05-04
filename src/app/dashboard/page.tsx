@@ -515,7 +515,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: price,
-          planName: `Beeper ${plan.charAt(0).toUpperCase() + plan.slice(1)}`
+          planName: `Beepme ${plan.charAt(0).toUpperCase() + plan.slice(1)}`
         })
       })
       const data = await response.json()
@@ -590,7 +590,7 @@ export default function DashboardPage() {
               <Smartphone size={40} className="text-white" />
             </div>
             
-            <h2 className="text-3xl font-black text-white text-center mb-2">Welcome to Beeper!</h2>
+            <h2 className="text-3xl font-black text-white text-center mb-2">Welcome to Beepme!</h2>
             
             {!merchant?.phone ? (
               <>
@@ -634,7 +634,7 @@ export default function DashboardPage() {
 
                 <div className="space-y-4">
                   <a 
-                    href={`https://wa.me/60194696158?text=${encodeURIComponent(`Salam Beeper, sila sahkan akaun saya.\n\nStore: ${merchant.name}\nPhone: ${merchant.phone}\nID: ${merchant.id}`)}`}
+                    href={`https://wa.me/60194696158?text=${encodeURIComponent(`Salam Beepme, sila sahkan akaun saya.\n\nStore: ${merchant.name}\nPhone: ${merchant.phone}\nID: ${merchant.id}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-5 rounded-2xl bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-lg transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3"
@@ -669,10 +669,10 @@ export default function DashboardPage() {
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-white/10 shrink-0" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
-              <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover" />
+              <img src="/icon.png" alt="Beepme" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col justify-center flex-1 min-w-0 ml-1">
-              <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beeper</span>
+              <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beepme</span>
               {merchant && (
                 <h1 className="text-sm sm:text-base font-bold text-white truncate leading-none">
                   {merchant.name}
@@ -782,7 +782,7 @@ export default function DashboardPage() {
               <div className="mt-4 pt-4 border-t border-white/5">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    {merchant?.plan_type === 'pro' ? 'Beeper Pro Usage' : 'Monthly Order Quota'}
+                    {merchant?.plan_type === 'pro' ? 'Beepme Pro Usage' : 'Monthly Order Quota'}
                   </span>
                   <span className="text-[10px] font-bold text-white uppercase tracking-widest">
                     {merchant?.plan_type === 'pro' ? `${monthlyCount} / Unlimited` : `${monthlyCount} / ${merchant?.plan_type === 'basic' ? '500' : '20'}`}
@@ -1081,7 +1081,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${merchant?.plan_type !== 'free' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
                           <span className="text-white font-bold uppercase text-sm">
-                            Beeper {merchant?.plan_type || 'Free'}
+                            Beepme {merchant?.plan_type || 'Free'}
                           </span>
                         </div>
                         {merchant?.expiry_date && (
@@ -1099,7 +1099,7 @@ export default function DashboardPage() {
                       <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'free' ? 'bg-white/[0.05] border-white/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-white font-bold text-sm">Beeper Free</h3>
+                            <h3 className="text-white font-bold text-sm">Beepme Free</h3>
                             <p className="text-[10px] text-slate-500">Perfect for starting out</p>
                           </div>
                           <div className="text-right">
@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
                       <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'basic' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-white/[0.02] border-white/5'}`}>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-white font-bold text-sm">Beeper Basic</h3>
+                            <h3 className="text-white font-bold text-sm">Beepme Basic</h3>
                             <p className="text-[10px] text-slate-500">For small cafes & trucks</p>
                           </div>
                           <div className="text-right">
@@ -1162,7 +1162,7 @@ export default function DashboardPage() {
                         <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[8px] font-black px-2 py-1 uppercase rounded-bl-lg">Best Value</div>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-white font-bold text-sm">Beeper Unlimited</h3>
+                            <h3 className="text-white font-bold text-sm">Beepme Unlimited</h3>
                             <p className="text-[10px] text-slate-500">For busy restaurants</p>
                           </div>
                           <div className="text-right">
@@ -1276,7 +1276,7 @@ export default function DashboardPage() {
                       className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 font-bold text-sm hover:bg-rose-500/10 transition-all active:scale-95"
                     >
                       <LogOut size={16} />
-                      Sign Out from Beeper
+                      Sign Out from Beepme
                     </button>
                   </div>
                 )}

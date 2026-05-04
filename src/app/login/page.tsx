@@ -167,7 +167,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--muted)' }}>
-          © 2025 Beeper.io — Replace hardware. Go digital.
+          © 2025 Beepme.pro — Replace hardware. Go digital.
         </p>
       </div>
     </div>

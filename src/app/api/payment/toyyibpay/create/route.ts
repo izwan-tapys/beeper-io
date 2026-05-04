@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const formData = new URLSearchParams()
     formData.append('userSecretKey', userSecretKey)
     formData.append('categoryCode', categoryCode)
-    formData.append('billName', `Beeper ${planName} Subscription`)
+    formData.append('billName', `Beepme ${planName} Subscription`)
     formData.append('billDescription', `Subscription for merchant ${user.email}`)
     formData.append('billPriceSetting', '1')
     formData.append('billPayorInfo', '1')
