@@ -743,7 +743,7 @@ export default function DashboardPage() {
                   onSubmit={(e) => { 
                     e.preventDefault(); 
                     if (isOverQuota) {
-                      setOpenSection('plan');
+                      setOpenSection('subscription');
                       setIsSettingsOpen(true);
                       return;
                     }
