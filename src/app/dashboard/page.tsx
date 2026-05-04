@@ -462,7 +462,17 @@ export default function DashboardPage() {
       return
     }
 
-    setMfaEnrollData(data)
+    // Immediately challenge to get challengeId
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+      factorId: data.id
+    })
+
+    if (challengeError) {
+      setMfaError(challengeError.message)
+      return
+    }
+
+    setMfaEnrollData({ ...data, challengeId: challengeData.id })
   }
 
   const verifyMfa = async () => {
@@ -471,6 +481,7 @@ export default function DashboardPage() {
     
     const { error } = await supabase.auth.mfa.verify({
       factorId: mfaEnrollData.id,
+      challengeId: (mfaEnrollData as any).challengeId,
       code: mfaCode
     })
 
