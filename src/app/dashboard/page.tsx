@@ -765,34 +765,60 @@ export default function DashboardPage() {
 
                 {openSection === 'subscription' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
-                          <span className="text-white font-bold uppercase text-sm">
-                            {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
-                          </span>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
+                            <span className="text-white font-bold uppercase text-sm">
+                              {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
+                            </span>
+                          </div>
+                          {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
+                            <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                          )}
                         </div>
-                        {merchant?.plan_type === 'pro' && merchant?.expiry_date && (
-                          <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                        {merchant?.plan_type === 'pro' && (
+                          <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase">Active</span>
                         )}
                       </div>
-                      
-                      {merchant?.plan_type !== 'pro' ? (
-                        <button 
-                          onClick={handleUpgrade}
-                          type="button"
-                          disabled={savingSettings}
-                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2"
-                        >
-                          {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                          Upgrade
-                        </button>
-                      ) : (
-                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase">Active</span>
+
+                      {merchant?.plan_type !== 'pro' && (
+                        <div className="pt-2 border-t border-white/5 space-y-3">
+                          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Why Upgrade to Pro?</p>
+                          <ul className="space-y-2">
+                            {[
+                              { icon: <Zap size={12} />, text: 'Unlimited Active Pagers' },
+                              { icon: <Settings size={12} />, text: 'Custom Store Logo & Branding' },
+                              { icon: <CheckCircle size={12} />, text: 'Faster Loyverse Sync' },
+                              { icon: <Phone size={12} />, text: 'WhatsApp Notifications (Soon)' }
+                            ].map((item, i) => (
+                              <li key={i} className="flex items-center gap-2 text-xs text-slate-400">
+                                <span className="text-indigo-500">{item.icon}</span>
+                                {item.text}
+                              </li>
+                            ))}
+                          </ul>
+                          
+                          <div className="pt-4 flex items-center justify-between gap-4">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Price</span>
+                              <span className="text-xl font-black text-white">RM30.00<span className="text-xs font-normal text-slate-500">/mo</span></span>
+                            </div>
+                            <button 
+                              onClick={handleUpgrade}
+                              type="button"
+                              disabled={savingSettings}
+                              className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+                            >
+                              {savingSettings ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                              Upgrade Now
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <p className="text-[9px] text-slate-600 italic px-1">*RM1.00 fee applied at ToyyibPay (borne by merchant).</p>
+                    <p className="text-[9px] text-slate-600 italic px-1 text-center">*Secure payment via ToyyibPay. RM1.00 fee applies.</p>
                   </div>
                 )}
               </section>
