@@ -241,6 +241,25 @@ export default function DashboardPage() {
     setTogglingStore(false)
   }
 
+  const hasSettingsChanged = () => {
+    if (!merchant) return false
+    return (
+      settingsName !== (merchant.name || '') ||
+      settingsLogo !== (merchant.logo_url || '') ||
+      settingsLoyverseToken !== (merchant.loyverse_token || '') ||
+      settingsGmbUrl !== (merchant.gmb_url || '')
+    )
+  }
+
+  const closeSettings = () => {
+    if (hasSettingsChanged()) {
+      if (!confirm('You have unsaved changes. Are you sure you want to close?')) {
+        return
+      }
+    }
+    setIsSettingsOpen(false)
+  }
+
   const saveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!merchant || !settingsName.trim()) return
@@ -573,7 +592,7 @@ export default function DashboardPage() {
                 </div>
                 <h2 className="text-xl font-bold text-white">Settings</h2>
               </div>
-              <button onClick={() => setIsSettingsOpen(false)} className="text-slate-500 hover:text-white transition-colors">
+              <button onClick={closeSettings} className="text-slate-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -739,7 +758,7 @@ export default function DashboardPage() {
             {/* Footer Buttons */}
             <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-3">
               <button 
-                onClick={() => setIsSettingsOpen(false)} 
+                onClick={closeSettings} 
                 type="button"
                 className="flex-1 py-3.5 rounded-2xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-all"
               >
@@ -748,8 +767,12 @@ export default function DashboardPage() {
               <button 
                 onClick={saveSettings} 
                 type="button"
-                disabled={savingSettings} 
-                className="flex-[2] py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
+                disabled={savingSettings || !hasSettingsChanged()} 
+                className={`flex-[2] py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
+                  savingSettings || !hasSettingsChanged() 
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
+                }`}
               >
                 {savingSettings && <Loader2 size={16} className="animate-spin" />}
                 Save Changes
