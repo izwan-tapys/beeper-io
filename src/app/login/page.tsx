@@ -118,6 +118,39 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Separator */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--card-border)' }}></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="px-4 text-slate-500" style={{ background: 'var(--card)' }}>Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Login Button */}
+          <button
+            onClick={async () => {
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                  redirectTo: `${window.location.origin}/auth/callback`,
+                },
+              })
+              if (error) setError(error.message)
+            }}
+            className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-3 border border-white/10 hover:bg-white/5 active:scale-95"
+            style={{ background: '#0a0b0f' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M23.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h6.5c-.3 1.5-1.1 2.8-2.4 3.6v3h3.8c2.3-2.1 3.6-5.1 3.6-8.6z" fill="#4285F4"/>
+              <path d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.8-3c-1.1.7-2.5 1.2-4.1 1.2-3.2 0-5.9-2.1-6.8-5H1.3v3.1C3.3 21.4 7.4 24 12 24z" fill="#34A853"/>
+              <path d="M5.2 14.3c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3V6.6H1.3c-.8 1.6-1.3 3.4-1.3 5.4s.5 3.8 1.3 5.4l3.9-3.1z" fill="#FBBC05"/>
+              <path d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.3 2.6 1.3 6.6l3.9 3.1c.9-2.9 3.6-5 6.8-5z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+          </button>
+
           <p className="text-center text-sm mt-6" style={{ color: 'var(--muted-foreground)' }}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
