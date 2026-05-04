@@ -288,10 +288,10 @@ export default function DashboardPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-white/10 shrink-0" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
               <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-white text-base sm:text-lg leading-none">Beeper</span>
+            <div className="flex flex-col justify-center">
+              <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beeper</span>
               {merchant && (
-                <span className="text-[10px] sm:text-xs font-medium text-indigo-400/80 truncate max-w-[100px] sm:max-w-none mt-0.5">
+                <span className="text-sm sm:text-base font-bold text-white truncate max-w-[140px] sm:max-w-none leading-none">
                   {merchant.name}
                 </span>
               )}
