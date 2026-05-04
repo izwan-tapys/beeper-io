@@ -770,7 +770,7 @@ export default function DashboardPage() {
                     {merchant?.plan_type === 'pro' ? 'Beeper Pro Usage' : 'Monthly Order Quota'}
                   </span>
                   <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                    {merchant?.plan_type === 'pro' ? 'Unlimited' : `${monthlyCount} / ${merchant?.plan_type === 'basic' ? '500' : '20'}`}
+                    {merchant?.plan_type === 'pro' ? `${monthlyCount} / Unlimited` : `${monthlyCount} / ${merchant?.plan_type === 'basic' ? '500' : '20'}`}
                   </span>
                 </div>
                 {merchant?.plan_type !== 'pro' && (
