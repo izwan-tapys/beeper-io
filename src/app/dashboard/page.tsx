@@ -285,22 +285,24 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 border-b" style={{ background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', borderColor: 'var(--card-border)' }}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-white/10 shrink-0" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
               <img src="/icon.png" alt="Beeper" className="w-full h-full object-cover" />
             </div>
-            <span className="font-bold text-white text-lg">Beeper</span>
-            {merchant && (
-              <span className="text-sm px-2 py-0.5 rounded-full" style={{ background: 'var(--card)', color: 'var(--muted-foreground)', border: '1px solid var(--card-border)' }}>
-                {merchant.name}
-              </span>
-            )}
+            <div className="flex flex-col">
+              <span className="font-bold text-white text-base sm:text-lg leading-none">Beeper</span>
+              {merchant && (
+                <span className="text-[10px] sm:text-xs font-medium text-indigo-400/80 truncate max-w-[100px] sm:max-w-none mt-0.5">
+                  {merchant.name}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               id="store-toggle-btn"
               onClick={toggleStore}
               disabled={togglingStore}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300"
               style={{
                 background: merchant?.is_open ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
                 color: merchant?.is_open ? '#4ade80' : '#818cf8',
@@ -308,13 +310,14 @@ export default function DashboardPage() {
               }}
             >
               {togglingStore ? <Loader2 size={14} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={14} /> : <Power size={14} />}
-              {merchant?.is_open ? 'Close Store' : 'Open Store'}
+              <span className="hidden xs:inline">{merchant?.is_open ? 'Close Store' : 'Open Store'}</span>
+              <span className="xs:hidden">{merchant?.is_open ? 'Close' : 'Open'}</span>
             </button>
-            <button id="settings-btn" onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-xl transition-colors hover:bg-white/5" style={{ color: 'var(--muted-foreground)' }} title="Settings">
-              <Settings size={18} />
+            <button id="settings-btn" onClick={() => setIsSettingsOpen(true)} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Settings">
+              <Settings size={20} />
             </button>
-            <button id="logout-btn" onClick={handleLogout} className="p-2 rounded-xl transition-colors hover:bg-white/5" style={{ color: 'var(--muted-foreground)' }} title="Logout">
-              <LogOut size={16} />
+            <button id="logout-btn" onClick={handleLogout} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Logout">
+              <LogOut size={18} />
             </button>
           </div>
         </div>
@@ -353,11 +356,11 @@ export default function DashboardPage() {
                   id="create-session-btn"
                   type="submit"
                   disabled={creating || !receiptInput.trim()}
-                  className="px-6 py-3 rounded-xl font-semibold text-white flex items-center gap-2"
+                  className="px-4 sm:px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
                   style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: creating ? 0.7 : 1 }}
                 >
-                  {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                  Issue
+                  {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
+                  <span className={receiptInput.length > 5 ? 'hidden sm:inline' : ''}>Issue</span>
                 </button>
                 <button
                   type="button"
@@ -427,46 +430,49 @@ export default function DashboardPage() {
               ) : (
                 <div className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
                   {filteredSessions.map((session) => (
-                    <div key={session.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] animate-slide-up">
-                      <div className="w-2 h-2 rounded-full" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
-                      <div className="flex-1 flex flex-col gap-1">
-                        <div className="flex items-center gap-3">
-                          <p className="font-black text-white text-xl">Order #{session.receipt_number}</p>
-                          {session.status === 'waiting' && (
-                            <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-400/20 animate-pulse">
-                              {getWaitTime(session.created_at)}
-                            </span>
-                          )}
-                          <div className="flex shrink-0">
-                            {!session.is_confirmed ? (
-                              <span className="bg-yellow-500 text-black text-[10px] px-2 py-1 rounded font-black animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.4)]">
-                                WAITING FOR CUSTOMER
-                              </span>
-                            ) : (
-                              <span className="bg-green-500 text-black text-[10px] px-2 py-1 rounded font-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                                CUSTOMER WAITING
+                    <div key={session.id} className="flex flex-col md:flex-row md:items-center gap-4 p-5 hover:bg-white/[0.02] animate-slide-up transition-colors">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <p className="font-black text-white text-xl">#{session.receipt_number}</p>
+                            {session.status === 'waiting' && (
+                              <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-400/20 animate-pulse">
+                                {getWaitTime(session.created_at)}
                               </span>
                             )}
+                            <div className="flex shrink-0">
+                              {!session.is_confirmed ? (
+                                <span className="bg-yellow-500 text-black text-[9px] px-2 py-0.5 rounded font-black animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                                  WAITING FOR CUSTOMER
+                                </span>
+                              ) : (
+                                <span className="bg-green-500 text-black text-[9px] px-2 py-0.5 rounded font-black shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                                  CUSTOMER READY
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
+                            {session.status === 'called' ? '🔔 Called' : '⏳ Preparing'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
-                        <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
-                          {session.status === 'called' ? '🔔 CALLED' : '⏳ PREPARING'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-end sm:justify-start">
                         <button
                           id={`qr-btn-${session.id}`}
                           onClick={() => setQrSession(session)}
-                          className="p-2 rounded-lg"
+                          className="p-2.5 rounded-xl transition-all active:scale-95"
                           style={{ color: 'var(--muted-foreground)', background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                          title="Show QR Code"
                         >
-                          <QrCode size={14} />
+                          <QrCode size={16} />
                         </button>
                         <button
                           onClick={() => callSession(session.id)}
                           disabled={session.status === 'called' || !session.is_confirmed}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all disabled:opacity-20 disabled:grayscale"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
                           style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
                         >
                           <Phone size={14} />
@@ -475,7 +481,7 @@ export default function DashboardPage() {
                         <button
                           onClick={() => doneSession(session.id)}
                           disabled={!session.is_confirmed}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all disabled:opacity-20 disabled:grayscale"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
                           style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
                         >
                           <CheckCircle size={14} />
@@ -494,7 +500,7 @@ export default function DashboardPage() {
       {/* QR Modal */}
       {qrSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-8 border text-center animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+          <div className="w-full max-w-sm rounded-3xl p-6 sm:p-8 border text-center animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white text-lg">Order #{qrSession.receipt_number}</h3>
               <button onClick={() => setQrSession(null)} className="p-1 rounded-lg" style={{ color: 'var(--muted-foreground)' }}>
@@ -512,7 +518,7 @@ export default function DashboardPage() {
       {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-md rounded-2xl p-8 border animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-8 border animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white text-lg">Store Settings</h3>
               <button onClick={() => setIsSettingsOpen(false)} className="p-1 rounded-lg" style={{ color: 'var(--muted-foreground)' }}>
