@@ -341,40 +341,42 @@ export default function DashboardPage() {
           <>
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
               <h2 className="text-lg font-semibold text-white mb-4">Issue New Pager</h2>
-              <form onSubmit={(e) => { e.preventDefault(); createSession() }} className="flex gap-2">
+              <form onSubmit={(e) => { e.preventDefault(); createSession() }} className="flex flex-col sm:flex-row gap-3">
                 <input
                   id="receipt-input"
                   type="text"
                   value={receiptInput}
                   onChange={(e) => setReceiptInput(e.target.value)}
                   placeholder="Enter receipt / order number"
-                  className="flex-1 px-4 py-3 rounded-xl text-white outline-none"
+                  className="w-full sm:flex-1 px-4 py-3 rounded-xl text-white outline-none"
                   style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
                 />
-                <button
-                  id="create-session-btn"
-                  type="submit"
-                  disabled={creating || !receiptInput.trim()}
-                  className="px-4 sm:px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: creating ? 0.7 : 1 }}
-                >
-                  {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
-                  <span className={receiptInput.length > 5 ? 'hidden sm:inline' : ''}>Issue</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={syncLoyverse}
-                  disabled={isSyncing || syncCooldown > 0 || !merchant?.loyverse_token}
-                  className="px-4 py-3 rounded-xl border flex items-center justify-center transition-all min-w-[50px]"
-                  style={{ 
-                    background: 'rgba(234,179,8,0.1)', 
-                    borderColor: (merchant?.loyverse_token && syncCooldown === 0) ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
-                    color: (merchant?.loyverse_token && syncCooldown === 0) ? '#eab308' : '#475569'
-                  }}
-                  title={syncCooldown > 0 ? `Cooldown: ${syncCooldown}s` : "Sync with Loyverse"}
-                >
-                  {isSyncing ? <Loader2 size={18} className="animate-spin" /> : syncCooldown > 0 ? <span className="text-xs font-bold">{syncCooldown}</span> : <Zap size={18} />}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    id="create-session-btn"
+                    type="submit"
+                    disabled={creating || !receiptInput.trim()}
+                    className="flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: creating ? 0.7 : 1 }}
+                  >
+                    {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
+                    <span>Issue</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={syncLoyverse}
+                    disabled={isSyncing || syncCooldown > 0 || !merchant?.loyverse_token}
+                    className="px-5 py-3 rounded-xl border flex items-center justify-center transition-all min-w-[50px] sm:min-w-0"
+                    style={{ 
+                      background: 'rgba(234,179,8,0.1)', 
+                      borderColor: (merchant?.loyverse_token && syncCooldown === 0) ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
+                      color: (merchant?.loyverse_token && syncCooldown === 0) ? '#eab308' : '#475569'
+                    }}
+                    title={syncCooldown > 0 ? `Cooldown: ${syncCooldown}s` : "Sync with Loyverse"}
+                  >
+                    {isSyncing ? <Loader2 size={18} className="animate-spin" /> : syncCooldown > 0 ? <span className="text-xs font-bold">{syncCooldown}</span> : <Zap size={18} />}
+                  </button>
+                </div>
               </form>
 
               {/* Latest Receipts List */}
