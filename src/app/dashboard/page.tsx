@@ -434,60 +434,73 @@ export default function DashboardPage() {
                     <div key={session.id} className="flex flex-col md:flex-row md:items-center gap-4 p-5 hover:bg-white/[0.02] animate-slide-up transition-colors">
                       <div className="flex items-center gap-4 flex-1">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
-                        <div className="flex-1 flex flex-col gap-1">
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                            <p className="font-black text-white text-xl">#{session.receipt_number}</p>
-                            {session.status === 'waiting' && (
-                              <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-400/20 animate-pulse">
-                                {getWaitTime(session.created_at)}
+                        <div className="flex-1 flex flex-col">
+                          {/* Connection Status ABOVE Order Number */}
+                          <div className="flex mb-1.5">
+                            {!session.is_confirmed ? (
+                              <span className="bg-yellow-500/90 text-black text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                                WAITING FOR CUSTOMER
+                              </span>
+                            ) : (
+                              <span className="bg-green-500 text-black text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+                                CUSTOMER READY
                               </span>
                             )}
-                            <div className="flex shrink-0">
-                              {!session.is_confirmed ? (
-                                <span className="bg-yellow-500 text-black text-[9px] px-2 py-0.5 rounded font-black animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-                                  WAITING FOR CUSTOMER
-                                </span>
-                              ) : (
-                                <span className="bg-green-500 text-black text-[9px] px-2 py-0.5 rounded font-black shadow-[0_0_10px_rgba(34,197,94,0.3)]">
-                                  CUSTOMER READY
-                                </span>
-                              )}
-                            </div>
                           </div>
-                          <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                            {session.status === 'called' ? '🔔 Called' : '⏳ Preparing'} · {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          
+                          <div className="flex items-center gap-3">
+                            <p className="font-black text-white text-xl sm:text-2xl">#{session.receipt_number}</p>
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 border border-white/5" style={{ color: 'var(--muted-foreground)' }}>
+                              {session.status === 'called' ? '🔔 Called' : '⏳ Preparing'}
+                            </span>
+                          </div>
+                          
+                          <p className="text-[10px] font-medium text-slate-600 mt-1 uppercase tracking-tighter">
+                            Issued at {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 justify-end sm:justify-start">
-                        <button
-                          id={`qr-btn-${session.id}`}
-                          onClick={() => setQrSession(session)}
-                          className="p-2.5 rounded-xl transition-all active:scale-95"
-                          style={{ color: 'var(--muted-foreground)', background: '#0a0b0f', border: '1px solid var(--card-border)' }}
-                          title="Show QR Code"
-                        >
-                          <QrCode size={16} />
-                        </button>
-                        <button
-                          onClick={() => callSession(session.id)}
-                          disabled={session.status === 'called' || !session.is_confirmed}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
-                          style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
-                        >
-                          <Phone size={14} />
-                          {session.status === 'called' ? 'CALLED' : 'CALL'}
-                        </button>
-                        <button
-                          onClick={() => doneSession(session.id)}
-                          disabled={!session.is_confirmed}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
-                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
-                        >
-                          <CheckCircle size={14} />
-                          DONE
-                        </button>
+                      <div className="flex items-center justify-between md:justify-end gap-6 sm:gap-8">
+                        {/* Timer moved to the RIGHT */}
+                        {session.status === 'waiting' && (
+                          <div className="flex flex-col items-end shrink-0">
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Wait Time</span>
+                            <span className="text-xl font-mono text-indigo-400 font-bold tabular-nums">
+                              {getWaitTime(session.created_at)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            id={`qr-btn-${session.id}`}
+                            onClick={() => setQrSession(session)}
+                            className="p-2.5 rounded-xl transition-all active:scale-95"
+                            style={{ color: 'var(--muted-foreground)', background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                            title="Show QR Code"
+                          >
+                            <QrCode size={16} />
+                          </button>
+                          <button
+                            onClick={() => callSession(session.id)}
+                            disabled={session.status === 'called' || !session.is_confirmed}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
+                            style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
+                          >
+                            <Phone size={14} />
+                            {session.status === 'called' ? 'CALLED' : 'CALL'}
+                          </button>
+                          <button
+                            onClick={() => doneSession(session.id)}
+                            disabled={!session.is_confirmed}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
+                            style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
+                          >
+                            <CheckCircle size={14} />
+                            DONE
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
