@@ -155,17 +155,21 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
   }
 
-  const playChime = () => {
+  const playChime = async () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
-    // Higher, more piercing frequencies (C6, E6, G6, C7)
+    
+    // Ensure context is active (critical for iOS)
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
+    }
+
     const tones = [1046.50, 1318.51, 1567.98, 2093.00]
     tones.forEach((freq, i) => {
       const osc = ctx.createOscillator()
       const gainNode = ctx.createGain()
       osc.connect(gainNode)
       gainNode.connect(ctx.destination)
-      // Triangle wave is sharper than sine but less harsh than square
       osc.type = 'triangle'
       osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12)
       gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.12)
@@ -181,12 +185,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       if (audioCtxRef.current) {
         await audioCtxRef.current.resume()
         setIsAudioReady(true)
+        playChime() // Play feedback
         return
       }
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       await ctx.resume()
       audioCtxRef.current = ctx
       
+      // Unlock audio with a short silent buffer
       const buffer = ctx.createBuffer(1, 1, 22050)
       const source = ctx.createBufferSource()
       source.buffer = buffer
@@ -194,6 +200,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       source.start()
       
       setIsAudioReady(true)
+      playChime() // Play feedback
       await acquireWakeLock()
     } catch (e) {
       console.error('Audio init error:', e)
@@ -300,7 +307,15 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               <p className="text-indigo-400 text-3xl font-black font-mono">{formatWaitTime()}</p>
             </div>
 
-            {!isAudioReady && (
+            {isAudioReady ? (
+              <button 
+                onClick={() => playChime()}
+                className="block mx-auto text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-indigo-400 transition-colors flex items-center justify-center gap-2"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                Test Sound
+              </button>
+            ) : (
               <button 
                 onClick={initAudio}
                 className="block mx-auto px-6 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold text-sm animate-pulse"
