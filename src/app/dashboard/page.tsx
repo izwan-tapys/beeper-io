@@ -63,6 +63,16 @@ export default function DashboardPage() {
     setOpenSection(prev => prev === section ? null : section)
   }
 
+  // Auto-close QR Modal when customer confirms
+  useEffect(() => {
+    if (qrSession) {
+      const activeSession = sessions.find(s => s.id === qrSession.id)
+      if (activeSession?.is_confirmed) {
+        setQrSession(null)
+      }
+    }
+  }, [sessions, qrSession])
+
   // Reset settings state when modal opens
   useEffect(() => {
     if (isSettingsOpen && merchant) {
