@@ -54,15 +54,26 @@ export default function AdminPage() {
       .select('*, sessions(id)')
       .order('created_at', { ascending: false })
 
-    if (!mError && mData) {
-      // Manually count sessions for current month per merchant
+    if (mError) {
+      console.error('Error fetching merchants:', mError)
+      alert('Gagal tarik data merchant: ' + mError.message)
+      setLoading(false)
+      return
+    }
+
+    if (mData) {
+      // Fetch monthly counts for all merchants in a single query if possible or at least handle errors
       const processedMerchants = await Promise.all(mData.map(async (m) => {
-        const { count } = await supabase
-          .from('sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('merchant_id', m.id)
-          .gt('created_at', firstOfMonth.toISOString())
-        return { ...m, monthly_count: count || 0 }
+        try {
+          const { count } = await supabase
+            .from('sessions')
+            .select('*', { count: 'exact', head: true })
+            .eq('merchant_id', m.id)
+            .gt('created_at', firstOfMonth.toISOString())
+          return { ...m, monthly_count: count || 0 }
+        } catch (e) {
+          return { ...m, monthly_count: 0 }
+        }
       }))
       setMerchants(processedMerchants)
     }
