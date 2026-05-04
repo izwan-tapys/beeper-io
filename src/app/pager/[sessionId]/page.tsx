@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -21,9 +21,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [receiptNumber, setReceiptNumber] = useState('')
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
-  const [volume, setVolume] = useState(0.8)
+  const [volume, setVolume] = useState(1.0)
   const [isFlashing, setIsFlashing] = useState(false)
   const [isAudioReady, setIsAudioReady] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -52,8 +53,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
     
     setReceiptNumber(data.receipt_number)
-
-    setReceiptNumber(data.receipt_number)
     setCreatedAt(data.created_at)
 
     if (data.status === 'called') {
@@ -63,41 +62,33 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       }
     } else if (data.status === 'completed' || data.status === 'archived') {
       setStatus('completed')
+      stopAlert()
     } else if (data.is_confirmed) {
-      // IF ALREADY CONFIRMED, GO TO WAITING
       setStatus('waiting')
     } else {
       setStatus('confirm')
     }
   }, [sessionId])
 
-  // Initial Fetch
   useEffect(() => {
     fetchSession()
   }, [fetchSession])
 
-  // Wait timer & Polling fallback
   useEffect(() => {
     if (status === 'waiting' || status === 'called') {
-      // Live timer tick
       if (!waitTimerRef.current) {
         waitTimerRef.current = setInterval(() => setNow(Date.now()), 1000)
       }
-      
-      // Polling for both waiting and called states
       if (!pollingRef.current) {
         pollingRef.current = setInterval(() => {
           fetchSession()
         }, 3000)
       }
     }
-
-    // Cleanup if status is completed, archived or error
     if (status === 'completed' || status === 'error') {
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
     }
-
     return () => { 
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
@@ -117,16 +108,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     wakeLockRef.current = null
   }
 
-  // Handle Wake Lock
   useEffect(() => {
     acquireWakeLock()
-    
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        acquireWakeLock()
-      }
+      if (document.visibilityState === 'visible') acquireWakeLock()
     }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -139,12 +125,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     setIsFlashing(true)
     const runAlert = () => {
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        navigator.vibrate([500, 200, 500, 200, 500])
+        navigator.vibrate([800, 200, 800, 200, 800])
       }
       playChime()
     }
     runAlert()
-    alertIntervalRef.current = setInterval(runAlert, 3000)
+    alertIntervalRef.current = setInterval(runAlert, 2500)
   }
 
   const stopAlert = () => {
@@ -153,16 +139,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       clearInterval(alertIntervalRef.current)
       alertIntervalRef.current = null
     }
+    // Attempt to update status in DB to completion if needed, 
+    // but usually completion is handled by merchant
   }
 
   const playChime = async () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
-    
-    // Ensure context is active (critical for iOS)
-    if (ctx.state === 'suspended') {
-      await ctx.resume()
-    }
+    if (ctx.state === 'suspended') await ctx.resume()
 
     const tones = [1046.50, 1318.51, 1567.98, 2093.00]
     tones.forEach((freq, i) => {
@@ -170,13 +154,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       const gainNode = ctx.createGain()
       osc.connect(gainNode)
       gainNode.connect(ctx.destination)
-      osc.type = 'triangle'
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12)
-      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.12)
-      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.12 + 0.03)
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4)
-      osc.start(ctx.currentTime + i * 0.12)
-      osc.stop(ctx.currentTime + i * 0.12 + 0.5)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
+      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.1)
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.1 + 0.02)
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.35)
+      osc.start(ctx.currentTime + i * 0.1)
+      osc.stop(ctx.currentTime + i * 0.1 + 0.4)
     })
   }
 
@@ -185,14 +169,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       if (audioCtxRef.current) {
         await audioCtxRef.current.resume()
         setIsAudioReady(true)
-        playChime() // Play feedback
+        playChime()
         return
       }
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       await ctx.resume()
       audioCtxRef.current = ctx
       
-      // Unlock audio with a short silent buffer
       const buffer = ctx.createBuffer(1, 1, 22050)
       const source = ctx.createBufferSource()
       source.buffer = buffer
@@ -200,7 +183,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       source.start()
       
       setIsAudioReady(true)
-      playChime() // Play feedback
+      playChime()
       await acquireWakeLock()
     } catch (e) {
       console.error('Audio init error:', e)
@@ -229,27 +212,29 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center bg-[#0a0b0f]"><Loader2 className="animate-spin text-indigo-500" /></div>
+    return <div className="min-h-screen flex items-center justify-center bg-[#020203]"><Loader2 className="animate-spin text-indigo-500" /></div>
   }
 
   if (status === 'error') {
-    return <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#0a0b0f]"><h1 className="text-white font-bold text-xl">Order Not Found</h1></div>
+    return <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#020203]"><h1 className="text-white font-bold text-xl uppercase tracking-widest">Session Expired / Not Found</h1></div>
   }
 
   if (status === 'completed') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#0a0b0f]">
-        <div className="animate-bounce-in">
-          <div className="text-6xl mb-6">🙏</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Thank You!</h1>
-          <p className="text-slate-400 mb-8">Order #{receiptNumber} collected.</p>
+      <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#020203]">
+        <div className="animate-bounce-in max-w-sm">
+          <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-8 border border-green-500/20">
+            <CheckCircle2 size={48} className="text-green-500" />
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Order Collected</h1>
+          <p className="text-slate-400 mb-10 text-sm">Thank you for visiting {merchantName}! We hope you enjoyed your meal.</p>
 
           {gmbUrl && (
             <a 
               href={gmbUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#ea4335]/10 border border-[#ea4335]/30 text-[#ea4335] font-bold hover:bg-[#ea4335]/20 transition-all animate-slide-up"
+              className="w-full flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-black font-black text-lg hover:bg-slate-100 transition-all shadow-xl shadow-white/5"
             >
               ⭐ Rate us on Google
             </a>
@@ -261,77 +246,128 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   if (status === 'called' || isFlashing) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer bg-green-500 animate-pulse" onClick={stopAlert}>
-        <div className="text-8xl mb-4">🔔</div>
-        <h1 className="text-4xl font-black text-white mb-3">YOUR ORDER IS READY!</h1>
-        <p className="text-white text-5xl font-black mb-6">#{receiptNumber}</p>
-        <p className="text-white text-sm font-bold border border-white/40 px-6 py-2 rounded-full uppercase">Tap to stop sound</p>
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors duration-75 overflow-hidden" 
+        style={{ backgroundColor: (now % 200 < 100) ? '#10b981' : '#000000' }}
+        onClick={stopAlert}
+      >
+        <div className="animate-ping-slow text-9xl mb-8">🔔</div>
+        <h1 className="text-6xl font-black text-white mb-4 tracking-tighter italic">READY!</h1>
+        <p className="text-white text-7xl font-black mb-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">#{receiptNumber}</p>
+        <div className="bg-white text-black px-8 py-4 rounded-full font-black text-xl animate-bounce uppercase tracking-widest">
+           TAP TO STOP
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0b0f]">
-      <header className="p-6 text-center relative">
-        <div className="flex flex-col items-center gap-3">
+    <div className="min-h-screen flex flex-col bg-[#020203] relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+      <header className="p-8 text-center relative z-10">
+        <div className="flex flex-col items-center gap-4">
           {merchantLogo ? (
-            <img src={merchantLogo} alt={merchantName} className="w-16 h-16 rounded-2xl object-cover border border-white/10" />
+            <img src={merchantLogo} alt={merchantName} className="w-20 h-20 rounded-3xl object-cover border border-white/10 shadow-2xl" />
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold">{merchantName?.[0]}</div>
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-black text-2xl shadow-xl">{merchantName?.[0]}</div>
           )}
-          <span className="font-bold text-white text-xl">{merchantName}</span>
+          <h2 className="font-black text-white text-2xl tracking-tight uppercase">{merchantName}</h2>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-6">
+      <main className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
         {status === 'confirm' && (
           <div className="w-full max-w-sm text-center animate-slide-up">
-            <div className="w-24 h-24 rounded-3xl overflow-hidden mx-auto mb-6 shadow-[0_0_40px_rgba(79,70,229,0.4)] border border-white/10">
-              <img src="/icon.png" alt="Beepme" className="w-full h-full object-cover" />
+            <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
+              <h1 className="text-4xl font-black text-white mb-2 tracking-tighter italic">#{receiptNumber}</h1>
+              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Connect Your Pager</p>
+              
+              <div className="space-y-4 text-left mb-8">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                  <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-indigo-200 leading-snug">This phone will vibrate and sound when your order is ready.</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleConfirm} 
+                className="w-full py-5 rounded-2xl font-black text-white text-xl bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 active:scale-95 transition-all flex items-center justify-center gap-3"
+              >
+                ACTIVATE PAGER
+              </button>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Order #{receiptNumber}</h1>
-            <p className="text-slate-400 mb-8 text-sm">We&apos;ll alert you when your order is ready.</p>
-            <button onClick={handleConfirm} className="w-full py-5 rounded-2xl font-bold text-white text-xl bg-indigo-600 shadow-xl active:scale-95 transition-all">✅ Confirm Order</button>
           </div>
         )}
 
         {status === 'waiting' && (
           <div className="w-full max-w-sm text-center animate-fade-in">
-            <div className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_40px_rgba(79,70,229,0.2)]">
-              <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500/10" />
-              <img src="/icon.png" alt="Beepme" className="w-full h-full object-cover relative z-10" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-1">Preparing Order</h1>
-            <p className="text-slate-400 mb-6 text-sm">Order #{receiptNumber}</p>
-            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-3xl inline-block mb-8">
-              <p className="text-indigo-400 text-3xl font-black font-mono">{formatWaitTime()}</p>
+            <div className="relative w-40 h-40 mx-auto mb-10 flex items-center justify-center rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02]">
+              <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500/5" />
+              <img src="/icon.png" alt="Beepme" className="w-20 h-20 object-contain relative z-10 animate-pulse" />
             </div>
 
-            {isAudioReady ? (
-              <button 
-                onClick={() => playChime()}
-                className="block mx-auto text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-indigo-400 transition-colors flex items-center justify-center gap-2"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                Test Sound
-              </button>
-            ) : (
-              <button 
-                onClick={initAudio}
-                className="block mx-auto px-6 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold text-sm animate-pulse"
-              >
-                🔊 Tap to Enable Sound
-              </button>
-            )}
+            <div className="mb-10">
+              <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">PREPARING...</h1>
+              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Order #{receiptNumber}</p>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 px-10 py-6 rounded-[32px] inline-block mb-12 shadow-inner">
+               <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
+               <p className="text-indigo-400 text-4xl font-black font-mono tracking-tight">{formatWaitTime()}</p>
+            </div>
+
+            {/* Verification Tools */}
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Online</span>
+                </div>
+                <button 
+                   onClick={() => playChime()}
+                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95"
+                >
+                  <Volume2 size={14} />
+                  Test Sound
+                </button>
+              </div>
+
+              {showInstructions && (
+                <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-left">
+                   <div className="flex items-center gap-2 text-amber-500 mb-2">
+                      <AlertTriangle size={14} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Important for Sound</span>
+                   </div>
+                   <ul className="text-[10px] text-amber-200/60 space-y-1.5 font-medium leading-relaxed">
+                      <li>• Turn OFF Silent Mode (Mute Switch)</li>
+                      <li>• Increase Volume to Maximum</li>
+                      <li>• Keep this page open in browser</li>
+                   </ul>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
 
-      <footer className="p-4 text-center">
-        <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
-          Beepme.pro
+      <footer className="p-8 text-center relative z-10">
+        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.4em]">
+          Beepme.pro — Virtual Paging System
         </p>
       </footer>
+
+      <style jsx global>{`
+        @keyframes ping-slow {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 1s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
 }
