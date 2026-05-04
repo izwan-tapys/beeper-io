@@ -60,7 +60,6 @@ export default function DashboardPage() {
   const [openSection, setOpenSection] = useState<string | null>(null)
   const [monthlyCount, setMonthlyCount] = useState(0)
   const [onboardingPhone, setOnboardingPhone] = useState('')
-  const [isOnboarding, setIsOnboarding] = useState(false)
   const [savingOnboarding, setSavingOnboarding] = useState(false)
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
@@ -206,13 +205,6 @@ export default function DashboardPage() {
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
       setSettingsGmbUrl(m.gmb_url || '')
-      
-      // Force onboarding if phone is missing or not verified
-      if (!m.phone || !m.is_verified) {
-        setIsOnboarding(true)
-      } else {
-        setIsOnboarding(false)
-      }
     }
   }, [router])
 
@@ -442,8 +434,8 @@ export default function DashboardPage() {
         alert('Failed to save: ' + error.message)
       }
     } else {
-      // Update local state with phone but KEEP onboarding open
-      // The UI will automatically switch to the "Verify via WhatsApp" screen
+      // Update local state with phone
+      // The UI will automatically switch based on the merchant object
       setMerchant({ ...merchant, phone: cleanedPhone, is_verified: false })
     }
     setSavingOnboarding(false)
@@ -485,10 +477,12 @@ export default function DashboardPage() {
 
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
 
+  const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
+
   return (
-    <div className={`min-h-screen ${isOnboarding ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+    <div className={`min-h-screen ${showOnboarding ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
       {/* Onboarding Modal (Forced) */}
-      {isOnboarding && (
+      {showOnboarding && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
           <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 animate-bounce-in">
             <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
