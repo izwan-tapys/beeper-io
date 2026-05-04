@@ -592,15 +592,15 @@ export default function DashboardPage() {
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-400/10 px-2 py-0.5 rounded">Store Profile</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Store Profile</span>
                   </div>
-                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.profile ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.profile ? 'rotate-90' : ''}`} />
                 </button>
                 
                 {openSections.profile && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Store Name</label>
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Store Name</label>
                       <input
                         type="text"
                         value={settingsName}
@@ -610,7 +610,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Logo URL</label>
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Logo URL</label>
                       <input
                         type="text"
                         value={settingsLogo}
@@ -630,15 +630,15 @@ export default function DashboardPage() {
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] bg-amber-400/10 px-2 py-0.5 rounded">Integrations</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Integrations</span>
                   </div>
-                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.integrations ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.integrations ? 'rotate-90' : ''}`} />
                 </button>
 
                 {openSections.integrations && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Loyverse Access Token</label>
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Loyverse Access Token</label>
                       <input
                         type="password"
                         value={settingsLoyverseToken}
@@ -648,7 +648,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">GMB Review URL</label>
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">GMB Review URL</label>
                       <input
                         type="text"
                         value={settingsGmbUrl}
@@ -659,8 +659,8 @@ export default function DashboardPage() {
                     </div>
                     
                     <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
-                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Webhook Endpoint</p>
-                      <code className="block text-[10px] text-indigo-400 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
+                      <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">Webhook Endpoint</p>
+                      <code className="block text-[10px] text-indigo-400/80 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
                         {baseUrl}/api/webhooks/loyverse?merchant_id={merchant?.id}
                       </code>
                     </div>
@@ -675,9 +675,9 @@ export default function DashboardPage() {
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-emerald-400/10 px-2 py-0.5 rounded">Subscription Plan</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Subscription Plan</span>
                   </div>
-                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.subscription ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.subscription ? 'rotate-90' : ''}`} />
                 </button>
 
                 {openSections.subscription && (
@@ -685,7 +685,7 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type === 'pro' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
                           <span className="text-white font-bold uppercase text-sm">
                             {merchant?.plan_type === 'pro' ? 'Beeper Pro' : 'Beeper Free'}
                           </span>
@@ -721,9 +721,9 @@ export default function DashboardPage() {
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] bg-rose-400/10 px-2 py-0.5 rounded">Account Control</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Account Control</span>
                   </div>
-                  <Settings size={14} className={`text-slate-500 transition-transform duration-300 ${openSections.account ? 'rotate-90' : ''}`} />
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSections.account ? 'rotate-90' : ''}`} />
                 </button>
 
                 {openSections.account && (
