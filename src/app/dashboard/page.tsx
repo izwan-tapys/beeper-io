@@ -618,6 +618,7 @@ export default function DashboardPage() {
               {/* 1. Store Profile */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
+                  type="button"
                   onClick={() => toggleSection('profile')}
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
@@ -656,6 +657,7 @@ export default function DashboardPage() {
               {/* 2. Integrations */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
+                  type="button"
                   onClick={() => toggleSection('integrations')}
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
@@ -701,6 +703,7 @@ export default function DashboardPage() {
               {/* 3. Subscription */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
+                  type="button"
                   onClick={() => toggleSection('subscription')}
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
@@ -747,6 +750,7 @@ export default function DashboardPage() {
               {/* 4. Account */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
+                  type="button"
                   onClick={() => toggleSection('account')}
                   className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
                 >
