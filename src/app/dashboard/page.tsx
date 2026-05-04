@@ -857,6 +857,36 @@ export default function DashboardPage() {
 
                     {/* Plan Selector */}
                     <div className="grid grid-cols-1 gap-3">
+                      {/* Free Plan Card */}
+                      <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'free' ? 'bg-white/[0.05] border-white/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="text-white font-bold text-sm">Beeper Free</h3>
+                            <p className="text-[10px] text-slate-500">Perfect for starting out</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-white font-bold text-sm">RM0</span>
+                            <p className="text-[8px] text-slate-500 uppercase font-bold">/forever</p>
+                          </div>
+                        </div>
+                        <ul className="space-y-1.5 mb-2">
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-slate-500" /> 20 Monthly Orders
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-slate-500" /> Standard Virtual Pager
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-slate-500" /> Loyverse Integration
+                          </li>
+                        </ul>
+                        {merchant?.plan_type === 'free' && (
+                          <div className="mt-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Current Plan</span>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Basic Plan Card */}
                       <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'basic' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-white/[0.02] border-white/5'}`}>
                         <div className="flex justify-between items-start mb-3">
