@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { 
   CheckCircle, XCircle, ShieldCheck, 
-  Loader2, Search, Smartphone, Store
+  Loader2, Search, Smartphone, Store,
+  Zap, Clock, BarChart3
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -18,85 +19,77 @@ export default function AdminPage() {
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-
-  const checkAdmin = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || user.email !== ADMIN_EMAIL) {
-      router.push('/dashboard')
-      return
-    }
-    setIsAdmin(true)
-    fetchPendingMerchants()
-  }, [router])
-
-  const fetchStats = useCallback(async () => {
-    // 1. Total Merchants
-    const { count: mCount } = await supabase.from('merchants').select('*', { count: 'exact', head: true })
-    
-    // 2. Total Orders (All Time)
-    const { count: sCount } = await supabase.from('sessions').select('*', { count: 'exact', head: true })
-    
-    // 3. Orders Today
-    const today = new Date()
-    today.setHours(0,0,0,0)
-    const { count: todayCount } = await supabase
-      .from('sessions')
-      .select('*', { count: 'exact', head: true })
-      .gt('created_at', today.toISOString())
-
-    // 4. Monthly Orders for each merchant
-    const firstOfMonth = new Date()
-    firstOfMonth.setDate(1)
-    firstOfMonth.setHours(0,0,0,0)
-
-    const { data: mData, error: mError } = await supabase
-      .from('merchants')
-      .select('*, sessions(id)')
-      .order('created_at', { ascending: false })
-
-    if (mError) {
-      console.error('Error fetching merchants:', mError)
-      alert('Gagal tarik data merchant: ' + mError.message)
-      setLoading(false)
-      return
-    }
-
-    if (mData) {
-      // Fetch monthly counts for all merchants in a single query if possible or at least handle errors
-      const processedMerchants = await Promise.all(mData.map(async (m) => {
-        try {
-          const { count } = await supabase
-            .from('sessions')
-            .select('*', { count: 'exact', head: true })
-            .eq('merchant_id', m.id)
-            .gt('created_at', firstOfMonth.toISOString())
-          return { ...m, monthly_count: count || 0 }
-        } catch (e) {
-          return { ...m, monthly_count: 0 }
-        }
-      }))
-      setMerchants(processedMerchants)
-    }
-
-    setStats({
-      totalMerchants: mCount || 0,
-      totalOrders: sCount || 0,
-      ordersToday: todayCount || 0,
-      estimatedRevenue: (mData || []).reduce((acc, m) => {
-        if (m.plan_type === 'basic') return acc + 30
-        if (m.plan_type === 'pro') return acc + 49
-        return acc
-      }, 0)
-    })
-    setLoading(false)
-  }, [])
-
   const [stats, setStats] = useState({
     totalMerchants: 0,
     totalOrders: 0,
     ordersToday: 0,
     estimatedRevenue: 0
   })
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true)
+    try {
+      // 1. Total Merchants
+      const { count: mCount } = await supabase.from('merchants').select('*', { count: 'exact', head: true })
+      
+      // 2. Total Orders (All Time)
+      const { count: sCount } = await supabase.from('sessions').select('*', { count: 'exact', head: true })
+      
+      // 3. Orders Today
+      const today = new Date()
+      today.setHours(0,0,0,0)
+      const { count: todayCount } = await supabase
+        .from('sessions')
+        .select('*', { count: 'exact', head: true })
+        .gt('created_at', today.toISOString())
+
+      // 4. Fetch all merchants
+      const { data: mData, error: mError } = await supabase
+        .from('merchants')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (mError) throw mError
+
+      if (mData) {
+        const firstOfMonth = new Date()
+        firstOfMonth.setDate(1)
+        firstOfMonth.setHours(0,0,0,0)
+
+        // Fetch monthly counts for all merchants
+        const processedMerchants = await Promise.all(mData.map(async (m) => {
+          try {
+            const { count } = await supabase
+              .from('sessions')
+              .select('*', { count: 'exact', head: true })
+              .eq('merchant_id', m.id)
+              .gt('created_at', firstOfMonth.toISOString())
+            return { ...m, monthly_count: count || 0 }
+          } catch (e) {
+            return { ...m, monthly_count: 0 }
+          }
+        }))
+        
+        setMerchants(processedMerchants)
+        
+        setStats({
+          totalMerchants: mCount || 0,
+          totalOrders: sCount || 0,
+          ordersToday: todayCount || 0,
+          estimatedRevenue: mData.reduce((acc, m) => {
+            if (m.plan_type === 'basic') return acc + 30
+            if (m.plan_type === 'pro') return acc + 49
+            return acc
+          }, 0)
+        })
+      }
+    } catch (error: any) {
+      console.error('Admin Fetch Error:', error)
+      alert('Error fetching admin data: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -116,7 +109,7 @@ export default function AdminPage() {
       .eq('id', id)
     
     if (!error) {
-      setMerchants(merchants.map(m => m.id === id ? { ...m, ...updates } : m))
+      setMerchants(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m))
     } else {
       alert('Error: ' + error.message)
     }
@@ -130,7 +123,7 @@ export default function AdminPage() {
   const filteredMerchants = merchants.filter(m => 
     m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.phone?.includes(searchQuery) ||
-    m.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    m.id.includes(searchQuery)
   )
 
   if (!isAdmin) return null
@@ -156,7 +149,7 @@ export default function AdminPage() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
             <input 
               type="text"
-              placeholder="Search merchants, phones, emails..."
+              placeholder="Search merchants, phones, IDs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-14 pr-6 py-4 rounded-[20px] bg-white/[0.03] border border-white/5 outline-none focus:border-indigo-500/50 focus:bg-white/[0.05] transition-all font-medium text-sm backdrop-blur-md"
@@ -257,6 +250,12 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        {filteredMerchants.length === 0 && !loading && (
+          <div className="text-center py-32">
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No merchants found matching your search.</p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -270,16 +269,6 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string
         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
       </div>
       <p className="text-2xl font-black text-white">{value}</p>
-    </div>
-  )
-}
-
-        {filteredMerchants.length === 0 && !loading && (
-          <div className="text-center py-32">
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No merchants found matching your search.</p>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
