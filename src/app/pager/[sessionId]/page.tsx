@@ -268,7 +268,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       {/* Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <header className="p-8 text-center relative z-10 shrink-0">
+      <header className="p-4 sm:p-8 text-center relative z-10 shrink-0">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl backdrop-blur-xl">
              <img src="/icon.png" alt="Beepme" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
@@ -277,7 +277,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative z-10 min-h-0">
         {status === 'confirm' && (
           <div className="w-full max-w-sm text-center animate-slide-up">
             <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
@@ -303,26 +303,26 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         )}
 
         {status === 'waiting' && (
-          <div className="w-full max-w-sm text-center animate-fade-in">
+          <div className="w-full max-w-sm text-center animate-fade-in flex flex-col h-full justify-center">
             {merchantLogo && (
-              <div className="relative w-40 h-40 mx-auto mb-10 flex items-center justify-center rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02] shrink-0">
+              <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-4 sm:mb-10 flex items-center justify-center rounded-[32px] sm:rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02] shrink-0">
                 <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
-                <img src={merchantLogo} alt={merchantName} className="w-24 h-24 rounded-[32px] object-cover relative z-10 animate-pulse shadow-2xl border border-white/5" />
+                <img src={merchantLogo} alt={merchantName} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[32px] object-cover relative z-10 animate-pulse shadow-2xl border border-white/5" />
               </div>
             )}
 
-            <div className="mb-10">
-              <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">PREPARING...</h1>
+            <div className="mb-4 sm:mb-10 shrink-0">
+              <h1 className="text-2xl sm:text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">PREPARING...</h1>
               <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Order #{receiptNumber}</p>
             </div>
 
-            <div className="bg-white/[0.03] border border-white/10 px-10 py-6 rounded-[32px] inline-block mb-12 shadow-inner">
-               <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
-               <p className="text-4xl font-black font-mono tracking-tight" style={{ color: themeColor }}>{formatWaitTime()}</p>
+            <div className="bg-white/[0.03] border border-white/10 px-6 py-4 sm:px-10 sm:py-6 rounded-3xl sm:rounded-[32px] inline-block mb-4 sm:mb-12 shadow-inner shrink-0">
+               <p className="text-slate-500 text-[8px] sm:text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
+               <p className="text-3xl sm:text-4xl font-black font-mono tracking-tight" style={{ color: themeColor }}>{formatWaitTime()}</p>
             </div>
 
             {/* Verification Tools */}
-            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-5">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5 space-y-3 sm:space-y-5 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                    <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ backgroundColor: themeColor }} />
@@ -339,12 +339,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               </div>
 
               {showInstructions && (
-                <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-left">
-                   <div className="flex items-center gap-2 text-amber-500 mb-2">
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-500/5 border border-amber-500/20 text-left">
+                   <div className="flex items-center gap-2 text-amber-500 mb-1 sm:mb-2">
                       <AlertTriangle size={14} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Important for Sound</span>
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Important for Sound</span>
                    </div>
-                   <ul className="text-[10px] text-amber-200/60 space-y-1.5 font-medium leading-relaxed">
+                   <ul className="text-[9px] sm:text-[10px] text-amber-200/60 space-y-1 sm:space-y-1.5 font-medium leading-relaxed">
                       <li>• Turn OFF Silent Mode (Mute Switch)</li>
                       <li>• Increase Volume to Maximum</li>
                       <li>• Keep this page open in browser</li>
@@ -356,7 +356,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         )}
       </main>
 
-      <footer className="p-8 text-center relative z-10">
+      <footer className="p-4 sm:p-8 text-center relative z-10 shrink-0">
         <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.4em]">
           Beepme.pro — Virtual Paging System
         </p>
