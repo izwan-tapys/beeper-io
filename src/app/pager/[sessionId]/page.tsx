@@ -333,7 +333,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Online</span>
                 </div>
                 <button 
-                   onClick={() => playChime()}
+                   onClick={() => initAudio()}
                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
                    style={{ backgroundColor: themeColor }}
                 >
