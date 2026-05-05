@@ -6,6 +6,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
+import {
+  Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
   LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
