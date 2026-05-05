@@ -319,7 +319,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
             <div className="bg-white/[0.03] border border-white/10 px-6 py-4 sm:px-10 sm:py-6 rounded-3xl sm:rounded-[32px] inline-block mb-4 sm:mb-12 shadow-inner shrink-0">
                <p className="text-slate-500 text-[8px] sm:text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
-               <p className="text-3xl sm:text-4xl font-black font-mono tracking-tight" style={{ color: themeColor }}>{formatWaitTime()}</p>
+               <p className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-[#10b981]">{formatWaitTime()}</p>
             </div>
 
             </div>
