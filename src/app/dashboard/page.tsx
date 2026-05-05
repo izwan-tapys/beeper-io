@@ -875,8 +875,8 @@ export default function DashboardPage() {
                     <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Latest from Loyverse</h4>
                     <button onClick={() => setLatestReceipts([])} className="text-slate-500 hover:text-white"><X size={14}/></button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {latestReceipts.slice(0, 5).map((r, i) => (
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                    {latestReceipts.slice(0, 6).map((r, i) => (
                       <button
                         key={i}
                         onClick={() => {
