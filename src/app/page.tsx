@@ -159,7 +159,7 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing Grid/Carousel */}
-          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0">
+          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pt-8 pb-10 md:pb-0">
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Free Station"
