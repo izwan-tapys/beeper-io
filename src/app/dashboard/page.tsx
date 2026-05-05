@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
-  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity
+  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon
 } from 'lucide-react'
 
 type Session = {
@@ -857,7 +857,7 @@ export default function DashboardPage() {
                     {merchant?.plan_type === 'pro' ? 'Beepme Pro Usage' : 'Monthly Order Quota'}
                   </span>
                   <span className="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-1">
-                    {monthlyCount} / {merchant?.plan_type === 'pro' ? <Infinity size={14} className="text-indigo-400" /> : (merchant?.plan_type === 'basic' ? '500' : '20')}
+                    {monthlyCount} / {merchant?.plan_type === 'pro' ? <InfinityIcon size={14} className="text-indigo-400" /> : (merchant?.plan_type === 'basic' ? '500' : '20')}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -1319,7 +1319,7 @@ export default function DashboardPage() {
                         </div>
                         <ul className="space-y-1.5 mb-4">
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> <Infinity size={12} className="inline" /> Orders
+                            <CheckCircle size={10} className="text-indigo-500" /> <InfinityIcon size={12} className="inline" /> Orders
                           </li>
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
                             <CheckCircle size={10} className="text-indigo-500" /> Priority Support
@@ -1331,8 +1331,8 @@ export default function DashboardPage() {
                             disabled={savingSettings}
                             className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
                           >
-                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Infinity size={12} />}
-                            Upgrade to <Infinity size={12} />
+                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <InfinityIcon size={12} />}
+                            Upgrade to <InfinityIcon size={12} />
                           </button>
                         )}
                       </div>
