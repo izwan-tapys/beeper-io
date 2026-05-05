@@ -249,8 +249,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   if (status === 'called' || isFlashing) {
     return (
       <div 
-        className="min-h-screen flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors duration-75 overflow-hidden" 
-        style={{ backgroundColor: (now % 200 < 100) ? '#10b981' : '#000000' }}
+        className="h-[100dvh] w-screen fixed inset-0 flex flex-col items-center justify-center p-6 text-center cursor-pointer overflow-hidden animate-flash-green" 
         onClick={stopAlert}
       >
         <div className="animate-ping-slow text-9xl mb-8">🔔</div>
@@ -368,6 +367,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       </footer>
 
       <style jsx global>{`
+        @keyframes flash-green {
+          0%, 100% { background-color: #000000; }
+          50% { background-color: #10b981; }
+        }
+        .animate-flash-green {
+          animation: flash-green 0.5s step-end infinite;
+        }
         @keyframes ping-slow {
           0% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.1); opacity: 0.8; }
