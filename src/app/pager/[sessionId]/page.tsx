@@ -329,7 +329,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5 space-y-3 sm:space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ backgroundColor: themeColor }} />
+                   <div className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Online</span>
                 </div>
                 <button 
