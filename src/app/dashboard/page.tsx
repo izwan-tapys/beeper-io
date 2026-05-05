@@ -6,10 +6,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
-import {
-  Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
   LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon
 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 
 type Session = {
   id: string
@@ -740,9 +739,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 border-b" style={{ background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', borderColor: 'var(--card-border)' }}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-white/10 shrink-0" style={{ background: 'var(--card)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
-              <img src="/icon.png" alt="Beepme" className="w-full h-full object-cover" />
-            </div>
+            <Logo size={32} showText={false} />
             <div className="flex flex-col justify-center flex-1 min-w-0 ml-1">
               <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beepme</span>
               {merchant && (

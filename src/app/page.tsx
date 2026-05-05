@@ -8,6 +8,7 @@ import {
   Clock, Play, Star, ChevronDown,
   X, Menu, DollarSign, Battery, Infinity as InfinityIcon
 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -17,12 +18,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 py-4 md:py-6 bg-gradient-to-b from-black/50 to-transparent">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden border border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-[#0f1117] flex items-center justify-center">
-              <img src="/icon.png" alt="Beepme Logo" className="w-6 h-6 md:w-7 md:h-7 object-contain" />
-            </div>
-            <span className="text-xl md:text-2xl font-black tracking-tighter uppercase text-white">Beepme<span className="text-indigo-500">.pro</span></span>
-          </div>
+          <Logo size={36} />
 
           <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
             <Link href="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">

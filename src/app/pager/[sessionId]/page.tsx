@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
 import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -269,9 +270,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
       <header className="p-4 sm:p-8 text-center relative z-10 shrink-0">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl backdrop-blur-xl">
-             <img src="/icon.png" alt="Beepme" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
-          </div>
+          <Logo size={48} showText={false} />
           <h2 className="font-black text-white text-2xl tracking-tight uppercase">{merchantName}</h2>
         </div>
       </header>
