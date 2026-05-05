@@ -111,26 +111,54 @@ export default function DashboardPage() {
     const file = e.target.files?.[0]
     if (!file || !merchant) return
 
-    // Validate size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File too large. Max 2MB allowed.')
-      return
-    }
-
     setUploadingLogo(true)
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${merchant.id}/${Date.now()}.${fileExt}`
+      // 1. Create a canvas to resize and compress
+      const img = new Image()
+      const reader = new FileReader()
+
+      const compressedFile = await new Promise<Blob>((resolve, reject) => {
+        reader.onload = (event) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas')
+            const size = 512 // Standard logo size
+            canvas.width = size
+            canvas.height = size
+            
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return reject(new Error('Failed to get canvas context'))
+
+            // Draw and crop to square (center)
+            const minSide = Math.min(img.width, img.height)
+            const sx = (img.width - minSide) / 2
+            const sy = (img.height - minSide) / 2
+            
+            ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size)
+            
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob)
+              else reject(new Error('Canvas to Blob failed'))
+            }, 'image/webp', 0.8)
+          }
+          img.src = event.target?.result as string
+        }
+        reader.readAsDataURL(file)
+      })
+
+      const fileName = `${merchant.id}/${Date.now()}.webp`
       const filePath = `logos/${fileName}`
 
-      // Upload to Supabase Storage
+      // 2. Upload the compressed WebP blob to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('merchant-logos')
-        .upload(filePath, file, { upsert: true })
+        .upload(filePath, compressedFile, { 
+          upsert: true,
+          contentType: 'image/webp'
+        })
 
       if (uploadError) throw uploadError
 
-      // Get Public URL
+      // 3. Get Public URL
       const { data: { publicUrl } } = supabase.storage
         .from('merchant-logos')
         .getPublicUrl(filePath)
