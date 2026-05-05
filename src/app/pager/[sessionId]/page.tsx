@@ -303,7 +303,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         )}
 
         {status === 'waiting' && (
-          <div className="w-full max-w-sm text-center animate-fade-in flex flex-col h-full justify-center">
+          <div className="w-full max-w-sm text-center animate-fade-in flex flex-col h-full">
+            <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             {merchantLogo && (
               <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-4 sm:mb-10 flex items-center justify-center rounded-[32px] sm:rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02] shrink-0">
                 <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
@@ -321,8 +322,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                <p className="text-3xl sm:text-4xl font-black font-mono tracking-tight" style={{ color: themeColor }}>{formatWaitTime()}</p>
             </div>
 
+            </div>
+
             {/* Verification Tools */}
-            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5 space-y-3 sm:space-y-5 shrink-0">
+            <div className="mt-auto w-full shrink-0 pt-4">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5 space-y-3 sm:space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                    <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ backgroundColor: themeColor }} />
@@ -351,6 +355,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                    </ul>
                 </div>
               )}
+            </div>
             </div>
           </div>
         )}
