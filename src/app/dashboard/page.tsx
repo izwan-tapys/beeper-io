@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [isMfaChallenge, setIsMfaChallenge] = useState(false)
   const [mfaError, setMfaError] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -105,6 +106,43 @@ export default function DashboardPage() {
       // Note: openSection is NOT reset here so it can be pre-set before opening
     }
   }, [isSettingsOpen, merchant])
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !merchant) return
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File too large. Max 2MB allowed.')
+      return
+    }
+
+    setUploadingLogo(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${merchant.id}/${Date.now()}.${fileExt}`
+      const filePath = `logos/${fileName}`
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('merchant-logos')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('merchant-logos')
+        .getPublicUrl(filePath)
+
+      setSettingsLogo(publicUrl)
+    } catch (error: any) {
+      console.error('Error uploading logo:', error)
+      alert('Error uploading: ' + error.message)
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
 
   useEffect(() => {
     const requestWakeLock = async () => {
@@ -1000,15 +1038,46 @@ export default function DashboardPage() {
                         className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
                       />
                     </div>
+
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Logo URL</label>
-                      <input
-                        type="text"
-                        value={settingsLogo}
-                        onChange={(e) => setSettingsLogo(e.target.value)}
-                        placeholder="https://..."
-                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                      />
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Logo Kedai</label>
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-[#0a0b0f] border border-white/10">
+                        <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                          {settingsLogo ? (
+                            <img src={settingsLogo} alt="Logo Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <Store size={24} className="text-slate-700" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            id="logo-upload"
+                            className="hidden"
+                            disabled={uploadingLogo}
+                          />
+                          <label 
+                            htmlFor="logo-upload"
+                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${
+                              uploadingLogo ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                            }`}
+                          >
+                            {uploadingLogo ? <Loader2 size={12} className="animate-spin" /> : 'Pilih Gambar'}
+                          </label>
+                          <p className="text-[9px] text-slate-600 mt-2">PNG, JPG up to 2MB. 1:1 ratio recommended.</p>
+                        </div>
+                        {settingsLogo && (
+                          <button 
+                            type="button"
+                            onClick={() => setSettingsLogo('')}
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

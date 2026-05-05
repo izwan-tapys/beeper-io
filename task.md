@@ -9,7 +9,7 @@
 - [x] **Google My Business**: Integration with GMB link on Thank You page.
 - [x] **Premium Landing Page**: Professional front-facing website with 3-tier pricing.
 - [x] **Mobile UI Optimization**: Improved dashboard & pager responsiveness.
-- [x] **Billing System (ToyyibPay)**: Multi-tier subscription (Free, Basic RM30, Unlimited RM49). 💰
+- [x] **Billing System (ToyyibPay)**: Full integration for Basic (RM30) and Unlimited (RM49) plans. 💰
 - [x] **Google Login Integration**: Easy signup for merchants. 🔑
 - [x] **iOS Audio Reliability**: Auto-resume & Test Sound button for Safari. 🔊
 - [x] **Screen Wake Lock**: Prevent devices from sleeping during operation. 🔋
