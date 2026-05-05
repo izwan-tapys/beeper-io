@@ -49,11 +49,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 animate-pulse-ring"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 30px rgba(99,102,241,0.4)' }}>
-            <Zap size={28} className="text-white" fill="white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 overflow-hidden border border-white/10"
+            style={{ background: '#0f1117', boxShadow: '0 0 30px rgba(99,102,241,0.3)' }}>
+            <img src="/icon.png" alt="Beepme Logo" className="w-10 h-10 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Beeper</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Beepme<span className="text-indigo-500">.pro</span></h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>Virtual Pager for F&B Businesses</p>
         </div>
 
@@ -167,7 +167,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--muted)' }}>
-          © 2025 Beepme.pro — Replace hardware. Go digital.
+          © 2026 Beepme.pro — Replace hardware. Go digital.
         </p>
       </div>
     </div>
