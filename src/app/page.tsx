@@ -13,23 +13,23 @@ export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <div className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-[#020203] text-slate-200 selection:bg-indigo-500/30 selection:text-white font-sans">
-      {/* Navbar - Fixed at top of viewport */}
-      <nav className="fixed top-0 left-0 right-0 z-50 py-6">
+    <div className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-[#020203] text-slate-200 selection:bg-indigo-500/30 selection:text-white font-sans no-scrollbar">
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 py-4 md:py-6 bg-gradient-to-b from-black/50 to-transparent">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-[#0f1117] flex items-center justify-center">
-              <img src="/icon.png" alt="Beepme Logo" className="w-7 h-7 object-contain" />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden border border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-[#0f1117] flex items-center justify-center">
+              <img src="/icon.png" alt="Beepme Logo" className="w-6 h-6 md:w-7 md:h-7 object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tighter uppercase text-white">Beepme<span className="text-indigo-500">.pro</span></span>
+            <span className="text-xl md:text-2xl font-black tracking-tighter uppercase text-white">Beepme<span className="text-indigo-500">.pro</span></span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-            <Link href="/login" className="px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
-              Merchant Login
+          <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <Link href="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
+              Login
             </Link>
-            <Link href="/login" className="px-6 py-2.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
-              Get Started Free
+            <Link href="/login" className="px-5 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
+              Free Start
             </Link>
           </div>
 
@@ -49,224 +49,216 @@ export default function LandingPage() {
       )}
 
       {/* 1. HERO SECTION */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center overflow-hidden px-6 text-center">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-violet-600/10 blur-[120px] rounded-full pointer-events-none" />
-
-        <div className="relative z-10 max-w-5xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 animate-bounce-in">
-            <Zap size={14} className="fill-indigo-400" />
-            The Future of F&B Guest Paging
+      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 w-full max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-[0.2em] mb-6 md:mb-8 animate-fade-in">
+            <Zap size={12} className="fill-indigo-400" />
+            The Future of F&B Paging
           </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-white leading-[1] tracking-tighter mb-8">
+          <h1 className="text-4xl md:text-8xl font-black text-white leading-tight tracking-tighter mb-6 md:mb-8 animate-slide-up">
             Stop Buying <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">Hardware Pagers.</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
-            Your customers already have the world&apos;s best screen in their pockets. <span className="text-white font-bold">Use it.</span> Replace expensive hardware with Beepme.pro.
+          <p className="text-base md:text-xl text-slate-400 max-w-xl mx-auto mb-10 md:mb-12 font-medium animate-slide-up" style={{ animationDelay: '100ms' }}>
+            Replace expensive hardware with <span className="text-white font-bold">Beepme.pro</span>. 
+            Use the screens already in your customers&apos; pockets.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/login" className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3 group active:scale-95">
-              Start Free Station
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+          <Link href="/login" className="inline-flex px-10 py-5 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 transition-all items-center gap-3 active:scale-95 animate-slide-up" style={{ animationDelay: '200ms' }}>
+            Start Free Now
+            <ArrowRight size={20} />
+          </Link>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500 animate-bounce">
-          <span className="text-[10px] font-black uppercase tracking-widest">Scroll Down</span>
-          <ChevronDown size={20} />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-slate-600 animate-bounce">
+          <span className="text-[8px] font-black uppercase tracking-widest">Scroll</span>
+          <ChevronDown size={16} />
         </div>
       </section>
 
-      {/* 2. PROBLEM/SOLUTION */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center overflow-hidden px-6 bg-white/[0.01]">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-indigo-500/[0.02] blur-[150px] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto relative z-10 w-full">
-          <div className="text-center mb-16">
-            <h2 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-4">Why Beepme?</h2>
-            <h3 className="text-4xl md:text-6xl font-black text-white tracking-tight">Hardware is Dying.</h3>
+      {/* 2. WHY BEEPME (CAROUSEL ON MOBILE) */}
+      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Why Beepme?</h2>
+            <h3 className="text-3xl md:text-6xl font-black text-white tracking-tight">Better Than Hardware.</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            <FeatureCard 
-              icon={<DollarSign size={28} className="text-rose-500" />}
-              title="RM0 Setup Cost"
-              desc="Forget spending RM3,000+ on hardware. Use any device you already own."
-              color="rose"
-            />
-            <FeatureCard 
-              icon={<Battery size={28} className="text-amber-500" />}
-              title="No Charging"
-              desc="Hardware pagers die in the rush. Customers' phones are always ready."
-              color="amber"
-            />
-            <FeatureCard 
-              icon={<Star size={28} className="text-indigo-500" />}
-              title="Get More Reviews"
-              desc="Turn 'Order Ready' alerts into 5-star Google Reviews automatically."
-              color="indigo"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. HOW IT WORKS */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center overflow-hidden px-6">
-        <div className="max-w-7xl mx-auto relative z-10 w-full">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            <div className="flex-1 text-center lg:text-left">
-              <h2 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-4">The Process</h2>
-              <h3 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-12">Ready in 30 Seconds.</h3>
-              
-              <div className="space-y-8 md:space-y-12 max-w-lg mx-auto lg:mx-0">
-                <StepItem num="01" title="Issue a Pager" desc="Enter receipt number on your dashboard." />
-                <StepItem num="02" title="Customer Scans" desc="They scan your QR. Their phone is now their pager." />
-                <StepItem num="03" title="Beep Them!" desc="Click 'Call' and their phone vibrates & rings." />
-              </div>
+          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0">
+            <div className="min-w-[85%] md:min-w-0 snap-center">
+              <FeatureCard 
+                icon={<DollarSign size={24} />}
+                title="RM0 Setup Cost"
+                desc="No more RM3,000 sets. Use what you have."
+                color="rose"
+              />
             </div>
+            <div className="min-w-[85%] md:min-w-0 snap-center">
+              <FeatureCard 
+                icon={<Battery size={24} />}
+                title="No Charging"
+                desc="Hardware dies. Phones are always ready."
+                color="amber"
+              />
+            </div>
+            <div className="min-w-[85%] md:min-w-0 snap-center">
+              <FeatureCard 
+                icon={<Star size={24} />}
+                title="Google Reviews"
+                desc="Collect reviews with every order ready."
+                color="indigo"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. PROCESS */}
+      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
+        <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex-1 text-center lg:text-left">
+            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Simple Process</h2>
+            <h3 className="text-3xl md:text-6xl font-black text-white tracking-tight mb-8 md:mb-12">Done in Seconds.</h3>
             
-            <div className="flex-1 relative hidden md:block">
-              <div className="absolute inset-0 bg-indigo-600/10 blur-[80px] rounded-full" />
-              <div className="relative p-12 rounded-[50px] bg-white/[0.03] border border-white/10 backdrop-blur-3xl shadow-2xl">
-                <div className="flex flex-col items-center gap-6">
-                  <div className="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center animate-pulse">
-                    <Zap size={40} className="text-white" />
+            <div className="space-y-6 md:space-y-10 max-w-md mx-auto lg:mx-0">
+              <StepItem num="01" title="Issue Pager" desc="Enter receipt # on your dashboard." />
+              <StepItem num="02" title="Customer Scans" desc="Scan QR. Their phone is now the pager." />
+              <StepItem num="03" title="Beep Them!" desc="Click Call. Their phone vibrates & rings." />
+            </div>
+          </div>
+          
+          <div className="flex-1 relative hidden lg:block">
+            <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
+            <div className="relative p-10 rounded-[40px] bg-white/[0.02] border border-white/10 backdrop-blur-2xl">
+               <div className="flex flex-col items-center gap-6">
+                  <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center animate-pulse">
+                    <Zap size={32} className="text-white" />
                   </div>
                   <div className="text-center">
-                    <p className="text-white font-black text-2xl mb-2">Order #124</p>
-                    <p className="text-indigo-400 font-bold uppercase tracking-widest text-[10px]">Your Order is Ready!</p>
+                    <p className="text-white font-black text-xl mb-1">Order #124</p>
+                    <p className="text-indigo-400 font-bold uppercase tracking-widest text-[9px]">Ready to Collect!</p>
                   </div>
-                  <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 w-[60%] animate-pulse" />
+                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 w-[70%] animate-pulse" />
                   </div>
-                </div>
-              </div>
+               </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* 4. PRICING */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center overflow-hidden px-6 bg-white/[0.01]">
-        <div className="max-w-7xl mx-auto relative z-10 w-full">
-          <div className="text-center mb-12">
-            <h2 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-4">Pricing Plans</h2>
-            <h3 className="text-4xl md:text-6xl font-black text-white tracking-tight">Invest RM1, Save RM100.</h3>
+      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-2">Pricing Plans</h2>
+            <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight">Choose Your Growth.</h3>
           </div>
 
-          <div className="flex md:grid md:grid-cols-3 gap-6 max-w-6xl mx-auto overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pb-10 md:pb-0">
-            {/* Free */}
-            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+          {/* Pricing Grid/Carousel */}
+          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0">
+            <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Free Station"
                 price="RM0"
                 period="/ forever"
-                features={["20 Monthly Orders", "Full Digital Pager UI", "Loyverse Integration"]}
+                features={["20 Monthly Orders", "Digital Pager UI", "Loyverse Integration"]}
               />
             </div>
-
-            {/* Basic */}
-            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+            <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Basic Cafe"
                 price="RM30"
                 period="/ month"
-                features={["500 Monthly Orders", "GMB Review Collection", "Loyverse Pro Sync"]}
+                features={["500 Monthly Orders", "GMB Review Sync", "Loyverse Pro"]}
                 recommended
               />
             </div>
-
-            {/* Pro */}
-            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+            <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Unlimited"
                 price="RM49"
                 period="/ month"
-                features={["Unlimited Orders", "Custom Branding", "Priority 24/7 Support"]}
+                features={["Unlimited Orders", "Custom Branding", "Priority Support"]}
                 isPro
               />
             </div>
           </div>
+          
+          {/* Mobile indicator for 3 items */}
+          <div className="flex md:hidden justify-center gap-2 mt-8">
+            <div className="w-2 h-2 rounded-full bg-white/20" />
+            <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+            <div className="w-2 h-2 rounded-full bg-white/20" />
+          </div>
         </div>
       </section>
 
-      {/* 5. FINAL CTA & FOOTER */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center overflow-hidden px-6">
+      {/* 5. CTA & FOOTER */}
+      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-indigo-600/5" />
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter">Ready to Beep?</h2>
-          <p className="text-slate-400 text-lg md:text-xl mb-12 max-w-xl mx-auto">
-            Join the most innovative restaurants in Malaysia today. Instant setup, cancel anytime.
+        <div className="relative z-10 w-full max-w-4xl text-center">
+          <h2 className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter animate-fade-in">Ready to Beep?</h2>
+          <p className="text-slate-400 text-base md:text-xl mb-12 max-w-lg mx-auto">
+            Join innovative restaurants in Malaysia today. Instant setup, cancel anytime.
           </p>
-          <Link href="/login" className="inline-flex items-center gap-3 px-12 py-6 rounded-2xl bg-white text-black font-black text-xl hover:bg-slate-100 transition-all active:scale-95 shadow-2xl shadow-white/10">
+          <Link href="/login" className="inline-flex px-12 py-5 rounded-2xl bg-white text-black font-black text-lg hover:bg-slate-100 transition-all active:scale-95 shadow-xl shadow-white/5">
             Create Your Station Now
-            <ArrowRight size={24} />
           </Link>
-
-          <style jsx global>{`
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-          `}</style>
           
-          <div className="mt-20 flex flex-wrap justify-center gap-8 md:gap-12 opacity-30">
-             <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest text-white">
-                <ShieldCheck size={16} /> Safe & Secure
-             </div>
-             <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest text-white">
-                <Zap size={16} /> Instant Setup
-             </div>
-             <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest text-white">
-                <Store size={16} /> Made for F&B
-             </div>
+          <div className="mt-16 md:mt-24 flex flex-wrap justify-center gap-6 md:gap-12 opacity-30">
+             <span className="flex items-center gap-2 font-black uppercase text-[9px] tracking-widest text-white"><ShieldCheck size={14}/> Safe</span>
+             <span className="flex items-center gap-2 font-black uppercase text-[9px] tracking-widest text-white"><Zap size={14}/> Instant</span>
+             <span className="flex items-center gap-2 font-black uppercase text-[9px] tracking-widest text-white"><Store size={14}/> F&B Pro</span>
           </div>
         </div>
 
-        <footer className="absolute bottom-0 left-0 right-0 py-8 border-t border-white/5">
+        <footer className="absolute bottom-0 left-0 right-0 py-6 border-t border-white/5">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.3em]">
-              © 2026 BEEPME.PRO — BUILT FOR THE CRAFT.
-            </p>
-            <div className="flex gap-6 text-[9px] font-black uppercase tracking-widest text-slate-500">
-               <a href="#" className="hover:text-white">Privacy</a>
-               <a href="#" className="hover:text-white">Terms</a>
-               <a href="#" className="hover:text-white">Support</a>
+            <p className="text-[8px] font-bold text-slate-600 uppercase tracking-[0.3em]">© 2026 BEEPME.PRO</p>
+            <div className="flex gap-6 text-[8px] font-black uppercase tracking-widest text-slate-500">
+               <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a>
             </div>
           </div>
         </footer>
       </section>
+
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   )
 }
 
 function FeatureCard({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: string }) {
   const colors: any = {
-    rose: 'group-hover:text-rose-400 bg-rose-500/5 border-rose-500/10',
-    amber: 'group-hover:text-amber-400 bg-amber-500/5 border-amber-500/10',
-    indigo: 'group-hover:text-indigo-400 bg-indigo-500/5 border-indigo-500/10',
+    rose: 'text-rose-500 bg-rose-500/5 border-rose-500/10',
+    amber: 'text-amber-500 bg-amber-500/5 border-amber-500/10',
+    indigo: 'text-indigo-500 bg-indigo-500/5 border-indigo-500/10',
   }
 
   return (
-    <div className={`p-8 rounded-[32px] border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all group text-left`}>
-      <div className={`p-4 rounded-2xl border mb-6 group-hover:scale-110 transition-transform duration-500 inline-block ${colors[color]}`}>
+    <div className="p-6 md:p-8 rounded-[32px] border border-white/5 bg-white/[0.02] text-left h-full">
+      <div className={`p-3 md:p-4 rounded-2xl border mb-5 inline-block ${colors[color]}`}>
         {icon}
       </div>
-      <h4 className="text-xl font-bold text-white mb-4 tracking-tight">{title}</h4>
-      <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+      <h4 className="text-lg md:text-xl font-bold text-white mb-3 tracking-tight">{title}</h4>
+      <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{desc}</p>
     </div>
   )
 }
 
 function StepItem({ num, title, desc }: { num: string, title: string, desc: string }) {
   return (
-    <div className="flex gap-6 text-left">
-      <div className="text-2xl font-black text-indigo-500/30 font-mono leading-none">{num}</div>
+    <div className="flex gap-4 md:gap-6 text-left items-start">
+      <div className="text-xl md:text-2xl font-black text-indigo-500/20 font-mono mt-1">{num}</div>
       <div>
-        <h4 className="text-xl font-black text-white mb-2 uppercase tracking-tight">{title}</h4>
-        <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+        <h4 className="text-lg md:text-xl font-black text-white mb-1 md:mb-2 uppercase tracking-tight">{title}</h4>
+        <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{desc}</p>
       </div>
     </div>
   )
@@ -274,23 +266,23 @@ function StepItem({ num, title, desc }: { num: string, title: string, desc: stri
 
 function PricingCard({ name, price, period, features, recommended, isPro }: { name: string, price: string, period: string, features: string[], recommended?: boolean, isPro?: boolean }) {
   return (
-    <div className={`p-8 rounded-[40px] border flex flex-col text-left transition-all ${recommended ? 'border-indigo-500/50 bg-indigo-500/5 scale-105 z-10 shadow-2xl shadow-indigo-500/10' : 'border-white/5 bg-white/[0.02] opacity-80 hover:opacity-100'}`}>
+    <div className={`p-6 md:p-8 rounded-[40px] border flex flex-col text-left transition-all relative h-full ${recommended ? 'border-indigo-500/50 bg-indigo-500/5 shadow-2xl shadow-indigo-500/10' : 'border-white/5 bg-white/[0.02]'}`}>
       {recommended && (
-        <div className="absolute top-0 right-10 -translate-y-1/2 bg-indigo-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">Recommended</div>
+        <div className="absolute top-0 right-8 -translate-y-1/2 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Best Value</div>
       )}
-      <p className={`font-bold text-[10px] uppercase tracking-widest mb-2 ${recommended ? 'text-indigo-400' : 'text-slate-500'}`}>{name}</p>
-      <h4 className="text-3xl font-black text-white mb-6">
-        {price} <span className="text-sm font-medium text-slate-600">{period}</span>
+      <p className={`font-bold text-[9px] uppercase tracking-widest mb-1 ${recommended ? 'text-indigo-400' : 'text-slate-600'}`}>{name}</p>
+      <h4 className="text-2xl md:text-3xl font-black text-white mb-6">
+        {price} <span className="text-xs font-medium text-slate-600">{period}</span>
       </h4>
-      <ul className="space-y-4 mb-10 flex-1">
+      <ul className="space-y-3 mb-8 flex-1">
         {features.map((f, i) => (
-          <li key={i} className="flex items-center gap-3 text-[11px]">
-            {f.includes('Unlimited') ? <InfinityIcon size={14} className="text-indigo-400" /> : <CheckCircle size={14} className={recommended ? 'text-indigo-400' : 'text-slate-700'} />}
-            <span className={recommended ? 'text-white' : 'text-slate-400'}>{f}</span>
+          <li key={i} className="flex items-center gap-2 text-[10px] md:text-[11px]">
+            {f.includes('Unlimited') ? <InfinityIcon size={12} className="text-indigo-400" /> : <CheckCircle size={12} className={recommended ? 'text-indigo-400' : 'text-slate-800'} />}
+            <span className={recommended ? 'text-white' : 'text-slate-500'}>{f}</span>
           </li>
         ))}
       </ul>
-      <Link href="/login" className={`w-full py-4 rounded-2xl font-black text-center transition-all active:scale-95 ${recommended ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/30' : 'bg-white/5 text-white hover:bg-white/10'}`}>
+      <Link href="/login" className={`w-full py-3.5 rounded-2xl font-black text-xs text-center transition-all active:scale-95 ${recommended ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white/5 text-white'}`}>
         {isPro ? 'Go Unlimited' : 'Get Started'}
       </Link>
     </div>
