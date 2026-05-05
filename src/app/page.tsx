@@ -158,32 +158,38 @@ export default function LandingPage() {
             <h3 className="text-4xl md:text-6xl font-black text-white tracking-tight">Invest RM1, Save RM100.</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="flex md:grid md:grid-cols-3 gap-6 max-w-6xl mx-auto overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pb-10 md:pb-0">
             {/* Free */}
-            <PricingCard 
-              name="Free Station"
-              price="RM0"
-              period="/ forever"
-              features={["20 Monthly Orders", "Full Digital Pager UI", "Loyverse Integration"]}
-            />
+            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+              <PricingCard 
+                name="Free Station"
+                price="RM0"
+                period="/ forever"
+                features={["20 Monthly Orders", "Full Digital Pager UI", "Loyverse Integration"]}
+              />
+            </div>
 
             {/* Basic */}
-            <PricingCard 
-              name="Basic Cafe"
-              price="RM30"
-              period="/ month"
-              features={["500 Monthly Orders", "GMB Review Collection", "Loyverse Pro Sync"]}
-              recommended
-            />
+            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+              <PricingCard 
+                name="Basic Cafe"
+                price="RM30"
+                period="/ month"
+                features={["500 Monthly Orders", "GMB Review Collection", "Loyverse Pro Sync"]}
+                recommended
+              />
+            </div>
 
             {/* Pro */}
-            <PricingCard 
-              name="Unlimited"
-              price="RM49"
-              period="/ month"
-              features={["Unlimited Orders", "Custom Branding", "Priority 24/7 Support"]}
-              isPro
-            />
+            <div className="min-w-[80vw] sm:min-w-[350px] md:min-w-0 snap-center">
+              <PricingCard 
+                name="Unlimited"
+                price="RM49"
+                period="/ month"
+                features={["Unlimited Orders", "Custom Branding", "Priority 24/7 Support"]}
+                isPro
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -200,6 +206,11 @@ export default function LandingPage() {
             Create Your Station Now
             <ArrowRight size={24} />
           </Link>
+
+          <style jsx global>{`
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          `}</style>
           
           <div className="mt-20 flex flex-wrap justify-center gap-8 md:gap-12 opacity-30">
              <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest text-white">
