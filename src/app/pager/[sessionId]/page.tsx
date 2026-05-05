@@ -264,17 +264,15 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#020203] relative overflow-hidden">
+    <div className="h-[100dvh] w-screen fixed inset-0 flex flex-col bg-[#020203] overflow-hidden">
       {/* Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <header className="p-8 text-center relative z-10">
+      <header className="p-8 text-center relative z-10 shrink-0">
         <div className="flex flex-col items-center gap-4">
-          {merchantLogo ? (
-            <img src={merchantLogo} alt={merchantName} className="w-20 h-20 rounded-3xl object-cover border border-white/10 shadow-2xl" />
-          ) : (
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl" style={{ backgroundColor: themeColor }}>{merchantName?.[0]}</div>
-          )}
+          <div className="w-16 h-16 flex items-center justify-center rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl backdrop-blur-xl">
+             <img src="/icon.png" alt="Beepme" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+          </div>
           <h2 className="font-black text-white text-2xl tracking-tight uppercase">{merchantName}</h2>
         </div>
       </header>
@@ -306,10 +304,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
         {status === 'waiting' && (
           <div className="w-full max-w-sm text-center animate-fade-in">
-            <div className="relative w-40 h-40 mx-auto mb-10 flex items-center justify-center rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02]">
-              <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
-              <img src="/icon.png" alt="Beepme" className="w-20 h-20 object-contain relative z-10 animate-pulse" />
-            </div>
+            {merchantLogo && (
+              <div className="relative w-40 h-40 mx-auto mb-10 flex items-center justify-center rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02] shrink-0">
+                <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
+                <img src={merchantLogo} alt={merchantName} className="w-24 h-24 rounded-[32px] object-cover relative z-10 animate-pulse shadow-2xl border border-white/5" />
+              </div>
+            )}
 
             <div className="mb-10">
               <h1 className="text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">PREPARING...</h1>

@@ -20,8 +20,8 @@
 
 ## 🚀 Priority: Professional Growth
 
-- [ ] **Custom Branding (Logo Upload)**: Merchant boleh letak logo kedai sendiri kat pager. 🖼️
-- [ ] **Custom Pager Theme**: Merchant boleh tukar warna skrin pager ikut tema kedai dorang. 🎨
+- [x] **Custom Branding (Logo Upload)**: Merchant boleh letak logo kedai sendiri kat pager. 🖼️
+- [x] **Custom Pager Theme**: Merchant boleh tukar warna skrin pager ikut tema kedai dorang. 🎨
 - [ ] **Custom Domain Email (Resend)**: Gunakan domain profesional untuk email sistem. 📧
 - [ ] **Staff Accounts**: Tambah pekerja untuk tolong issue pager (Limited access). 👥
 
