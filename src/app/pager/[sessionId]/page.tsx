@@ -264,9 +264,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   return (
-    <div className="h-[100dvh] w-screen fixed inset-0 flex flex-col bg-[#020203] overflow-hidden">
+    <div className="h-[100dvh] w-screen fixed inset-0 flex flex-col bg-[#020203] overflow-hidden" style={{ backgroundImage: `radial-gradient(circle at top, ${themeColor}1a, #020203)` }}>
       {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
 
       <header className="p-4 sm:p-8 text-center relative z-10 shrink-0">
         <div className="flex flex-col items-center gap-4">
