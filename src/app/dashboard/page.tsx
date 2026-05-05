@@ -66,6 +66,7 @@ export default function DashboardPage() {
   const [isMfaChallenge, setIsMfaChallenge] = useState(false)
   const [mfaError, setMfaError] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [settingsThemeColor, setSettingsThemeColor] = useState('#6366f1')
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -275,6 +276,7 @@ export default function DashboardPage() {
       setSettingsLogo(m.logo_url || '')
       setSettingsLoyverseToken(m.loyverse_token || '')
       setSettingsGmbUrl(m.gmb_url || '')
+      setSettingsThemeColor(m.theme_color || '#6366f1')
 
       // Check for MFA Challenge
       const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -425,7 +427,8 @@ export default function DashboardPage() {
       settingsName !== (merchant.name || '') ||
       settingsLogo !== (merchant.logo_url || '') ||
       settingsLoyverseToken !== (merchant.loyverse_token || '') ||
-      settingsGmbUrl !== (merchant.gmb_url || '')
+      settingsGmbUrl !== (merchant.gmb_url || '') ||
+      settingsThemeColor !== (merchant.theme_color || '#6366f1')
     )
   }
 
@@ -448,7 +451,8 @@ export default function DashboardPage() {
         name: settingsName.trim(), 
         logo_url: settingsLogo.trim() || null,
         loyverse_token: settingsLoyverseToken.trim() || null,
-        gmb_url: settingsGmbUrl.trim() || null 
+        gmb_url: settingsGmbUrl.trim() || null,
+        theme_color: settingsThemeColor
       })
       .eq('id', merchant.id)
     
@@ -461,7 +465,8 @@ export default function DashboardPage() {
         name: settingsName.trim(), 
         logo_url: settingsLogo.trim() || null,
         loyverse_token: settingsLoyverseToken.trim() || null,
-        gmb_url: settingsGmbUrl.trim() || null 
+        gmb_url: settingsGmbUrl.trim() || null,
+        theme_color: settingsThemeColor
       })
       setIsSettingsOpen(false)
       fetchMerchant()
@@ -1106,6 +1111,52 @@ export default function DashboardPage() {
                           </button>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* 2. Custom Branding */}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  type="button"
+                  onClick={() => toggleSection('branding')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Custom Branding</span>
+                  </div>
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'branding' ? 'rotate-90' : ''}`} />
+                </button>
+                
+                {openSection === 'branding' && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Pager Theme Color</label>
+                      <div className="flex items-center gap-4">
+                        <div 
+                          className="w-12 h-12 rounded-xl border border-white/10 shadow-lg shrink-0" 
+                          style={{ backgroundColor: settingsThemeColor }}
+                        />
+                        <div className="flex-1 grid grid-cols-5 gap-2">
+                          {['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'].map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setSettingsThemeColor(color)}
+                              className={`h-8 rounded-lg border transition-all ${settingsThemeColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <input 
+                        type="color" 
+                        value={settingsThemeColor}
+                        onChange={(e) => setSettingsThemeColor(e.target.value)}
+                        className="w-full h-10 rounded-xl bg-[#0a0b0f] border border-white/10 p-1 cursor-pointer"
+                      />
+                      <p className="text-[9px] text-slate-600">Pilih warna mengikut tema kedai anda.</p>
                     </div>
                   </div>
                 )}

@@ -24,6 +24,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [volume, setVolume] = useState(1.0)
   const [isFlashing, setIsFlashing] = useState(false)
   const [isAudioReady, setIsAudioReady] = useState(false)
+  const [themeColor, setThemeColor] = useState('#6366f1')
   const [showInstructions, setShowInstructions] = useState(true)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -37,7 +38,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   useEffect(() => { statusRef.current = status }, [status])
 
   const fetchSession = useCallback(async () => {
-    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url, gmb_url)').eq('id', sessionId).single()
+    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url, gmb_url, theme_color)').eq('id', sessionId).single()
     if (error || !data) { 
       if (statusRef.current === 'loading') setStatus('error')
       return 
@@ -50,6 +51,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       setMerchantName(merchantData.name || 'Store')
       setMerchantLogo(merchantData.logo_url)
       setGmbUrl(merchantData.gmb_url)
+      setThemeColor(merchantData.theme_color || '#6366f1')
     }
     
     setReceiptNumber(data.receipt_number)
@@ -271,7 +273,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
           {merchantLogo ? (
             <img src={merchantLogo} alt={merchantName} className="w-20 h-20 rounded-3xl object-cover border border-white/10 shadow-2xl" />
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-black text-2xl shadow-xl">{merchantName?.[0]}</div>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl" style={{ backgroundColor: themeColor }}>{merchantName?.[0]}</div>
           )}
           <h2 className="font-black text-white text-2xl tracking-tight uppercase">{merchantName}</h2>
         </div>
@@ -293,7 +295,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
               <button 
                 onClick={handleConfirm} 
-                className="w-full py-5 rounded-2xl font-black text-white text-xl bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="w-full py-5 rounded-2xl font-black text-white text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                style={{ backgroundColor: themeColor, boxShadow: `0 20px 40px ${themeColor}33` }}
               >
                 ACTIVATE PAGER
               </button>
@@ -304,7 +307,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         {status === 'waiting' && (
           <div className="w-full max-w-sm text-center animate-fade-in">
             <div className="relative w-40 h-40 mx-auto mb-10 flex items-center justify-center rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02]">
-              <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500/5" />
+              <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
               <img src="/icon.png" alt="Beepme" className="w-20 h-20 object-contain relative z-10 animate-pulse" />
             </div>
 
@@ -315,19 +318,20 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
             <div className="bg-white/[0.03] border border-white/10 px-10 py-6 rounded-[32px] inline-block mb-12 shadow-inner">
                <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
-               <p className="text-indigo-400 text-4xl font-black font-mono tracking-tight">{formatWaitTime()}</p>
+               <p className="text-4xl font-black font-mono tracking-tight" style={{ color: themeColor }}>{formatWaitTime()}</p>
             </div>
 
             {/* Verification Tools */}
             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                   <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ backgroundColor: themeColor }} />
                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Online</span>
                 </div>
                 <button 
                    onClick={() => playChime()}
-                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95"
+                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                   style={{ backgroundColor: themeColor }}
                 >
                   <Volume2 size={14} />
                   Test Sound
