@@ -31,6 +31,7 @@ type Merchant = {
   plan_type: 'free' | 'basic' | 'pro'
   subscription_status: 'active' | 'expired' | 'trial'
   expiry_date: string | null
+  theme_color: string | null
 }
 
 const supabase = createClient()
