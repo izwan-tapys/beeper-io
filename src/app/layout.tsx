@@ -1,5 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#020203",
+};
 
 export const metadata: Metadata = {
   title: "Beepme — Virtual Pager for F&B",
@@ -10,7 +14,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Beepme",
   },
-  themeColor: "#020203",
 };
 
 export default function RootLayout({

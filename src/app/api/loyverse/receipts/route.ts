@@ -1,12 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  // Create client inside handler — avoids module-level eval at build time
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   try {
     const { searchParams } = new URL(request.url)
     const merchantId = searchParams.get('merchant_id')
@@ -15,10 +18,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing merchant_id' }, { status: 400 })
     }
 
-    // 1. Ambil token Loyverse dari database
+    // 1. Ambil token Loyverse dan status subscription dari database
     const { data: merchant, error: mError } = await supabase
       .from('merchants')
-      .select('loyverse_token')
+      .select('loyverse_token, subscription_status, expiry_date, plan_type')
       .eq('id', merchantId)
       .single()
 
@@ -26,7 +29,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Loyverse token not found' }, { status: 404 })
     }
 
-    // 2. Tarik resit dari Loyverse API (Latest 10 SALES only)
+    // 2. Check subscription status for paid plans
+    if (merchant.plan_type !== 'free') {
+      const isExpired =
+        merchant.subscription_status !== 'active' ||
+        (merchant.expiry_date && new Date(merchant.expiry_date) < new Date())
+
+      if (isExpired) {
+        return NextResponse.json({ error: 'Subscription expired. Please renew your plan.' }, { status: 402 })
+      }
+    }
+
+    // 3. Tarik resit dari Loyverse API (Latest 10 SALES only)
     const response = await fetch('https://api.loyverse.com/v1.0/receipts?limit=10&receipt_type=SALE', {
       headers: {
         'Authorization': `Bearer ${merchant.loyverse_token}`
@@ -39,11 +53,11 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json()
-    
+
     // Tapis manual untuk pastikan HANYA SALE sahaja (Loyverse kadang-kadang hantar semua)
     const salesOnly = (data.receipts || []).filter((r: any) => r.receipt_type === 'SALE')
 
-    // 3. Filter data yang penting saja (Receipt Number & Created At)
+    // 4. Filter data yang penting saja (Receipt Number & Created At)
     const receipts = salesOnly.map((r: any) => ({
       receipt_number: r.receipt_number,
       created_at: r.receipt_date,

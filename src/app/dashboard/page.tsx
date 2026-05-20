@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { getWebhookToken } from '@/lib/webhook'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
@@ -61,6 +62,7 @@ export default function DashboardPage() {
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
   const [monthlyCount, setMonthlyCount] = useState(0)
+  const [isOnline, setIsOnline] = useState(true)
   const [onboardingPhone, setOnboardingPhone] = useState('')
   const [savingOnboarding, setSavingOnboarding] = useState(false)
   const [mfaEnrollData, setMfaEnrollData] = useState<any>(null)
@@ -198,6 +200,18 @@ export default function DashboardPage() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (wakeLockRef.current) wakeLockRef.current.release()
+    }
+  }, [])
+
+  // ─── Online / Offline Detection ─────────────────────────────────────────────
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true)
+    const goOffline = () => setIsOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
     }
   }, [])
 
@@ -615,6 +629,18 @@ export default function DashboardPage() {
   )
 
   const quota = merchant?.plan_type === 'pro' ? Infinity : merchant?.plan_type === 'basic' ? 500 : 20
+
+  // Subscription expiry: free plan never expires; paid plans expire on expiry_date
+  const isExpired = merchant
+    ? merchant.plan_type !== 'free' &&
+      (merchant.subscription_status !== 'active' ||
+        (!!merchant.expiry_date && new Date(merchant.expiry_date) < new Date()))
+    : false
+
+  // Webhook URL with secure token (only computed when merchant is loaded)
+  const webhookUrl = merchant
+    ? `${baseUrl}/api/webhooks/loyverse?merchant_id=${merchant.id}&token=${getWebhookToken(merchant.id)}`
+    : ''
   const isOverQuota = monthlyCount >= quota
 
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
@@ -733,6 +759,47 @@ export default function DashboardPage() {
             <p className="mt-8 text-[9px] text-slate-600 text-center uppercase tracking-tighter">
               By continuing, you agree to our terms and fair usage policy.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Offline Alert Banner ──────────────────────────────────────────── */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 py-3 bg-rose-600/95 backdrop-blur-md border-b border-rose-500/50 animate-fade-in">
+          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
+          <p className="text-white text-xs font-black uppercase tracking-widest">
+            ⚠️ No Internet Connection — Real-time pager notifications paused. Reconnect to resume.
+          </p>
+        </div>
+      )}
+
+      {/* ─── Subscription Expired Overlay ────────────────────────────────────── */}
+      {isExpired && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-sm bg-[#0a0b0f] border border-rose-500/30 rounded-[32px] p-8 shadow-2xl shadow-rose-500/10 text-center animate-bounce-in">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6">
+              <Zap size={32} className="text-rose-400" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">Subscription Expired</h2>
+            <p className="text-slate-400 text-sm mb-2">
+              Your <span className="text-white font-bold capitalize">{merchant?.plan_type}</span> plan expired on{' '}
+              <span className="text-rose-400 font-bold">
+                {merchant?.expiry_date ? new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
+              </span>.
+            </p>
+            <p className="text-slate-500 text-xs mb-8">Renew your plan to continue issuing pagers and receiving orders.</p>
+            <button
+              onClick={() => { setOpenSection('subscription'); setIsSettingsOpen(true) }}
+              className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
+            >
+              <Zap size={16} /> Renew Subscription
+            </button>
+            <button
+              onClick={handleLogout}
+              className="mt-4 text-slate-600 hover:text-white text-xs font-bold uppercase tracking-widest"
+            >
+              Logout
+            </button>
           </div>
         </div>
       )}
@@ -1199,8 +1266,9 @@ export default function DashboardPage() {
                     <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
                       <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">Webhook Endpoint</p>
                       <code className="block text-[10px] text-indigo-400/80 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
-                        {baseUrl}/api/webhooks/loyverse?merchant_id={merchant?.id}
+                        {webhookUrl || `${baseUrl}/api/webhooks/loyverse?merchant_id=${merchant?.id}&token=...`}
                       </code>
+                      <p className="text-[9px] text-slate-600">⚠️ Copy this full URL into your Loyverse webhook settings. The token secures this endpoint.</p>
                     </div>
                   </div>
                 )}
