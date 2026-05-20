@@ -533,7 +533,22 @@ export default function AdminPage() {
                   <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
                     <div className="aspect-[9/16] relative bg-[#0a0b0f] w-full">
                       {ad.video_url ? (
-                        <video src={ad.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                        (() => {
+                          const ytMatch = ad.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
+                          const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                          if (ytId) {
+                            return (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                                className="w-full h-full object-cover pointer-events-none scale-105"
+                                allow="autoplay; encrypted-media"
+                              />
+                            )
+                          }
+                          return (
+                            <video src={ad.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                          )
+                        })()
                       ) : ad.image_url ? (
                         <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
                       ) : (

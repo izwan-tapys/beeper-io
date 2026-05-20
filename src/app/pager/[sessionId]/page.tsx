@@ -465,14 +465,29 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               {ad ? (
                 <>
                   {ad.media_url ? (
-                    <video
-                      src={ad.media_url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
+                    (() => {
+                      const ytMatch = ad.media_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
+                      const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                      if (ytId) {
+                        return (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                            className="w-full h-full object-cover pointer-events-none scale-105"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+                      return (
+                        <video
+                          src={ad.media_url}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    })()
                   ) : ad.fallback_image_url ? (
                     <img
                       src={ad.fallback_image_url}
