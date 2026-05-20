@@ -347,10 +347,25 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   if (status === 'completed') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#020203]">
-        <div className="animate-bounce-in max-w-sm">
-          <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-8 border border-green-500/20">
-            <CheckCircle2 size={48} className="text-green-500" />
+      <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#020203]" style={{ backgroundImage: `radial-gradient(circle at center, ${themeColor}1a, #020203)` }}>
+        <div className="animate-bounce-in max-w-sm w-full flex flex-col items-center">
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            {merchantLogo ? (
+              <img 
+                src={merchantLogo} 
+                alt={merchantName} 
+                className="w-24 h-24 rounded-full object-cover border border-white/10 shadow-xl" 
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                <CheckCircle2 size={48} className="text-green-500" />
+              </div>
+            )}
+            {merchantLogo && (
+              <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1.5 border-4 border-[#020203] shadow-md flex items-center justify-center">
+                <CheckCircle2 size={16} className="text-white" />
+              </div>
+            )}
           </div>
           <h1 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Order Collected</h1>
           <p className="text-slate-400 mb-10 text-sm">Thank you for visiting {merchantName}! We hope you enjoyed your meal.</p>
