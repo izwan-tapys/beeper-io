@@ -97,7 +97,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
           break
         }
       }
-      setAd(selected)
+      setAd({
+        id: selected.id,
+        title: selected.title,
+        media_url: selected.video_url,
+        fallback_image_url: selected.image_url,
+        link_url: selected.link_url
+      })
     } catch (err) {
       console.error('Error fetching ads:', err)
     }
