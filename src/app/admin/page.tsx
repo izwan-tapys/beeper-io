@@ -513,7 +513,6 @@ export default function AdminPage() {
                  <Loader2 size={32} className="text-indigo-500 animate-spin" />
                  <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Network Data...</p>
                </div>
-            ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {ads.map((ad) => (
                   <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
@@ -527,6 +526,17 @@ export default function AdminPage() {
                               <iframe
                                 src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
                                 className="w-full h-full object-cover pointer-events-none scale-105"
+                                allow="autoplay; encrypted-media"
+                              />
+                            )
+                          }
+                          const tiktokMatch = ad.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
+                          const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
+                          if (tiktokId) {
+                            return (
+                              <iframe
+                                src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                                className="w-full h-full object-cover pointer-events-none"
                                 allow="autoplay; encrypted-media"
                               />
                             )

@@ -483,6 +483,19 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                           />
                         )
                       }
+                      
+                      const tiktokMatch = ad.media_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
+                      const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
+                      if (tiktokId) {
+                        return (
+                          <iframe
+                            src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                            className="w-full h-full object-cover"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+
                       return (
                         <video
                           src={ad.media_url}
