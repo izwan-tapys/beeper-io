@@ -54,3 +54,31 @@ SELECT cron.schedule(
   '0 3 * * *',
   $$ DELETE FROM sessions WHERE status = 'completed' AND created_at < NOW() - INTERVAL '48 hours' $$
 );
+
+-- 7. Create ad_analytics table for click/impression tracking
+CREATE TABLE IF NOT EXISTS ad_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id UUID REFERENCES ads(id) ON DELETE CASCADE,
+  merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE,
+  session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('impression', 'click')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE ad_analytics ENABLE ROW LEVEL SECURITY;
+
+-- Allow public inserts (anon/authenticated) so customer pager can log clicks & impressions
+DROP POLICY IF EXISTS "Allow public insert to ad_analytics" ON ad_analytics;
+CREATE POLICY "Allow public insert to ad_analytics"
+ON ad_analytics FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+-- Allow admin to read and manage all analytics
+DROP POLICY IF EXISTS "Allow admin to manage ad_analytics" ON ad_analytics;
+CREATE POLICY "Allow admin to manage ad_analytics"
+ON ad_analytics FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'izwan.tapys@gmail.com')
+WITH CHECK (auth.jwt() ->> 'email' = 'izwan.tapys@gmail.com');

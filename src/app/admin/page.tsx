@@ -8,7 +8,8 @@ import {
   CheckCircle, XCircle, ShieldCheck, 
   Loader2, Search, Smartphone, Store,
   Zap, Clock, BarChart3, Globe, ExternalLink,
-  ChevronRight, ArrowUpRight, TrendingUp, AlertCircle, LogOut, ArrowLeft
+  ChevronRight, ArrowUpRight, TrendingUp, AlertCircle, LogOut, ArrowLeft,
+  Tv, PlayCircle, Image, Plus, Trash2, Eye, MousePointerClick, Percent
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -27,6 +28,13 @@ export default function AdminPage() {
     ordersToday: 0,
     estimatedRevenue: 0
   })
+
+  // Ads State
+  const [activeTab, setActiveTab] = useState<'merchants' | 'ads'>('merchants')
+  const [ads, setAds] = useState<any[]>([])
+  const [adsLoading, setAdsLoading] = useState(false)
+  const [isAddingAd, setIsAddingAd] = useState(false)
+  const [newAd, setNewAd] = useState({ title: '', video_url: '', image_url: '', link_url: '', is_active: true })
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -85,6 +93,69 @@ export default function AdminPage() {
       setLoading(false)
     }
   }, [])
+
+  const fetchAds = useCallback(async () => {
+    setAdsLoading(true)
+    try {
+      const { data: adsData, error: adsError } = await supabase.from('ads').select('*').order('created_at', { ascending: false })
+      const { data: analyticsData } = await supabase.from('ad_analytics').select('ad_id, event_type')
+      
+      if (adsData) {
+        const enrichedAds = adsData.map((ad: any) => {
+          const adAnalytics = analyticsData?.filter((a: any) => a.ad_id === ad.id) || []
+          const impressions = adAnalytics.filter((a: any) => a.event_type === 'impression').length
+          const clicks = adAnalytics.filter((a: any) => a.event_type === 'click').length
+          return { 
+            ...ad, 
+            impressions, 
+            clicks, 
+            ctr: impressions > 0 ? ((clicks / impressions) * 100).toFixed(1) : '0.0' 
+          }
+        })
+        setAds(enrichedAds)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAdsLoading(false)
+    }
+  }, [])
+
+  const handleSaveAd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newAd.title.trim()) return
+    const { error } = await supabase.from('ads').insert({
+      title: newAd.title.trim(),
+      video_url: newAd.video_url.trim() || null,
+      image_url: newAd.image_url.trim() || null,
+      link_url: newAd.link_url.trim() || null,
+      is_active: newAd.is_active
+    })
+    if (!error) {
+      setIsAddingAd(false)
+      setNewAd({ title: '', video_url: '', image_url: '', link_url: '', is_active: true })
+      fetchAds()
+    } else {
+      alert('Error adding ad: ' + error.message)
+    }
+  }
+
+  const toggleAdActive = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('ads').update({ is_active: !current }).eq('id', id)
+    if (!error) fetchAds()
+  }
+
+  const deleteAd = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this ad?')) return
+    const { error } = await supabase.from('ads').delete().eq('id', id)
+    if (!error) fetchAds()
+  }
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'ads') {
+      fetchAds()
+    }
+  }, [isAdmin, activeTab, fetchAds])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -187,8 +258,24 @@ export default function AdminPage() {
           </div>
         </header>
 
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-4 mb-10 p-2 bg-white/[0.02] border border-white/5 rounded-3xl w-max mx-auto md:mx-0 shadow-inner">
+          <button
+            onClick={() => setActiveTab('merchants')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'merchants' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <Store size={16} /> Directory
+          </button>
+          <button
+            onClick={() => setActiveTab('ads')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <Tv size={16} /> Ad Network
+          </button>
+        </div>
+
         {/* Global Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16 ${activeTab !== 'merchants' ? 'hidden' : ''}`}>
           <StatCard 
             icon={<Store size={24} />} 
             label="Total Merchants" 
@@ -220,7 +307,7 @@ export default function AdminPage() {
         </div>
 
         {/* Merchants View */}
-        <div className="mb-8 flex items-center justify-between px-2">
+        <div className={`mb-8 flex items-center justify-between px-2 ${activeTab !== 'merchants' ? 'hidden' : ''}`}>
           <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Merchant Directory</h2>
           <div className="flex items-center gap-4 text-[10px] font-bold text-slate-600 uppercase">
             <span>Sort by Latest</span>
@@ -228,7 +315,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {loading ? (
+        {loading && activeTab === 'merchants' ? (
           <div className="flex flex-col items-center justify-center py-40 gap-8">
             <div className="relative w-20 h-20">
               <div className="absolute inset-0 rounded-full border-b-2 border-indigo-500 animate-spin"></div>
@@ -239,7 +326,7 @@ export default function AdminPage() {
             </div>
             <p className="text-slate-600 font-bold uppercase tracking-[0.5em] text-[10px] animate-pulse">Syncing Encrypted Data...</p>
           </div>
-        ) : (
+        ) : activeTab === 'merchants' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {filteredMerchants.map((m) => {
               const quota = m.plan_type === 'pro' ? Infinity : m.plan_type === 'basic' ? 500 : 20;
@@ -309,7 +396,20 @@ export default function AdminPage() {
                     <div className="flex gap-3">
                       <select 
                         value={m.plan_type}
-                        onChange={(e) => updateMerchant(m.id, { plan_type: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          const updates: any = { plan_type: val }
+                          if (val === 'pro' || val === 'basic') {
+                            updates.subscription_status = 'active'
+                            const expiry = new Date()
+                            expiry.setDate(expiry.getDate() + 30)
+                            updates.expiry_date = expiry.toISOString()
+                          } else {
+                            updates.subscription_status = null
+                            updates.expiry_date = null
+                          }
+                          updateMerchant(m.id, updates)
+                        }}
                         disabled={verifyingId === m.id}
                         className="flex-[2] px-4 py-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
                       >
@@ -351,12 +451,140 @@ export default function AdminPage() {
               )
             })}
           </div>
-        )}
+        ) : null}
 
-        {filteredMerchants.length === 0 && !loading && (
+        {filteredMerchants.length === 0 && !loading && activeTab === 'merchants' && (
           <div className="text-center py-40 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
             <AlertCircle size={48} className="mx-auto text-slate-700 mb-4" />
             <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No Signal Detected in this quadrant.</p>
+          </div>
+        )}
+
+        {/* Ads Network View */}
+        {activeTab === 'ads' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Ad Campaigns</h2>
+                <p className="text-[10px] font-bold text-slate-600">Central rotation for Always Free pagers.</p>
+              </div>
+              <button
+                onClick={() => setIsAddingAd(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all active:scale-95"
+              >
+                <Plus size={16} /> New Ad
+              </button>
+            </div>
+
+            {/* Ads Stats */}
+            <div className="grid grid-cols-3 gap-6">
+              <StatCard icon={<Tv size={20} />} label="Total Ads" value={ads.length} color="indigo" trend="Active Network" />
+              <StatCard icon={<Eye size={20} />} label="Impressions" value={ads.reduce((acc, ad) => acc + ad.impressions, 0).toLocaleString()} color="amber" trend="Total Views" />
+              <StatCard icon={<MousePointerClick size={20} />} label="Total Clicks" value={ads.reduce((acc, ad) => acc + ad.clicks, 0).toLocaleString()} color="emerald" trend="Engagements" />
+            </div>
+
+            {isAddingAd && (
+              <form onSubmit={handleSaveAd} className="p-8 rounded-[40px] bg-white/[0.02] border border-white/10 shadow-2xl backdrop-blur-md animate-slide-up space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-black text-white text-xl uppercase tracking-tighter">Create New Campaign</h3>
+                  <button type="button" onClick={() => setIsAddingAd(false)} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all">
+                    <XCircle size={20} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ad Title</label>
+                    <input type="text" required value={newAd.title} onChange={e => setNewAd({...newAd, title: e.target.value})} placeholder="e.g. KFC Promo" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Out URL</label>
+                    <input type="text" value={newAd.link_url} onChange={e => setNewAd({...newAd, link_url: e.target.value})} placeholder="e.g. https://kfc.com.my" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Video URL (9:16)</label>
+                    <input type="text" value={newAd.video_url} onChange={e => setNewAd({...newAd, video_url: e.target.value})} placeholder="e.g. https://cdn.example.com/ad.mp4" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fallback Image URL</label>
+                    <input type="text" value={newAd.image_url} onChange={e => setNewAd({...newAd, image_url: e.target.value})} placeholder="e.g. https://cdn.example.com/ad.jpg" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={newAd.is_active} onChange={e => setNewAd({...newAd, is_active: e.target.checked})} />
+                    <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                  </label>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Immediately</span>
+                </div>
+                <button type="submit" className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20">
+                  Save Campaign
+                </button>
+              </form>
+            )}
+
+            {adsLoading ? (
+               <div className="flex flex-col items-center justify-center py-20 gap-4">
+                 <Loader2 size={32} className="text-indigo-500 animate-spin" />
+                 <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Network Data...</p>
+               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {ads.map((ad) => (
+                  <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
+                    <div className="aspect-[9/16] relative bg-[#0a0b0f] w-full">
+                      {ad.video_url ? (
+                        <video src={ad.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                      ) : ad.image_url ? (
+                        <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/50 to-black p-6 text-center">
+                          <p className="text-white font-black text-xl">{ad.title}</p>
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-6 flex flex-col justify-end">
+                        <h4 className="text-white font-black text-lg leading-tight uppercase tracking-tight line-clamp-2 mb-2">{ad.title}</h4>
+                        <div className="grid grid-cols-3 gap-2 mb-4 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+                           <div className="text-center">
+                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">Views</p>
+                             <p className="text-sm font-black text-white">{ad.impressions}</p>
+                           </div>
+                           <div className="text-center border-x border-white/10">
+                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">Clicks</p>
+                             <p className="text-sm font-black text-white">{ad.clicks}</p>
+                           </div>
+                           <div className="text-center">
+                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">CTR</p>
+                             <p className="text-sm font-black text-emerald-400">{ad.ctr}%</p>
+                           </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <button 
+                             onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                             className={`flex-1 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${ad.is_active ? 'bg-indigo-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                           >
+                             {ad.is_active ? 'ON' : 'OFF'}
+                           </button>
+                           <button 
+                             onClick={() => deleteAd(ad.id)}
+                             className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shrink-0"
+                           >
+                             <Trash2 size={14} />
+                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {ads.length === 0 && !adsLoading && (
+              <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
+                <Tv size={48} className="mx-auto text-slate-700 mb-4" />
+                <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No active campaigns. Default Beepme ad is currently live.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
