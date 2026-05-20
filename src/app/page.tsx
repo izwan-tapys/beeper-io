@@ -155,30 +155,22 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing Grid/Carousel */}
-          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pt-8 pb-10 md:pb-0">
+          <div className="flex md:grid md:grid-cols-2 max-w-4xl mx-auto gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pt-8 pb-10 md:pb-0">
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
-                name="Free Station"
+                name="Always Free"
                 price="RM0"
                 period="/ forever"
-                features={["20 Monthly Orders", "Digital Pager UI", "Loyverse Integration"]}
+                features={["Unlimited Orders", "Ad-Supported wait page", "Loyverse POS Integration", "Screen WakeLock API"]}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
-                name="Basic Cafe"
-                price="RM30"
+                name="Premium Station"
+                price="RM39"
                 period="/ month"
-                features={["500 Monthly Orders", "GMB Review Sync", "Loyverse Pro"]}
+                features={["100% Ad-Free Pagers", "Custom Upsell Video/Image", "Custom Brand Logo", "Custom Color Themes", "WhatsApp Admin Approval"]}
                 recommended
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <PricingCard 
-                name="Unlimited"
-                price="RM49"
-                period="/ month"
-                features={["Unlimited Orders", "Custom Branding", "Priority Support"]}
                 isPro
               />
             </div>

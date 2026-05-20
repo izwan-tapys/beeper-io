@@ -16,6 +16,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const { sessionId } = use(params)
 
   const [status, setStatus] = useState<PagerStatus>('loading')
+  const [merchantId, setMerchantId] = useState<string | null>(null)
   const [merchantName, setMerchantName] = useState('')
   const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
   const [gmbUrl, setGmbUrl] = useState<string | null>(null)
@@ -28,18 +29,87 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [themeColor, setThemeColor] = useState('#6366f1')
   const [showInstructions, setShowInstructions] = useState(true)
 
+  const [clientUuid, setClientUuid] = useState<string | null>(null)
+  const [ad, setAd] = useState<any>(null)
+
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const waitTimerRef = useRef<NodeJS.Timeout | null>(null)
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const impressionLoggedRef = useRef<boolean>(false)
 
   // Use a ref for status to avoid closure issues in polling
   const statusRef = useRef<PagerStatus>('loading')
   useEffect(() => { statusRef.current = status }, [status])
 
+  // Get or create client_uuid from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      let uuid = localStorage.getItem('beepme_client_uuid')
+      if (!uuid) {
+        uuid = crypto.randomUUID()
+        localStorage.setItem('beepme_client_uuid', uuid)
+      }
+      setClientUuid(uuid)
+    }
+  }, [])
+
+  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any) => {
+    try {
+      if (isPremium && (upsellData.upsell_video_url || upsellData.upsell_image_url)) {
+        setAd({
+          id: 'merchant-upsell',
+          title: upsellData.upsell_title || 'Promosi Kedai',
+          media_url: upsellData.upsell_video_url,
+          fallback_image_url: upsellData.upsell_image_url,
+          link_url: upsellData.upsell_link_url || '#'
+        })
+        return
+      }
+
+      // Fetch global active ads
+      const { data: adsData, error } = await supabase
+        .from('ads')
+        .select('*')
+        .eq('is_active', true)
+
+      if (error || !adsData || adsData.length === 0) {
+        setAd({
+          id: 'default-beepme',
+          title: 'Beepme.pro - Pager F&B',
+          media_url: null,
+          fallback_image_url: null,
+          link_url: 'https://beepme.pro',
+          description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
+        })
+        return
+      }
+
+      // Weighted random selection
+      const totalWeight = adsData.reduce((sum, adItem) => sum + (adItem.weight || 1), 0)
+      let random = Math.random() * totalWeight
+      let selected = adsData[0]
+      for (const adItem of adsData) {
+        random -= (adItem.weight || 1)
+        if (random <= 0) {
+          selected = adItem
+          break
+        }
+      }
+      setAd(selected)
+    } catch (err) {
+      console.error('Error fetching ads:', err)
+    }
+  }, [])
+
   const fetchSession = useCallback(async () => {
-    const { data, error } = await supabase.from('sessions').select('*, merchants(name, logo_url, gmb_url, theme_color)').eq('id', sessionId).single()
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_link_url, upsell_video_url, upsell_image_url)')
+      .eq('id', sessionId)
+      .single()
+
     if (error || !data) { 
       if (statusRef.current === 'loading') setStatus('error')
       return 
@@ -48,15 +118,31 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     const rawMerchant = data.merchants
     const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
     
+    let isPremium = false
     if (merchantData) {
+      setMerchantId(data.merchant_id)
       setMerchantName(merchantData.name || 'Store')
       setMerchantLogo(merchantData.logo_url)
       setGmbUrl(merchantData.gmb_url)
       setThemeColor(merchantData.theme_color || '#6366f1')
+
+      isPremium = merchantData.plan_type === 'pro' &&
+        merchantData.subscription_status === 'active' &&
+        (!!merchantData.expiry_date && new Date(merchantData.expiry_date) > new Date())
     }
     
     setReceiptNumber(data.receipt_number)
     setCreatedAt(data.created_at)
+
+    // Sync client_uuid if empty
+    if (clientUuid && !data.client_uuid) {
+      await supabase.from('sessions').update({ client_uuid: clientUuid }).eq('id', sessionId)
+    }
+
+    // Trigger ad fetch once merchant is loaded
+    if (!ad && merchantData) {
+      fetchAd(data.merchant_id, isPremium, merchantData)
+    }
 
     if (data.status === 'called') {
       if (statusRef.current !== 'called') {
@@ -71,7 +157,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     } else {
       setStatus('confirm')
     }
-  }, [sessionId])
+  }, [sessionId, clientUuid, ad, fetchAd])
 
   useEffect(() => {
     fetchSession()
@@ -97,6 +183,35 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
     }
   }, [status, fetchSession])
+
+  // Track ad impression
+  useEffect(() => {
+    if (ad && status === 'waiting' && !impressionLoggedRef.current) {
+      impressionLoggedRef.current = true
+      supabase.from('ad_analytics').insert({
+        ad_id: ad.id === 'default-beepme' || ad.id === 'merchant-upsell' ? null : ad.id,
+        merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
+        session_id: sessionId,
+        event_type: 'impression'
+      }).then(({ error }) => {
+        if (error) console.error('Failed to log impression:', error)
+      })
+    }
+  }, [ad, status, sessionId, merchantId])
+
+  const handleAdClick = async () => {
+    if (!ad) return
+    try {
+      await supabase.from('ad_analytics').insert({
+        ad_id: ad.id === 'default-beepme' || ad.id === 'merchant-upsell' ? null : ad.id,
+        merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
+        session_id: sessionId,
+        event_type: 'click'
+      })
+    } catch (err) {
+      console.error('Failed to log click:', err)
+    }
+  }
 
   const acquireWakeLock = async () => {
     try {
@@ -142,8 +257,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       clearInterval(alertIntervalRef.current)
       alertIntervalRef.current = null
     }
-    // Attempt to update status in DB to completion if needed, 
-    // but usually completion is handled by merchant
   }
 
   const playChime = async () => {
@@ -195,7 +308,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   const handleConfirm = async () => {
     await initAudio()
-    const { error } = await supabase.from('sessions').update({ is_confirmed: true }).eq('id', sessionId)
+    const { error } = await supabase.from('sessions').update({ 
+      is_confirmed: true,
+      client_uuid: clientUuid
+    }).eq('id', sessionId)
     if (error) {
       alert('Gagal sambung: ' + error.message)
     } else {
@@ -212,6 +328,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     const m = Math.floor(totalSeconds / 60)
     const s = (totalSeconds % 60).toString().padStart(2, '0')
     return `${m}:${s}`
+  }
+
+  const isGhostActive = () => {
+    if (!createdAt) return false
+    const start = new Date(createdAt).getTime()
+    const seconds = Math.floor((now - start) / 1000)
+    return seconds > 900 // 15 minutes
   }
 
   if (status === 'loading') {
@@ -268,14 +391,32 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       {/* Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
 
-      <header className="p-4 sm:p-8 text-center relative z-10 shrink-0">
-        <div className="flex flex-col items-center gap-4">
-          <Logo size={48} showText={false} />
-          <h2 className="font-black text-white text-2xl tracking-tight uppercase">{merchantName}</h2>
+      {/* Header */}
+      <header className="p-4 text-center relative z-10 shrink-0">
+        <div className="flex flex-col items-center gap-2">
+          {merchantLogo ? (
+            <img src={merchantLogo} alt={merchantName} className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-md" />
+          ) : (
+            <Logo size={36} showText={false} />
+          )}
+          <h2 className="font-black text-white text-base tracking-tight uppercase">{merchantName}</h2>
+          
+          {status === 'waiting' && (
+            <div className="w-full max-w-[280px] mx-auto mt-2">
+              <div className="flex justify-between text-[7px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                <span className="animate-pulse">Sedang Disediakan</span>
+                <span>Sedia Dikutip</span>
+              </div>
+              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 w-[40%] animate-pulse" />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative z-10 min-h-0">
+      {/* Main content: Flex Col layout */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 relative z-10 min-h-0">
         {status === 'confirm' && (
           <div className="w-full max-w-sm text-center animate-slide-up">
             <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
@@ -285,7 +426,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               <div className="space-y-4 text-left mb-8">
                 <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
                   <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-indigo-200 leading-snug">This phone will vibrate and sound when your order is ready.</p>
+                  <p className="text-[11px] text-indigo-200 leading-snug">Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.</p>
                 </div>
               </div>
 
@@ -301,66 +442,144 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         )}
 
         {status === 'waiting' && (
-          <div className="w-full max-w-sm text-center animate-fade-in flex flex-col h-full">
-            <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-            {merchantLogo && (
-              <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-4 sm:mb-10 flex items-center justify-center rounded-[32px] sm:rounded-[40px] overflow-hidden border border-white/10 shadow-2xl bg-white/[0.02] shrink-0">
-                <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: `${themeColor}1a` }} />
-                <img src={merchantLogo} alt={merchantName} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[32px] object-cover relative z-10 animate-pulse shadow-2xl border border-white/5" />
-              </div>
-            )}
+          <div className="w-full max-w-sm text-center animate-fade-in flex flex-col h-full justify-between py-2">
+            
+            {/* Golden Area: TikTok/Reels vertical ad container (45% viewport height) */}
+            <div className="relative w-full max-w-[280px] h-[45vh] aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black shrink-0 mx-auto">
+              {ad ? (
+                <>
+                  {ad.media_url ? (
+                    <video
+                      src={ad.media_url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : ad.fallback_image_url ? (
+                    <img
+                      src={ad.fallback_image_url}
+                      alt={ad.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    // Default Beepme.pro interactive fallback card
+                    <div className="w-full h-full bg-gradient-to-br from-[#0c0d12] via-[#020203] to-[#1e1b4b] p-6 flex flex-col justify-between text-left relative overflow-hidden select-none">
+                      <div className="absolute inset-0 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
+                      
+                      {/* Header */}
+                      <div className="flex items-center gap-2 relative z-10">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                          <span className="text-white font-black text-sm">B</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Beepme.pro</p>
+                          <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Virtual Pager</p>
+                        </div>
+                      </div>
 
-            <div className="mb-4 sm:mb-10 shrink-0">
-              <h1 className="text-2xl sm:text-3xl font-black text-white mb-1 uppercase tracking-tighter italic">PREPARING...</h1>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Order #{receiptNumber}</p>
-            </div>
+                      {/* Center Content */}
+                      <div className="space-y-3 relative z-10 my-auto">
+                        <h4 className="text-sm font-black text-white leading-tight uppercase tracking-tight">
+                          Gantikan Pager Perkakasan Mahal.
+                        </h4>
+                        <p className="text-[9px] text-slate-400 leading-relaxed font-medium">
+                          Gunakan telefon pintar pelanggan anda. Sistem pager F&B mesra poket, percuma & moden.
+                        </p>
+                      </div>
 
-            <div className="bg-white/[0.03] border border-white/10 px-6 py-4 sm:px-10 sm:py-6 rounded-3xl sm:rounded-[32px] inline-block mb-4 sm:mb-12 shadow-inner shrink-0">
-               <p className="text-slate-500 text-[8px] sm:text-[9px] font-black uppercase tracking-widest mb-1">Waiting Time</p>
-               <p className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-[#10b981]">{formatWaitTime()}</p>
-            </div>
+                      {/* Footer button */}
+                      <div className="relative z-10 mt-auto">
+                        <div className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-black text-[10px] text-center uppercase tracking-widest shadow-lg shadow-indigo-600/30">
+                          Daftar Percuma
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-            </div>
-
-            {/* Verification Tools */}
-            <div className="mt-auto w-full shrink-0 pt-4">
-              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5 space-y-3 sm:space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Online</span>
-                </div>
-                <button 
-                   onClick={() => initAudio()}
-                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                   style={{ backgroundColor: themeColor }}
-                >
-                  <Volume2 size={14} />
-                  Test Sound
-                </button>
-              </div>
-
-              {showInstructions && (
-                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-500/5 border border-amber-500/20 text-left">
-                   <div className="flex items-center gap-2 text-amber-500 mb-1 sm:mb-2">
-                      <AlertTriangle size={14} />
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Important for Sound</span>
-                   </div>
-                   <ul className="text-[9px] sm:text-[10px] text-amber-200/60 space-y-1 sm:space-y-1.5 font-medium leading-relaxed">
-                      <li>• Turn OFF Silent Mode (Mute Switch)</li>
-                      <li>• Increase Volume to Maximum</li>
-                      <li>• Keep this page open in browser</li>
-                   </ul>
+                  {/* Overlays for title, description, and link */}
+                  <a
+                    href={ad.link_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleAdClick}
+                    className="absolute inset-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/20 to-transparent p-4 text-left"
+                  >
+                    <div className="space-y-1 select-none">
+                      <h4 className="text-xs font-black text-white tracking-tight uppercase line-clamp-1">{ad.title}</h4>
+                      {ad.description && <p className="text-[9px] text-slate-300 font-medium leading-tight line-clamp-2">{ad.description}</p>}
+                      <div className="inline-flex items-center gap-1 text-[8px] font-black text-indigo-400 uppercase tracking-widest mt-1">
+                        Ketahui Lebih Lanjut →
+                      </div>
+                    </div>
+                  </a>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Loader2 className="animate-spin text-slate-700" />
                 </div>
               )}
             </div>
+
+            {/* Status & Progress Component */}
+            <div className="w-full max-w-[280px] mx-auto text-center mt-2">
+              <div className="bg-white/[0.02] border border-white/10 px-6 py-3 rounded-2xl shadow-inner shrink-0 inline-block w-full">
+                {isGhostActive() ? (
+                  <>
+                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest mb-1">Status Pesanan</p>
+                    <p className="text-xs font-bold text-slate-300 italic animate-pulse">Kitchen congestion - preparing with care</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest mb-0.5">Tempoh Menunggu</p>
+                    <p className="text-2xl font-black font-mono tracking-tight text-[#10b981]">{formatWaitTime()}</p>
+                  </>
+                )}
+              </div>
             </div>
+
+            {/* Verification Tools */}
+            <div className="w-full max-w-[280px] mx-auto shrink-0 mt-2">
+              <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                     <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sistem Aktif</span>
+                  </div>
+                  <button 
+                     onClick={() => initAudio()}
+                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white font-black text-[8px] uppercase tracking-widest transition-all active:scale-95"
+                     style={{ backgroundColor: themeColor }}
+                  >
+                    <Volume2 size={12} />
+                    Uji Bunyi
+                  </button>
+                </div>
+
+                {showInstructions && (
+                  <div className="p-2 rounded-xl bg-amber-500/5 border border-amber-500/20 text-left relative">
+                     <button onClick={() => setShowInstructions(false)} className="absolute top-2 right-2 text-slate-500 hover:text-white font-bold text-[8px]">X</button>
+                     <div className="flex items-center gap-1.5 text-amber-500 mb-1">
+                        <AlertTriangle size={12} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Perhatian Bunyi</span>
+                     </div>
+                     <ul className="text-[8px] text-amber-200/60 space-y-0.5 font-medium leading-normal">
+                        <li>• Matikan Mod Senyap (Mute Switch)</li>
+                        <li>• Kuatkan Audio ke Maksimum</li>
+                        <li>• Jangan tutup halaman ini</li>
+                     </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+            
           </div>
         )}
       </main>
 
-      <footer className="p-4 sm:p-8 text-center relative z-10 shrink-0">
-        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.4em]">
+      <footer className="p-2 text-center relative z-10 shrink-0">
+        <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em]">
           Beepme.pro — Virtual Paging System
         </p>
       </footer>

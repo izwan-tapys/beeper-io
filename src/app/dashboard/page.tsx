@@ -34,6 +34,10 @@ type Merchant = {
   subscription_status: 'active' | 'expired' | 'trial'
   expiry_date: string | null
   theme_color: string | null
+  upsell_video_url: string | null
+  upsell_image_url: string | null
+  upsell_title: string | null
+  upsell_link_url: string | null
 }
 
 const supabase = createClient()
@@ -54,6 +58,10 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
   const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
+  const [settingsUpsellTitle, setSettingsUpsellTitle] = useState('')
+  const [settingsUpsellLinkUrl, setSettingsUpsellLinkUrl] = useState('')
+  const [settingsUpsellVideoUrl, setSettingsUpsellVideoUrl] = useState('')
+  const [settingsUpsellImageUrl, setSettingsUpsellImageUrl] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
@@ -108,6 +116,10 @@ export default function DashboardPage() {
       setSettingsLogo(merchant.logo_url || '')
       setSettingsLoyverseToken(merchant.loyverse_token || '')
       setSettingsGmbUrl(merchant.gmb_url || '')
+      setSettingsUpsellTitle(merchant.upsell_title || '')
+      setSettingsUpsellLinkUrl(merchant.upsell_link_url || '')
+      setSettingsUpsellVideoUrl(merchant.upsell_video_url || '')
+      setSettingsUpsellImageUrl(merchant.upsell_image_url || '')
       // Note: openSection is NOT reset here so it can be pre-set before opening
     }
   }, [isSettingsOpen, merchant])
@@ -355,17 +367,7 @@ export default function DashboardPage() {
     const finalReceiptNumber = rNum || receiptInput.trim()
     if (!merchant || !finalReceiptNumber) return
 
-    // Check monthly limit based on plan
-    let limit = 20
-    if (merchant.plan_type === 'basic') limit = 500
-    if (merchant.plan_type === 'pro') limit = 9999999 // Effectively unlimited
-
-    if (merchant.plan_type !== 'pro' && monthlyCount >= limit) {
-      alert(`Quota limit reached! You have used your ${limit} monthly orders. Please upgrade your plan for more pagers.`)
-      setIsSettingsOpen(true)
-      setOpenSection('subscription')
-      return
-    }
+    // No monthly limits for Always Free or Premium plan
 
     setCreating(true)
     
@@ -444,7 +446,11 @@ export default function DashboardPage() {
       settingsLogo !== (merchant.logo_url || '') ||
       settingsLoyverseToken !== (merchant.loyverse_token || '') ||
       settingsGmbUrl !== (merchant.gmb_url || '') ||
-      settingsThemeColor !== (merchant.theme_color || '#6366f1')
+      settingsThemeColor !== (merchant.theme_color || '#6366f1') ||
+      settingsUpsellTitle !== (merchant.upsell_title || '') ||
+      settingsUpsellLinkUrl !== (merchant.upsell_link_url || '') ||
+      settingsUpsellVideoUrl !== (merchant.upsell_video_url || '') ||
+      settingsUpsellImageUrl !== (merchant.upsell_image_url || '')
     )
   }
 
@@ -468,7 +474,11 @@ export default function DashboardPage() {
         logo_url: settingsLogo.trim() || null,
         loyverse_token: settingsLoyverseToken.trim() || null,
         gmb_url: settingsGmbUrl.trim() || null,
-        theme_color: settingsThemeColor
+        theme_color: settingsThemeColor,
+        upsell_title: settingsUpsellTitle.trim() || null,
+        upsell_link_url: settingsUpsellLinkUrl.trim() || null,
+        upsell_video_url: settingsUpsellVideoUrl.trim() || null,
+        upsell_image_url: settingsUpsellImageUrl.trim() || null
       })
       .eq('id', merchant.id)
     
@@ -482,7 +492,11 @@ export default function DashboardPage() {
         logo_url: settingsLogo.trim() || null,
         loyverse_token: settingsLoyverseToken.trim() || null,
         gmb_url: settingsGmbUrl.trim() || null,
-        theme_color: settingsThemeColor
+        theme_color: settingsThemeColor,
+        upsell_title: settingsUpsellTitle.trim() || null,
+        upsell_link_url: settingsUpsellLinkUrl.trim() || null,
+        upsell_video_url: settingsUpsellVideoUrl.trim() || null,
+        upsell_image_url: settingsUpsellImageUrl.trim() || null
       })
       setIsSettingsOpen(false)
       fetchMerchant()
@@ -628,7 +642,11 @@ export default function DashboardPage() {
     s.receipt_number.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const quota = merchant?.plan_type === 'pro' ? Infinity : merchant?.plan_type === 'basic' ? 500 : 20
+  const isPremiumActive = merchant?.plan_type === 'pro' &&
+    merchant?.subscription_status === 'active' &&
+    (!!merchant?.expiry_date && new Date(merchant.expiry_date) > new Date())
+
+  const quota = Infinity
 
   // Subscription expiry: free plan never expires; paid plans expire on expiry_date
   const isExpired = merchant
@@ -641,7 +659,7 @@ export default function DashboardPage() {
   const webhookUrl = merchant
     ? `${baseUrl}/api/webhooks/loyverse?merchant_id=${merchant.id}&token=${getWebhookToken(merchant.id)}`
     : ''
-  const isOverQuota = monthlyCount >= quota
+  const isOverQuota = false
 
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
 
@@ -918,19 +936,13 @@ export default function DashboardPage() {
 
               {/* Monthly Usage Counter */}
               <div className="mt-4 pt-4 border-t border-white/5">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    {merchant?.plan_type === 'pro' ? 'Beepme Pro Usage' : 'Monthly Order Quota'}
+                    Monthly Orders Processed
                   </span>
                   <span className="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-1">
-                    {monthlyCount} / {merchant?.plan_type === 'pro' ? <InfinityIcon size={14} className="text-indigo-400" /> : (merchant?.plan_type === 'basic' ? '500' : '20')}
+                    {monthlyCount} / <InfinityIcon size={14} className="text-indigo-400 font-black inline" />
                   </span>
-                </div>
-                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-1000 ${merchant?.plan_type === 'pro' ? 'bg-indigo-500' : (monthlyCount >= (merchant?.plan_type === 'basic' ? 450 : 15) ? 'bg-amber-500' : 'bg-indigo-500')}`}
-                    style={{ width: `${merchant?.plan_type === 'pro' ? '100' : Math.min((monthlyCount / (merchant?.plan_type === 'basic' ? 500 : 20)) * 100, 100)}%` }}
-                  />
                 </div>
               </div>
 
@@ -1227,6 +1239,90 @@ export default function DashboardPage() {
                 )}
               </section>
 
+              {/* 3. Upsell & Promosi */}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  type="button"
+                  onClick={() => toggleSection('upsell')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Upsell & Promosi</span>
+                  </div>
+                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'upsell' ? 'rotate-90' : ''}`} />
+                </button>
+                
+                {openSection === 'upsell' && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    {!isPremiumActive ? (
+                      <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-center space-y-3">
+                        <div className="text-2xl">🔒</div>
+                        <h4 className="text-white font-bold text-sm">Beepme Premium Feature</h4>
+                        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                          Urus promosi & upsell video/banner anda sendiri di halaman wait customer. Sila langgan Beepme Premium.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setOpenSection('subscription')}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/20"
+                        >
+                          Upgrade Sekarang
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Promotion Title</label>
+                          <input
+                            type="text"
+                            value={settingsUpsellTitle}
+                            onChange={(e) => setSettingsUpsellTitle(e.target.value)}
+                            placeholder="e.g. Diskaun 10% untuk Kopi Seterusnya!"
+                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Upsell Video URL (TikTok/Reels format)</label>
+                          <input
+                            type="text"
+                            value={settingsUpsellVideoUrl}
+                            onChange={(e) => setSettingsUpsellVideoUrl(e.target.value)}
+                            placeholder="e.g. https://cdn.example.com/videos/promo.mp4"
+                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
+                          />
+                          <p className="text-[9px] text-slate-600">Video 9:16 dimainkan semasa pelanggan sedang menunggu.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Fallback Image URL</label>
+                          <input
+                            type="text"
+                            value={settingsUpsellImageUrl}
+                            onChange={(e) => setSettingsUpsellImageUrl(e.target.value)}
+                            placeholder="e.g. https://cdn.example.com/images/banner.jpg"
+                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
+                          />
+                          <p className="text-[9px] text-slate-600">Imej banner dipaparkan jika video tidak dapat dimuatkan.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Action Link URL (Link Out)</label>
+                          <input
+                            type="text"
+                            value={settingsUpsellLinkUrl}
+                            onChange={(e) => setSettingsUpsellLinkUrl(e.target.value)}
+                            placeholder="e.g. https://shopee.com.my/yourstore"
+                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
+                          />
+                          <p className="text-[9px] text-slate-600 font-medium">Link dihantar apabila pelanggan menekan banner promosi.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
               {/* 2. Integrations */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
@@ -1293,16 +1389,19 @@ export default function DashboardPage() {
                     <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${merchant?.plan_type !== 'free' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
+                          <span className={`w-2 h-2 rounded-full ${isPremiumActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
                           <span className="text-white font-bold uppercase text-sm">
-                            Beepme {merchant?.plan_type || 'Free'}
+                            Beepme {isPremiumActive ? 'Premium' : 'Free'}
                           </span>
                         </div>
-                        {merchant?.expiry_date && (
-                          <span className="text-[10px] text-slate-500 mt-1">Expires on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                        {merchant?.expiry_date && isPremiumActive && (
+                          <span className="text-[10px] text-slate-500 mt-1">Active until {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                        )}
+                        {merchant?.expiry_date && !isPremiumActive && (
+                          <span className="text-[10px] text-rose-500 mt-1">Expired on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
                         )}
                       </div>
-                      {merchant?.plan_type !== 'free' && (
+                      {isPremiumActive && (
                         <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase tracking-widest">Active</span>
                       )}
                     </div>
@@ -1310,11 +1409,11 @@ export default function DashboardPage() {
                     {/* Plan Selector */}
                     <div className="grid grid-cols-1 gap-3">
                       {/* Free Plan Card */}
-                      <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'free' ? 'bg-white/[0.05] border-white/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}>
+                      <div className={`p-4 rounded-2xl border transition-all ${!isPremiumActive ? 'bg-white/[0.05] border-white/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-white font-bold text-sm">Beepme Free</h3>
-                            <p className="text-[10px] text-slate-500">Perfect for starting out</p>
+                            <h3 className="text-white font-bold text-sm">Always Free</h3>
+                            <p className="text-[10px] text-slate-500">Essential paging system</p>
                           </div>
                           <div className="text-right">
                             <span className="text-white font-bold text-sm">RM0</span>
@@ -1323,84 +1422,63 @@ export default function DashboardPage() {
                         </div>
                         <ul className="space-y-1.5 mb-2">
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> 20 Monthly Orders
+                            <CheckCircle size={10} className="text-slate-500" /> Unlimited Orders
                           </li>
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> Standard Virtual Pager
+                            <CheckCircle size={10} className="text-slate-500" /> Digital Pager UI (Ad-Supported)
                           </li>
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> Loyverse Integration
+                            <CheckCircle size={10} className="text-slate-500" /> Loyverse POS Integration
                           </li>
                         </ul>
-                        {merchant?.plan_type === 'free' && (
+                        {!isPremiumActive && (
                           <div className="mt-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Current Plan</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Basic Plan Card */}
-                      <div className={`p-4 rounded-2xl border transition-all ${merchant?.plan_type === 'basic' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-white/[0.02] border-white/5'}`}>
+                      {/* Premium Plan Card */}
+                      <div className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${isPremiumActive ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
+                        <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[8px] font-black px-2 py-1 uppercase rounded-bl-lg">Premium</div>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-white font-bold text-sm">Beepme Basic</h3>
-                            <p className="text-[10px] text-slate-500">For small cafes & trucks</p>
+                            <h3 className="text-white font-bold text-sm">Beepme Premium</h3>
+                            <p className="text-[10px] text-slate-500">For premium brand experience</p>
                           </div>
                           <div className="text-right">
-                            <span className="text-white font-bold text-sm">RM30</span>
+                            <span className="text-white font-bold text-sm">RM39</span>
                             <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
                           </div>
                         </div>
                         <ul className="space-y-1.5 mb-4">
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> 500 Monthly Orders
+                            <CheckCircle size={10} className="text-indigo-500" /> 100% Ad-Free waiting page
                           </li>
                           <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> Custom Branding
+                            <CheckCircle size={10} className="text-indigo-500" /> Custom branding, logo & colors
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> Custom Upsell Promotion (Video/Image)
+                          </li>
+                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
+                            <CheckCircle size={10} className="text-indigo-500" /> WhatsApp Admin Approval
                           </li>
                         </ul>
-                        {merchant?.plan_type !== 'basic' && merchant?.plan_type !== 'pro' && (
+                        {!isPremiumActive ? (
                           <button 
-                            onClick={() => handleUpgrade('basic', 30)}
-                            disabled={savingSettings}
-                            className="w-full py-2.5 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-indigo-600 transition-all flex items-center justify-center gap-2"
-                          >
-                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                            Select Basic
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Pro Plan Card */}
-                      <div className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${merchant?.plan_type === 'pro' ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
-                        <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[8px] font-black px-2 py-1 uppercase rounded-bl-lg">Best Value</div>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-white font-bold text-sm">Beepme Unlimited</h3>
-                            <p className="text-[10px] text-slate-500">For busy restaurants</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-white font-bold text-sm">RM49</span>
-                            <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
-                          </div>
-                        </div>
-                        <ul className="space-y-1.5 mb-4">
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> <InfinityIcon size={12} className="inline" /> Orders
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> Priority Support
-                          </li>
-                        </ul>
-                        {merchant?.plan_type !== 'pro' && (
-                          <button 
-                            onClick={() => handleUpgrade('pro', 49)}
+                            type="button"
+                            onClick={() => handleUpgrade('pro', 39)}
                             disabled={savingSettings}
                             className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
                           >
-                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <InfinityIcon size={12} />}
-                            Upgrade to <InfinityIcon size={12} />
+                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                            Upgrade to Premium (RM39)
                           </button>
+                        ) : (
+                          <div className="mt-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-center">
+                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Active Plan</span>
+                          </div>
                         )}
                       </div>
                     </div>

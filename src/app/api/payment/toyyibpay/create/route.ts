@@ -10,7 +10,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { amount, planName } = await request.json()
+    // Hardcode price to prevent client tampering
+    const amount = 39
+    const planName = 'Premium'
 
     // ToyyibPay API Details
     const userSecretKey = process.env.TOYYIBPAY_USER_SECRET_KEY
