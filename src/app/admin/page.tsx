@@ -327,129 +327,115 @@ export default function AdminPage() {
             <p className="text-slate-600 font-bold uppercase tracking-[0.5em] text-[10px] animate-pulse">Syncing Encrypted Data...</p>
           </div>
         ) : activeTab === 'merchants' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredMerchants.map((m) => {
-              const quota = m.plan_type === 'pro' ? Infinity : m.plan_type === 'basic' ? 500 : 20;
-              const usagePercent = Math.min((m.monthly_count / quota) * 100, 100);
-              
-              return (
-                <div 
-                  key={m.id} 
-                  className={`group relative rounded-[40px] border transition-all duration-700 bg-white/[0.02] ${m.is_verified ? 'border-white/5 hover:border-white/20' : 'border-indigo-500/20 hover:border-indigo-500/50 shadow-2xl shadow-indigo-500/5'}`}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-[40px]" />
-                  
-                  <div className="p-8 relative z-10">
-                    <div className="flex items-start justify-between mb-8">
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <div className={`absolute -inset-2 blur-md rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-                          <div className="relative w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-2xl font-black text-white group-hover:scale-110 transition-transform duration-500">
-                            {m.name?.[0] || 'M'}
+          <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                    <th className="py-5 px-6 font-black">Merchant</th>
+                    <th className="py-5 px-6 font-black">Contact</th>
+                    <th className="py-5 px-6 font-black">Usage / Quota</th>
+                    <th className="py-5 px-6 font-black">Subscription Plan</th>
+                    <th className="py-5 px-6 font-black text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredMerchants.map((m) => {
+                    const quota = m.plan_type === 'pro' ? Infinity : 20;
+                    let usagePercent = 0;
+                    if (quota !== Infinity) {
+                      usagePercent = Math.min((m.monthly_count / quota) * 100, 100);
+                    } else {
+                      usagePercent = 100; // Full bar for infinite
+                    }
+                    
+                    return (
+                      <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
+                              <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
+                                {m.name?.[0] || 'M'}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+                                  {m.is_verified ? 'Verified' : 'Pending'}
+                                </span>
+                                <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-white text-lg tracking-tight group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</h3>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'}`}>
-                              {m.is_verified ? 'Verified' : 'Pending Approval'}
-                            </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
+                            <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
+                            <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Usage Progress */}
-                    <div className="mb-8 space-y-3">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Monthly Throughput</p>
-                          <p className="text-xl font-black text-white">{m.monthly_count.toLocaleString()} <span className="text-xs text-slate-600 font-medium">/ {quota === Infinity ? '∞' : quota}</span></p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Health</p>
-                          <p className={`text-[10px] font-bold ${usagePercent > 90 ? 'text-rose-500' : usagePercent > 70 ? 'text-amber-500' : 'text-emerald-500'}`}>{usagePercent.toFixed(1)}%</p>
-                        </div>
-                      </div>
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/[0.03]">
-                        <div 
-                          className={`h-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.5)] ${usagePercent > 90 ? 'bg-rose-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                          style={{ width: `${usagePercent}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Direct Contact</p>
-                        <div className="flex items-center gap-2">
-                          <Smartphone size={12} className="text-indigo-500" />
-                          <p className="text-xs font-bold text-white truncate">{m.phone || 'NO PHONE'}</p>
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Access Level</p>
-                        <p className="text-xs font-black text-indigo-400 uppercase">{m.plan_type}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <select 
-                        value={m.plan_type}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          const updates: any = { plan_type: val }
-                          if (val === 'pro' || val === 'basic') {
-                            updates.subscription_status = 'active'
-                            const expiry = new Date()
-                            expiry.setDate(expiry.getDate() + 30)
-                            updates.expiry_date = expiry.toISOString()
-                          } else {
-                            updates.subscription_status = null
-                            updates.expiry_date = null
-                          }
-                          updateMerchant(m.id, updates)
-                        }}
-                        disabled={verifyingId === m.id}
-                        className="flex-[2] px-4 py-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
-                      >
-                        <option value="free">Lvl 0: Free</option>
-                        <option value="basic">Lvl 1: Basic</option>
-                        <option value="pro">Lvl 2: Pro</option>
-                      </select>
-                      
-                      <button 
-                        onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
-                        disabled={verifyingId === m.id}
-                        className={`flex-[3] py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95 ${m.is_verified ? 'bg-white/5 text-slate-500 hover:bg-rose-500/10 hover:text-rose-500' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 hover:bg-indigo-500'}`}
-                      >
-                        {verifyingId === m.id ? <Loader2 size={14} className="animate-spin" /> : m.is_verified ? 'Kill Session' : 'Activate Portal'}
-                      </button>
-                    </div>
-
-                    <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                          <Clock size={12} className="text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest leading-none mb-1">Deployment Date</p>
-                          <p className="text-[10px] text-white font-medium">{new Date(m.created_at).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                         <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all">
-                           <Smartphone size={14} />
-                         </a>
-                         <button className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-white transition-all">
-                           <ExternalLink size={14} />
-                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex flex-col gap-1.5 max-w-[120px]">
+                            <div className="flex items-end justify-between">
+                              <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
+                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">/ {quota === Infinity ? '∞' : quota}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-1000 ${quota === Infinity ? 'bg-indigo-500' : usagePercent > 90 ? 'bg-rose-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                                style={{ width: `${usagePercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <select 
+                            value={m.plan_type}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              const updates: any = { plan_type: val }
+                              if (val === 'pro') {
+                                updates.subscription_status = 'active'
+                                const expiry = new Date()
+                                expiry.setDate(expiry.getDate() + 30)
+                                updates.expiry_date = expiry.toISOString()
+                              } else {
+                                updates.subscription_status = null
+                                updates.expiry_date = null
+                              }
+                              updateMerchant(m.id, updates)
+                            }}
+                            disabled={verifyingId === m.id}
+                            className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
+                          >
+                            <option value="free">Trial (Free)</option>
+                            <option value="pro">Pro (RM39)</option>
+                          </select>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
+                              disabled={verifyingId === m.id}
+                              className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
+                            >
+                              {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
+                            </button>
+                            {m.phone && (
+                              <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
+                                <Smartphone size={14} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : null}
 
