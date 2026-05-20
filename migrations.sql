@@ -46,7 +46,7 @@ WITH CHECK (auth.jwt() ->> 'email' = 'izwan.tapys@gmail.com');
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- Unschedule first if it exists to avoid duplicate schedules
-SELECT cron.unschedule('purge-completed-sessions');
+SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'purge-completed-sessions';
 
 -- Schedule the purge job to run daily at 3:00 AM
 SELECT cron.schedule(
