@@ -440,14 +440,84 @@ const handleTouchStart = (e: React.TouchEvent) => {
   if (status === 'called' || isFlashing) {
     return (
       <div 
-        className="h-[100dvh] w-screen fixed inset-0 flex flex-col items-center justify-center p-6 text-center cursor-pointer overflow-hidden animate-flash-green" 
+        className="h-[100dvh] w-screen fixed inset-0 flex flex-col items-center justify-center p-6 text-center cursor-pointer overflow-hidden bg-black select-none z-[999]" 
         onClick={stopAlert}
       >
-        <div className="animate-ping-slow text-9xl mb-8">🔔</div>
-        <h1 className="text-6xl font-black text-white mb-4 tracking-tighter italic">READY!</h1>
-        <p className="text-white text-7xl font-black mb-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">#{receiptNumber}</p>
-        <div className="bg-white text-black px-8 py-4 rounded-full font-black text-xl animate-bounce uppercase tracking-widest">
-           TAP TO STOP
+        {/* Dynamic Background */}
+        <motion.div
+          animate={{ backgroundColor: ['#000000', themeColor || '#10b981', '#000000'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 opacity-40"
+        />
+
+        {/* Hypnotic Ripples */}
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{ 
+              width: '40vw', 
+              height: '40vw', 
+              minWidth: '300px', 
+              minHeight: '300px', 
+              border: `4px solid ${themeColor || '#10b981'}`,
+              backgroundColor: `${themeColor || '#10b981'}10`
+            }}
+            animate={{ 
+              scale: [0.5, 3], 
+              opacity: [0.8, 0] 
+            }}
+            transition={{ 
+              duration: 2.5, 
+              repeat: Infinity, 
+              delay: i * 0.8, 
+              ease: "easeOut" 
+            }}
+          />
+        ))}
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+            className="mb-8"
+          >
+            <span className="text-7xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">🔔</span>
+          </motion.div>
+          
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-4xl md:text-5xl font-black text-white mb-2 tracking-widest uppercase"
+          >
+            Pesanan Sedia
+          </motion.h1>
+
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="mb-16"
+          >
+            <p 
+              className="text-white font-black leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]"
+              style={{ fontSize: 'clamp(5rem, 25vw, 10rem)' }}
+            >
+              #{receiptNumber}
+            </p>
+          </motion.div>
+
+          <motion.div 
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="mt-8 px-8 py-4 rounded-full border border-white/20 bg-black/40 backdrop-blur-md"
+          >
+            <span className="text-white font-bold text-sm tracking-widest uppercase">
+              Ketik Di Mana-mana Untuk Berhenti
+            </span>
+          </motion.div>
         </div>
       </div>
     )
