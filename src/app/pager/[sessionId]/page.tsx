@@ -523,30 +523,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               )}
             </div>
 
-            {/* 2. Transparent Header (Single Row) */}
-            <header className="relative z-50 w-full p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {merchantLogo ? (
-                  <img src={merchantLogo} alt={merchantName} className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-md" />
-                ) : (
-                  <Logo size={24} showText={false} />
-                )}
-                <h2 className="font-black text-white text-sm tracking-tight uppercase drop-shadow-md">{merchantName}</h2>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
-                <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-white">Sedang Disediakan</span>
-              </div>
-            </header>
-
-            {/* 3. Middle Overlay (Invisible Spacer) */}
+            {/* 2. Middle Overlay (Invisible Spacer) */}
             <div className="flex-1" />
 
-            {/* 4. Bottom Section Wrapper */}
+            {/* 3. Bottom Section Wrapper */}
             <div className="relative z-50 w-full flex flex-col justify-end">
               
-              {/* Right Sidebar (Like/Comment area) */}
-              <div className="absolute right-4 bottom-24 flex flex-col items-center gap-4">
+              {/* Right Sidebar (Like/Comment area) pushed UP */}
+              <div className="absolute right-4 bottom-[280px] flex flex-col items-center gap-4">
                 <button 
                   onClick={() => setShowInstructions(true)}
                   className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95 transition-transform"
@@ -556,14 +540,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                 </button>
               </div>
 
-              {/* Bottom Left Ad Details */}
+              {/* Bottom Left Ad Details pushed UP */}
               {ad && (
                 <a
                   href={ad.link_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={handleAdClick}
-                  className="absolute left-4 bottom-24 max-w-[70%] text-left"
+                  className="absolute left-4 bottom-[280px] max-w-[70%] text-left"
                 >
                   <div className="space-y-1.5 drop-shadow-lg">
                     <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-2 leading-tight">@{ad.title}</h4>
@@ -575,41 +559,63 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                 </a>
               )}
 
-              {/* 5. Bottom Navbar */}
-              <footer className="w-full p-4 pt-0">
-                <div className="flex items-stretch gap-2.5 w-full">
-                  {/* Wait Time Box */}
-                  <div className="flex-1 bg-black/50 backdrop-blur-xl border border-white/10 px-4 py-2.5 rounded-2xl shadow-inner text-left flex flex-col justify-center">
+              {/* 4. Solid Pager Box (Integrated) */}
+              <footer className="w-full bg-white dark:bg-[#0c0d12] rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.4)] p-6 pt-5 relative z-50">
+                {/* Pull indicator / handle */}
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-5" />
+
+                {/* Baris 1: Logo, Nama Kedai & Status */}
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/50">
+                  <div className="flex items-center gap-2.5">
+                    {merchantLogo ? (
+                      <img src={merchantLogo} alt={merchantName} className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
+                    ) : (
+                      <Logo size={28} showText={false} />
+                    )}
+                    <h2 className="font-black text-slate-800 dark:text-white text-base tracking-tight uppercase">{merchantName}</h2>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981]/10 rounded-full border border-[#10b981]/20">
+                    <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">Disediakan</span>
+                  </div>
+                </div>
+
+                {/* Baris 2: Nombor Pesanan & Masa */}
+                <div className="flex items-end justify-between mb-6">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">No. Pesanan</p>
+                    <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+                      #{receiptNumber}
+                    </p>
+                  </div>
+                  <div className="text-right">
                     {isGhostActive() ? (
                       <>
-                        <p className="text-white/60 text-[8px] font-black uppercase tracking-widest mb-0.5">Status Pesanan</p>
-                        <p className="text-[10px] font-bold text-white italic animate-pulse leading-tight">Kitchen congestion</p>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                        <p className="text-sm font-bold text-slate-500 italic animate-pulse leading-tight">Sibuk</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-white/60 text-[8px] font-black uppercase tracking-widest mb-0.5">Tempoh Menunggu</p>
-                        <p className="text-lg font-black font-mono tracking-tight text-[#10b981] leading-none drop-shadow-md">{formatWaitTime()}</p>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Masa Menunggu</p>
+                        <p className="text-3xl font-black font-mono tracking-tight text-[#10b981] leading-none">{formatWaitTime()}</p>
                       </>
                     )}
                   </div>
-
-                  {/* Uji Bunyi Box */}
-                  <div className="flex-1 bg-black/50 backdrop-blur-xl border border-white/10 px-3 py-2.5 rounded-2xl flex flex-col justify-between items-center relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundColor: themeColor }} />
-                    <div className="relative z-10 flex items-center gap-1.5 mb-1.5">
-                       <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                       <span className="text-[7px] font-black text-white/80 uppercase tracking-widest">Sistem Aktif</span>
-                    </div>
-                    <button 
-                       onClick={() => initAudio()}
-                       className="relative z-10 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md border border-white/10"
-                       style={{ backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}40` }}
-                    >
-                      <Volume2 size={12} />
-                      Uji Bunyi
-                    </button>
-                  </div>
                 </div>
+
+                {/* Baris 3: Butang Uji Bunyi */}
+                <button 
+                  onClick={() => initAudio()}
+                  className="w-full flex flex-col items-center justify-center gap-1 py-3.5 rounded-2xl transition-all active:scale-95 border border-slate-200 dark:border-white/5 relative overflow-hidden group"
+                  style={{ backgroundColor: themeColor, boxShadow: `0 8px 24px ${themeColor}40` }}
+                >
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                  <div className="relative z-10 flex items-center gap-2 text-white font-black text-sm uppercase tracking-wider">
+                    <Volume2 size={16} />
+                    Uji Bunyi Pager
+                  </div>
+                  <span className="relative z-10 text-[9px] text-white/80 font-medium">Pastikan 'Silent Mode' dimatikan</span>
+                </button>
               </footer>
 
             </div>
