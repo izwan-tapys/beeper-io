@@ -411,12 +411,107 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     <div className="h-[100dvh] w-screen fixed inset-0 flex justify-center items-center bg-[#020203] overflow-hidden" style={{ backgroundImage: `radial-gradient(circle at top, ${themeColor}1a, #020203)` }}>
       
       {/* Centered Device Wrapper for Tablet/Desktop */}
-      <div className="w-full max-w-md h-full flex flex-col justify-between p-6 relative z-10 border-x border-white/5 bg-[#020203]/40 backdrop-blur-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+      <div className={`w-full max-w-md h-full flex flex-col justify-between p-6 relative z-10 border-x border-white/5 ${status === 'waiting' ? 'bg-black' : 'bg-[#020203]/40 backdrop-blur-3xl'} shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden`}>
+        
+        {/* Fullscreen Ad Background for Waiting Status */}
+        {status === 'waiting' && (
+          <div className="absolute inset-0 z-0 flex flex-col bg-black">
+            {ad ? (
+              <>
+                <div className="absolute inset-0 z-0">
+                  {ad.media_url ? (
+                    (() => {
+                      const ytMatch = ad.media_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
+                      const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                      if (ytId) {
+                        return (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                            className="w-full h-full object-cover pointer-events-none scale-105"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+                      
+                      const tiktokMatch = ad.media_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
+                      const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
+                      if (tiktokId) {
+                        return (
+                          <iframe
+                            src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                            className="w-full h-full object-cover"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+
+                      return (
+                        <video
+                          src={ad.media_url}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    })()
+                  ) : ad.fallback_image_url ? (
+                    <img
+                      src={ad.fallback_image_url}
+                      alt={ad.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#0c0d12] via-[#020203] to-[#1e1b4b] p-6 flex flex-col justify-center text-center relative overflow-hidden select-none">
+                      <div className="absolute inset-0 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
+                      <div className="relative z-10 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 mb-4">
+                          <span className="text-white font-black text-xl">B</span>
+                        </div>
+                        <h4 className="text-xl font-black text-white leading-tight uppercase tracking-tight mb-2">Beepme.pro</h4>
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-[200px]">Gantikan Pager Perkakasan Mahal. Daftar Percuma.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gradient Overlays */}
+                <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-black/90 to-transparent pointer-events-none z-10" />
+                <div className="absolute bottom-0 inset-x-0 h-64 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none z-10" />
+
+                {/* Clickable Overlay */}
+                <a
+                  href={ad.link_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleAdClick}
+                  className="absolute inset-0 z-10 flex flex-col justify-end p-6 pb-[160px] text-left"
+                >
+                  <div className="space-y-1.5 select-none mt-auto">
+                    <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-1 drop-shadow-md">{ad.title}</h4>
+                    {ad.description && <p className="text-[10px] text-slate-200 font-medium leading-tight line-clamp-2 drop-shadow-md">{ad.description}</p>}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest mt-2 shadow-lg">
+                      Ketahui Lebih Lanjut →
+                    </div>
+                  </div>
+                </a>
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Loader2 className="animate-spin text-slate-700" />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Background Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
+        {status !== 'waiting' && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
+        )}
 
         {/* Header */}
-        <header className="p-2 text-center relative z-10 shrink-0 mb-4">
+        <header className="p-2 text-center relative z-20 shrink-0 mb-4 pointer-events-none">
           <div className="flex flex-col items-center gap-2">
             {merchantLogo ? (
               <img src={merchantLogo} alt={merchantName} className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-md" />
@@ -465,116 +560,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             </div>
           )}
 
-          {status === 'waiting' && (
-            /* Golden Area: TikTok/Reels vertical ad container */
-            <div className="relative w-full max-w-[280px] flex-1 max-h-[48vh] aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black mx-auto my-auto shrink-0">
-              {ad ? (
-                <>
-                  {ad.media_url ? (
-                    (() => {
-                      const ytMatch = ad.media_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
-                      const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
-                      if (ytId) {
-                        return (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                            className="w-full h-full object-cover pointer-events-none scale-105"
-                            allow="autoplay; encrypted-media"
-                          />
-                        )
-                      }
-                      
-                      const tiktokMatch = ad.media_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
-                      const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
-                      if (tiktokId) {
-                        return (
-                          <iframe
-                            src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
-                            className="w-full h-full object-cover"
-                            allow="autoplay; encrypted-media"
-                          />
-                        )
-                      }
-
-                      return (
-                        <video
-                          src={ad.media_url}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover"
-                        />
-                      )
-                    })()
-                  ) : ad.fallback_image_url ? (
-                    <img
-                      src={ad.fallback_image_url}
-                      alt={ad.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    // Default Beepme.pro interactive fallback card
-                    <div className="w-full h-full bg-gradient-to-br from-[#0c0d12] via-[#020203] to-[#1e1b4b] p-6 flex flex-col justify-between text-left relative overflow-hidden select-none">
-                      <div className="absolute inset-0 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
-                      
-                      {/* Header */}
-                      <div className="flex items-center gap-2 relative z-10">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
-                          <span className="text-white font-black text-sm">B</span>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Beepme.pro</p>
-                          <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Virtual Pager</p>
-                        </div>
-                      </div>
-
-                      {/* Center Content */}
-                      <div className="space-y-3 relative z-10 my-auto">
-                        <h4 className="text-sm font-black text-white leading-tight uppercase tracking-tight">
-                          Gantikan Pager Perkakasan Mahal.
-                        </h4>
-                        <p className="text-[9px] text-slate-400 leading-relaxed font-medium">
-                          Gunakan telefon pintar pelanggan anda. Sistem pager F&B mesra poket, percuma & moden.
-                        </p>
-                      </div>
-
-                      {/* Footer button */}
-                      <div className="relative z-10 mt-auto">
-                        <div className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-black text-[10px] text-center uppercase tracking-widest shadow-lg shadow-indigo-600/30">
-                          Daftar Percuma
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Overlays for title, description, and link */}
-                  <a
-                    href={ad.link_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleAdClick}
-                    className="absolute inset-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/20 to-transparent p-4 text-left"
-                  >
-                    <div className="space-y-1 select-none">
-                      <h4 className="text-xs font-black text-white tracking-tight uppercase line-clamp-1">{ad.title}</h4>
-                      {ad.description && <p className="text-[9px] text-slate-300 font-medium leading-tight line-clamp-2">{ad.description}</p>}
-                      <div className="inline-flex items-center gap-1 text-[8px] font-black text-indigo-400 uppercase tracking-widest mt-1">
-                        Ketahui Lebih Lanjut →
-                      </div>
-                    </div>
-                  </a>
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Loader2 className="animate-spin text-slate-700" />
-                </div>
-              )}
-            </div>
-          )}
         </main>
 
-        <footer className="p-2 relative z-10 shrink-0 mt-4 space-y-4 text-center">
+        <footer className="p-2 relative z-20 shrink-0 mt-4 space-y-4 text-center">
           {status === 'waiting' && (
             <div className="w-full space-y-3">
               {/* Side-by-side controls */}
