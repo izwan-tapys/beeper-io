@@ -94,6 +94,8 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
   // Use a ref for status to avoid closure issues in polling
   const statusRef = useRef<PagerStatus>('loading')
+  const lastUpdatedRef = useRef<string | null>(null)
+  const isInitialFetchRef = useRef<boolean>(true)
   useEffect(() => { statusRef.current = status }, [status])
 
   // Get or create client_uuid from localStorage on mount
@@ -155,52 +157,55 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [])
 
-  const fetchSession = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_link_url, upsell_video_url, upsell_image_url)')
-      .eq('id', sessionId)
-      .single()
+  const playChime = useCallback(async () => {
+    const ctx = audioCtxRef.current
+    if (!ctx) return
+    if (ctx.state === 'suspended') await ctx.resume()
 
-    if (error || !data) { 
-      if (statusRef.current === 'loading') setStatus('error')
-      return 
+    const tones = [1046.50, 1318.51, 1567.98, 2093.00]
+    tones.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gainNode = ctx.createGain()
+      osc.connect(gainNode)
+      gainNode.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
+      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.1)
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.1 + 0.02)
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.35)
+      osc.start(ctx.currentTime + i * 0.1)
+      osc.stop(ctx.currentTime + i * 0.1 + 0.4)
+    })
+  }, [volume])
+
+  const triggerAlert = useCallback(() => {
+    if (alertIntervalRef.current) return
+    setIsFlashing(true)
+    const runAlert = () => {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate([800, 200, 800, 200, 800])
+      }
+      playChime()
     }
-    
-    const rawMerchant = data.merchants
-    const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
-    
-    let isPremium = false
-    if (merchantData) {
-      setMerchantId(data.merchant_id)
-      setMerchantName(merchantData.name || 'Store')
-      setMerchantLogo(merchantData.logo_url)
-      setGmbUrl(merchantData.gmb_url)
-      setThemeColor(merchantData.theme_color || '#6366f1')
+    runAlert()
+    alertIntervalRef.current = setInterval(runAlert, 2500)
+  }, [playChime])
 
-      isPremium = merchantData.plan_type === 'pro' &&
-        merchantData.subscription_status === 'active' &&
-        (!!merchantData.expiry_date && new Date(merchantData.expiry_date) > new Date())
+  const stopAlert = useCallback(() => {
+    setIsFlashing(false)
+    if (alertIntervalRef.current) {
+      clearInterval(alertIntervalRef.current)
+      alertIntervalRef.current = null
     }
-    
-    setReceiptNumber(data.receipt_number)
-    setCreatedAt(data.created_at)
+  }, [])
 
-    // Sync client_uuid if empty
-    if (clientUuid && !data.client_uuid) {
-      await supabase.from('sessions').update({ client_uuid: clientUuid }).eq('id', sessionId)
-    }
-
-    // Trigger ad fetch once merchant is loaded
-    if (!ad && merchantData) {
-      fetchAd(data.merchant_id, isPremium, merchantData)
-    }
-
+  const processSessionStatus = useCallback((data: any) => {
     if (data.status === 'called') {
-      if (statusRef.current !== 'called') {
+      if (statusRef.current !== 'called' || (lastUpdatedRef.current && data.updated_at !== lastUpdatedRef.current)) {
         setStatus('called')
         triggerAlert()
       }
+      lastUpdatedRef.current = data.updated_at
     } else if (data.status === 'completed' || data.status === 'archived') {
       setStatus('completed')
       stopAlert()
@@ -209,32 +214,115 @@ const handleTouchStart = (e: React.TouchEvent) => {
     } else {
       setStatus('confirm')
     }
-  }, [sessionId, clientUuid, ad, fetchAd])
+  }, [triggerAlert, stopAlert])
+
+  const fetchSession = useCallback(async () => {
+    if (isInitialFetchRef.current) {
+      // Heavy fetch on initial load
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_link_url, upsell_video_url, upsell_image_url)')
+        .eq('id', sessionId)
+        .single()
+
+      if (error || !data) { 
+        if (statusRef.current === 'loading') setStatus('error')
+        return 
+      }
+      
+      const rawMerchant = data.merchants
+      const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
+      
+      let isPremium = false
+      if (merchantData) {
+        setMerchantId(data.merchant_id)
+        setMerchantName(merchantData.name || 'Store')
+        setMerchantLogo(merchantData.logo_url)
+        setGmbUrl(merchantData.gmb_url)
+        setThemeColor(merchantData.theme_color || '#6366f1')
+
+        isPremium = merchantData.plan_type === 'pro' &&
+          merchantData.subscription_status === 'active' &&
+          (!!merchantData.expiry_date && new Date(merchantData.expiry_date) > new Date())
+      }
+      
+      setReceiptNumber(data.receipt_number)
+      setCreatedAt(data.created_at)
+
+      if (clientUuid && !data.client_uuid) {
+        await supabase.from('sessions').update({ client_uuid: clientUuid }).eq('id', sessionId)
+      }
+
+      if (!ad && merchantData) {
+        fetchAd(data.merchant_id, isPremium, merchantData)
+      }
+
+      processSessionStatus(data)
+      isInitialFetchRef.current = false
+    } else {
+      // Light fetch for polling
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('status, is_confirmed, updated_at')
+        .eq('id', sessionId)
+        .single()
+        
+      if (error || !data) return
+      processSessionStatus(data)
+    }
+  }, [sessionId, clientUuid, ad, fetchAd, processSessionStatus])
 
   useEffect(() => {
     fetchSession()
   }, [fetchSession])
 
   useEffect(() => {
+    // 1. Setup Wait Timer
     if (status === 'waiting' || status === 'called') {
       if (!waitTimerRef.current) {
         waitTimerRef.current = setInterval(() => setNow(Date.now()), 1000)
       }
-      if (!pollingRef.current) {
-        pollingRef.current = setInterval(() => {
-          fetchSession()
-        }, 3000)
+    } else {
+      if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
+    }
+
+    if (status === 'completed' || status === 'error') {
+      return
+    }
+
+    // 2. Setup 15-second Light Polling Fallback
+    if (!pollingRef.current) {
+      pollingRef.current = setInterval(() => {
+        fetchSession()
+      }, 15000) // Changed from 3s to 15s
+    }
+
+    // 3. Setup Supabase Realtime for instant updates (0.1s)
+    const channel = supabase
+      .channel(`session-${sessionId}`)
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, 
+        (payload: any) => {
+          processSessionStatus(payload.new)
+        }
+      )
+      .subscribe()
+
+    // 4. Setup Visibility API for instant resume
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSession() // Immediately fetch latest state when screen wakes up
       }
     }
-    if (status === 'completed' || status === 'error') {
-      if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
-      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
-    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => { 
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      supabase.removeChannel(channel)
     }
-  }, [status, fetchSession])
+  }, [status, sessionId, fetchSession, processSessionStatus])
 
   // Track ad impression
   useEffect(() => {
@@ -290,47 +378,6 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [])
 
-  const triggerAlert = () => {
-    if (alertIntervalRef.current) return
-    setIsFlashing(true)
-    const runAlert = () => {
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        navigator.vibrate([800, 200, 800, 200, 800])
-      }
-      playChime()
-    }
-    runAlert()
-    alertIntervalRef.current = setInterval(runAlert, 2500)
-  }
-
-  const stopAlert = () => {
-    setIsFlashing(false)
-    if (alertIntervalRef.current) {
-      clearInterval(alertIntervalRef.current)
-      alertIntervalRef.current = null
-    }
-  }
-
-  const playChime = async () => {
-    const ctx = audioCtxRef.current
-    if (!ctx) return
-    if (ctx.state === 'suspended') await ctx.resume()
-
-    const tones = [1046.50, 1318.51, 1567.98, 2093.00]
-    tones.forEach((freq, i) => {
-      const osc = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-      osc.connect(gainNode)
-      gainNode.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
-      gainNode.gain.setValueAtTime(0, ctx.currentTime + i * 0.1)
-      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + i * 0.1 + 0.02)
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.35)
-      osc.start(ctx.currentTime + i * 0.1)
-      osc.stop(ctx.currentTime + i * 0.1 + 0.4)
-    })
-  }
 
   const initAudio = async () => {
     try {

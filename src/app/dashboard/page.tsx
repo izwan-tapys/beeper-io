@@ -79,6 +79,7 @@ export default function DashboardPage() {
   const [mfaError, setMfaError] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [settingsThemeColor, setSettingsThemeColor] = useState('#6366f1')
+  const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -392,10 +393,19 @@ export default function DashboardPage() {
   }
 
   const callSession = async (id: string) => {
+    if (cooldowns[id]) return
+
+    // Set cooldown
+    setCooldowns(prev => ({ ...prev, [id]: true }))
+    setTimeout(() => {
+      setCooldowns(prev => ({ ...prev, [id]: false }))
+    }, 10000)
+
     const { error } = await supabase.from('sessions').update({ status: 'called', updated_at: new Date().toISOString() }).eq('id', id)
     if (error) {
       console.error('Call session error:', error)
       alert('Gagal panggil: ' + error.message)
+      setCooldowns(prev => ({ ...prev, [id]: false })) // release cooldown on error
     }
   }
 
@@ -1055,12 +1065,12 @@ export default function DashboardPage() {
                         </button>
                         <button
                           onClick={() => callSession(session.id)}
-                          disabled={session.status === 'called' || !session.is_confirmed}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-20 disabled:grayscale whitespace-nowrap"
+                          disabled={!session.is_confirmed || cooldowns[session.id]}
+                          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-20 disabled:grayscale whitespace-nowrap ${cooldowns[session.id] ? 'animate-pulse' : ''}`}
                           style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
                         >
                           <Phone size={16} />
-                          {session.status === 'called' ? 'CALLED' : 'CALL'}
+                          {cooldowns[session.id] ? 'WAIT...' : (session.status === 'called' ? 'RECALL' : 'CALL')}
                         </button>
                         <button
                           onClick={() => doneSession(session.id)}
