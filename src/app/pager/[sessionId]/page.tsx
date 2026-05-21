@@ -30,13 +30,55 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [showInstructions, setShowInstructions] = useState(true)
 
   const [clientUuid, setClientUuid] = useState<string | null>(null)
-  const [ad, setAd] = useState<any>(null)
+  const [adsList, setAdsList] = useState<any[]>([])
+  const [currentAdIndex, setCurrentAdIndex] = useState(0)
+  const ad = adsList[currentAdIndex] || null
+
+    const [touchStartY, setTouchStartY] = useState<number | null>(null)
+
+  const resetSlideTimer = useCallback(() => {
+    if (slideTimerRef.current) clearInterval(slideTimerRef.current)
+    if (adsList.length > 1) {
+      slideTimerRef.current = setInterval(() => {
+        setCurrentAdIndex((prev) => (prev + 1) % adsList.length)
+      }, 15000)
+    }
+  }, [adsList.length])
+
+  useEffect(() => {
+    if (status === 'waiting' && adsList.length > 1) {
+      resetSlideTimer()
+    }
+    return () => {
+      if (slideTimerRef.current) clearInterval(slideTimerRef.current)
+    }
+  }, [status, adsList.length, resetSlideTimer])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].clientY)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY === null || adsList.length <= 1) return
+    const touchEndY = e.changedTouches[0].clientY
+    const deltaY = touchStartY - touchEndY
+    
+    if (deltaY > 50) {
+      setCurrentAdIndex((prev) => (prev + 1) % adsList.length)
+      resetSlideTimer()
+    } else if (deltaY < -50) {
+      setCurrentAdIndex((prev) => (prev - 1 + adsList.length) % adsList.length)
+      resetSlideTimer()
+    }
+    setTouchStartY(null)
+  }
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const waitTimerRef = useRef<NodeJS.Timeout | null>(null)
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const slideTimerRef = useRef<NodeJS.Timeout | null>(null)
   const impressionLoggedRef = useRef<boolean>(false)
 
   // Use a ref for status to avoid closure issues in polling
@@ -58,13 +100,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any) => {
     try {
       if (isPremium && (upsellData.upsell_video_url || upsellData.upsell_image_url)) {
-        setAd({
+        setAdsList([{
           id: 'merchant-upsell',
           title: upsellData.upsell_title || 'Promosi Kedai',
           media_url: upsellData.upsell_video_url,
           fallback_image_url: upsellData.upsell_image_url,
           link_url: upsellData.upsell_link_url || '#'
-        })
+        }])
         return
       }
 
@@ -75,35 +117,28 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         .eq('is_active', true)
 
       if (error || !adsData || adsData.length === 0) {
-        setAd({
+        setAdsList([{
           id: 'default-beepme',
           title: 'Beepme.pro - Pager F&B',
           media_url: null,
           fallback_image_url: null,
           link_url: 'https://beepme.pro',
           description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
-        })
+        }])
         return
       }
 
-      // Weighted random selection
-      const totalWeight = adsData.reduce((sum, adItem) => sum + (adItem.weight || 1), 0)
-      let random = Math.random() * totalWeight
-      let selected = adsData[0]
-      for (const adItem of adsData) {
-        random -= (adItem.weight || 1)
-        if (random <= 0) {
-          selected = adItem
-          break
-        }
-      }
-      setAd({
-        id: selected.id,
-        title: selected.title,
-        media_url: selected.video_url,
-        fallback_image_url: selected.image_url,
-        link_url: selected.link_url
-      })
+      // We no longer pick just one ad. We use the full array and shuffle them.
+      const shuffledAds = adsData.map(adItem => ({
+        id: adItem.id,
+        title: adItem.title,
+        media_url: adItem.video_url,
+        fallback_image_url: adItem.image_url,
+        link_url: adItem.link_url,
+        description: adItem.description || ''
+      })).sort(() => 0.5 - Math.random())
+
+      setAdsList(shuffledAds)
     } catch (err) {
       console.error('Error fetching ads:', err)
     }
@@ -417,9 +452,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         {/* TIKTOK UX WAITING SCREEN                 */}
         {/* ========================================= */}
         {status === 'waiting' && (
-          <div className="w-full h-full relative flex flex-col justify-between">
+          <div className="w-full h-full relative flex flex-col justify-between" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             {/* 1. Fullscreen Background Ad */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 animate-fade-in" key={currentAdIndex}>
               {ad ? (
                 <>
                   {ad.media_url ? (
