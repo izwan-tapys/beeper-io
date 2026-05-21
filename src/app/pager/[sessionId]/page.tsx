@@ -411,14 +411,69 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     <div className="h-[100dvh] w-screen fixed inset-0 flex justify-center items-center bg-[#020203] overflow-hidden" style={{ backgroundImage: `radial-gradient(circle at top, ${themeColor}1a, #020203)` }}>
       
       {/* Centered Device Wrapper for Tablet/Desktop */}
-      <div className={`w-full max-w-md h-full flex flex-col justify-between p-6 relative z-10 border-x border-white/5 ${status === 'waiting' ? 'bg-black' : 'bg-[#020203]/40 backdrop-blur-3xl'} shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden`}>
+      <div className={`w-full max-w-md h-full flex flex-col justify-between relative z-10 border-x border-white/5 ${status === 'waiting' ? 'bg-black' : 'p-6 bg-[#020203]/40 backdrop-blur-3xl'} shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden`}>
         
-        {/* Fullscreen Ad Background for Waiting Status */}
-        {status === 'waiting' && (
-          <div className="absolute inset-0 z-0 flex flex-col bg-black">
-            {ad ? (
-              <>
-                <div className="absolute inset-0 z-0">
+        {/* Background Glow (Confirm Only) */}
+        {status !== 'waiting' && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
+        )}
+
+        {/* Header - 15% */}
+        <header className={`${status === 'waiting' ? 'h-[15dvh] bg-[#111]' : 'mb-4'} shrink-0 flex flex-col items-center justify-center p-4 relative z-20`}>
+          <div className="flex flex-col items-center gap-2 w-full max-w-[280px]">
+            <div className="flex items-center gap-2">
+              {merchantLogo ? (
+                <img src={merchantLogo} alt={merchantName} className={`${status === 'waiting' ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover border border-white/10 shadow-md`} />
+              ) : (
+                <Logo size={status === 'waiting' ? 24 : 36} showText={false} />
+              )}
+              <h2 className="font-black text-white text-base tracking-tight uppercase">{merchantName}</h2>
+            </div>
+            
+            {status === 'waiting' && (
+              <div className="w-full mt-1">
+                <div className="flex justify-between text-[7px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                  <span className="animate-pulse">Sedang Disediakan</span>
+                  <span>Sedia Dikutip</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 w-[40%] animate-pulse" />
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Main Content - 70% (Ads) or Confirm screen */}
+        <main className={`${status === 'waiting' ? 'h-[70dvh] w-full' : 'flex-1 px-2'} flex flex-col items-center justify-center relative z-10 overflow-hidden bg-black`}>
+          {status === 'confirm' && (
+            <div className="w-full max-w-sm text-center animate-slide-up h-full flex flex-col justify-center">
+              <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
+                <h1 className="text-4xl font-black text-white mb-2 tracking-tighter italic">#{receiptNumber}</h1>
+                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Connect Your Pager</p>
+                
+                <div className="space-y-4 text-left mb-8">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                    <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-indigo-200 leading-snug">Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleConfirm} 
+                  className="w-full py-5 rounded-2xl font-black text-white text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                  style={{ backgroundColor: themeColor, boxShadow: `0 20px 40px ${themeColor}33` }}
+                >
+                  ACTIVATE PAGER
+                </button>
+              </div>
+            </div>
+          )}
+
+          {status === 'waiting' && (
+            <div className="w-full h-full relative group">
+              {ad ? (
+                <>
                   {ad.media_url ? (
                     (() => {
                       const ytMatch = ad.media_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
@@ -474,100 +529,41 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                       </div>
                     </div>
                   )}
-                </div>
 
-                {/* Gradient Overlays */}
-                <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-black/90 to-transparent pointer-events-none z-10" />
-                <div className="absolute bottom-0 inset-x-0 h-64 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none z-10" />
+                  {/* Gradient Overlay for Ad Title */}
+                  <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none z-10" />
 
-                {/* Clickable Overlay */}
-                <a
-                  href={ad.link_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleAdClick}
-                  className="absolute inset-0 z-10 flex flex-col justify-end p-6 pb-[160px] text-left"
-                >
-                  <div className="space-y-1.5 select-none mt-auto">
-                    <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-1 drop-shadow-md">{ad.title}</h4>
-                    {ad.description && <p className="text-[10px] text-slate-200 font-medium leading-tight line-clamp-2 drop-shadow-md">{ad.description}</p>}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest mt-2 shadow-lg">
-                      Ketahui Lebih Lanjut →
+                  {/* Clickable Overlay */}
+                  <a
+                    href={ad.link_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleAdClick}
+                    className="absolute inset-0 z-20 flex flex-col justify-end p-6 text-left"
+                  >
+                    <div className="space-y-1.5 select-none mt-auto">
+                      <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-1 drop-shadow-md">{ad.title}</h4>
+                      {ad.description && <p className="text-[10px] text-slate-200 font-medium leading-tight line-clamp-2 drop-shadow-md">{ad.description}</p>}
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest mt-2 shadow-lg">
+                        Ketahui Lebih Lanjut →
+                      </div>
                     </div>
-                  </div>
-                </a>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Loader2 className="animate-spin text-slate-700" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Background Glow */}
-        {status !== 'waiting' && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
-        )}
-
-        {/* Header */}
-        <header className="p-2 text-center relative z-20 shrink-0 mb-4 pointer-events-none">
-          <div className="flex flex-col items-center gap-2">
-            {merchantLogo ? (
-              <img src={merchantLogo} alt={merchantName} className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-md" />
-            ) : (
-              <Logo size={36} showText={false} />
-            )}
-            <h2 className="font-black text-white text-base tracking-tight uppercase">{merchantName}</h2>
-            
-            {status === 'waiting' && (
-              <div className="w-full max-w-[280px] mx-auto mt-2">
-                <div className="flex justify-between text-[7px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                  <span className="animate-pulse">Sedang Disediakan</span>
-                  <span>Sedia Dikutip</span>
+                  </a>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Loader2 className="animate-spin text-slate-700" />
                 </div>
-                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 w-[40%] animate-pulse" />
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Main content: Flex Col layout */}
-        <main className="flex-1 flex flex-col items-center justify-center px-2 relative z-10 min-h-0 w-full">
-          {status === 'confirm' && (
-            <div className="w-full max-w-sm text-center animate-slide-up">
-              <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
-                <h1 className="text-4xl font-black text-white mb-2 tracking-tighter italic">#{receiptNumber}</h1>
-                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Connect Your Pager</p>
-                
-                <div className="space-y-4 text-left mb-8">
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-                    <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-indigo-200 leading-snug">Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={handleConfirm} 
-                  className="w-full py-5 rounded-2xl font-black text-white text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
-                  style={{ backgroundColor: themeColor, boxShadow: `0 20px 40px ${themeColor}33` }}
-                >
-                  ACTIVATE PAGER
-                </button>
-              </div>
+              )}
             </div>
           )}
-
         </main>
 
-        <footer className="p-2 relative z-20 shrink-0 mt-4 space-y-4 text-center">
+        {/* Footer - 15% */}
+        <footer className={`${status === 'waiting' ? 'h-[15dvh] bg-[#111]' : 'mt-4'} shrink-0 flex flex-col justify-center p-4 relative z-20`}>
           {status === 'waiting' && (
-            <div className="w-full space-y-3">
-              {/* Side-by-side controls */}
+            <div className="w-full space-y-3 max-w-[280px] mx-auto">
               <div className="flex items-stretch gap-3 w-full">
-                {/* Tempoh Menunggu Box */}
                 <div className="flex-1 bg-white/[0.02] border border-white/10 px-4 py-3 rounded-2xl shadow-inner text-left flex flex-col justify-center">
                   {isGhostActive() ? (
                     <>
@@ -582,7 +578,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                   )}
                 </div>
 
-                {/* Uji Bunyi Button & System indicator */}
                 <div className="flex-1 bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center gap-1.5 justify-center mb-1.5">
                      <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
@@ -599,7 +594,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                 </div>
               </div>
 
-              {/* Sound warning alert sheet */}
               {showInstructions && (
                 <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-left relative animate-slide-up">
                    <button onClick={() => setShowInstructions(false)} className="absolute top-2 right-2 text-slate-500 hover:text-white font-bold text-[8px]">X</button>
@@ -608,8 +602,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                       <span className="text-[8px] font-black uppercase tracking-widest">Perhatian Bunyi</span>
                    </div>
                    <ul className="text-[8px] text-amber-200/60 space-y-0.5 font-medium leading-normal">
-                      <li>• Matikan Mod Senyap (Mute Switch)</li>
-                      <li>• Kuatkan Audio ke Maksimum</li>
+                      <li>• Matikan Mod Senyap</li>
+                      <li>• Kuatkan Audio</li>
                       <li>• Jangan tutup halaman ini</li>
                    </ul>
                 </div>
@@ -617,7 +611,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             </div>
           )}
 
-          <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em] pt-2">
+          <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em] pt-2 text-center w-full mt-2">
             Beepme.pro — Virtual Paging System
           </p>
         </footer>
