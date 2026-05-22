@@ -169,6 +169,14 @@ export default function DashboardPage() {
       const fileName = `${merchant.id}/${Date.now()}.webp`
       const filePath = `logos/${fileName}`
 
+      // Delete old logo if it exists
+      if (merchant.logo_url) {
+        const bucketMatch = merchant.logo_url.split('/merchant-logos/');
+        if (bucketMatch.length === 2) {
+          await supabase.storage.from('merchant-logos').remove([bucketMatch[1]]);
+        }
+      }
+
       // 2. Upload the compressed WebP blob to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('merchant-logos')

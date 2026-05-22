@@ -62,6 +62,16 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
 
       const fileName = `ads/${merchant.id}/${Date.now()}.webp`
       
+      // Delete old image if it exists to save space
+      if (merchant.upsell_image_url) {
+        const oldUrl = merchant.upsell_image_url;
+        const bucketMatch = oldUrl.split('/merchant-logos/');
+        if (bucketMatch.length === 2) {
+          const oldPath = bucketMatch[1];
+          await supabase.storage.from('merchant-logos').remove([oldPath]);
+        }
+      }
+
       const { error: uploadError } = await supabase.storage
         .from('merchant-logos') // Reusing existing bucket
         .upload(fileName, compressedFile, { 
