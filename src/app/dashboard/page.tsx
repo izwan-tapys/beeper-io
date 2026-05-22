@@ -842,9 +842,16 @@ export default function DashboardPage() {
             <div className="flex flex-col justify-center flex-1 min-w-0 ml-1">
               <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beepme</span>
               {merchant && (
-                <h1 className="text-sm sm:text-base font-bold text-white truncate leading-none">
-                  {merchant.name}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-bold text-white truncate leading-none">
+                    {merchant.name}
+                  </h1>
+                  {merchant.plan_type === 'pro' && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[9px] font-black uppercase tracking-widest border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                      PRO
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
