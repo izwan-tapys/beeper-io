@@ -112,14 +112,25 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
   const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any) => {
     try {
-      if (isPremium && (upsellData.upsell_video_url || upsellData.upsell_image_url)) {
-        setAdsList([{
-          id: 'merchant-upsell',
-          title: upsellData.upsell_title || 'Promosi Kedai',
-          media_url: upsellData.upsell_video_url,
-          fallback_image_url: upsellData.upsell_image_url,
-          link_url: upsellData.upsell_link_url || '#'
-        }])
+      if (isPremium) {
+        if (upsellData.upsell_video_url || upsellData.upsell_image_url) {
+          setAdsList([{
+            id: 'merchant-upsell',
+            title: upsellData.upsell_title || 'Promosi Kedai',
+            media_url: upsellData.upsell_video_url,
+            fallback_image_url: upsellData.upsell_image_url,
+            link_url: upsellData.upsell_link_url || '#'
+          }])
+        } else {
+          setAdsList([{
+            id: 'default-beepme',
+            title: 'Beepme.pro - Pager F&B',
+            media_url: null,
+            fallback_image_url: null,
+            link_url: 'https://beepme.pro',
+            description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
+          }])
+        }
         return
       }
 
