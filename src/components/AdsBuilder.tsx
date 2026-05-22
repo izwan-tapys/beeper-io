@@ -219,7 +219,6 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
       <div className="w-full flex justify-between items-center mb-6">
         <div>
           <h2 className="text-xl font-bold text-white">Visual Ads Editor</h2>
-          <p className="text-sm text-slate-400">Edit terus atas skrin (WYSIWYG).</p>
         </div>
         <button
           onClick={handleSave}
