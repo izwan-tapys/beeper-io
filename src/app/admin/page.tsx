@@ -1,6 +1,6 @@
 'use client'
 
-// VERCEL_FORCE_REBUILD_FINAL_V3
+// VERCEL_FORCE_REBUILD_FINAL_V4
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -9,11 +9,23 @@ import {
   Loader2, Search, Smartphone, Store,
   Zap, Clock, BarChart3, Globe, ExternalLink,
   ChevronRight, ArrowUpRight, TrendingUp, AlertCircle, LogOut, ArrowLeft,
-  Tv, PlayCircle, Image, Plus, Trash2, Eye, MousePointerClick, Percent
+  Tv, PlayCircle, Image, Plus, Trash2, Eye, MousePointerClick, Percent,
+  MapPin, DollarSign, Clock3
 } from 'lucide-react'
 
 const supabase = createClient()
 const ADMIN_EMAIL = 'izwan.tapys@gmail.com'
+
+const MERCHANT_CATEGORIES = [
+  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Seafood',
+  'Nasi Kandar', 'Mamak', 'Hawker & Street Food', 'Bakery & Desserts',
+  'Other F&B', 'Retail', 'Bank & Finance', 'Entertainment', 'Health & Wellness', 'Other'
+]
+
+const AD_CATEGORIES = [
+  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Retail',
+  'Entertainment', 'Health & Wellness', 'Bank & Finance', 'Other'
+]
 
 export default function AdminPage() {
   const router = useRouter()
@@ -29,12 +41,33 @@ export default function AdminPage() {
     estimatedRevenue: 0
   })
 
+  // Location form state per merchant
+  const [locationFormId, setLocationFormId] = useState<string | null>(null)
+  const [locationForm, setLocationForm] = useState({ latitude: '', longitude: '', category: '' })
+  const [savingLocation, setSavingLocation] = useState(false)
+
   // Ads State
   const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra'>('merchants')
+  const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all'>('active')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
   const [isAddingAd, setIsAddingAd] = useState(false)
-  const [newAd, setNewAd] = useState({ title: '', video_url: '', image_url: '', link_url: '', is_active: true })
+  const [newAd, setNewAd] = useState({
+    title: '',
+    description: '',
+    cta_text: '',
+    category: '',
+    video_url: '',
+    image_url: '',
+    link_url: '',
+    target_latitude: '',
+    target_longitude: '',
+    target_radius_km: '',
+    cpv_bid: '',
+    is_active: true
+  })
+  const [adsModerating, setAdsModerating] = useState<string | null>(null)
+  const [totalCpvRevenue, setTotalCpvRevenue] = useState(0)
 
   // Infra State
   const [infraData, setInfraData] = useState<any>(null)
@@ -101,8 +134,24 @@ export default function AdminPage() {
   const fetchAds = useCallback(async () => {
     setAdsLoading(true)
     try {
-      const { data: adsData, error: adsError } = await supabase.from('ads').select('*').order('created_at', { ascending: false })
+      // Fetch ALL ads (no is_active filter)
+      const { data: adsData, error: adsError } = await supabase
+        .from('ads')
+        .select('*')
+        .order('created_at', { ascending: false })
+
       const { data: analyticsData } = await supabase.from('ad_analytics').select('ad_id, event_type')
+
+      // Fetch CPV revenue: sum of debits
+      const { data: txData } = await supabase
+        .from('ad_wallet_transactions')
+        .select('amount')
+        .eq('type', 'debit')
+
+      if (txData) {
+        const total = txData.reduce((acc, tx) => acc + (tx.amount || 0), 0)
+        setTotalCpvRevenue(total)
+      }
       
       if (adsData) {
         const enrichedAds = adsData.map((ad: any) => {
@@ -130,18 +179,48 @@ export default function AdminPage() {
     if (!newAd.title.trim()) return
     const { error } = await supabase.from('ads').insert({
       title: newAd.title.trim(),
+      description: newAd.description.trim() || null,
+      cta_text: newAd.cta_text.trim() || null,
+      category: newAd.category || null,
       video_url: newAd.video_url.trim() || null,
       image_url: newAd.image_url.trim() || null,
       link_url: newAd.link_url.trim() || null,
-      is_active: newAd.is_active
+      target_latitude: newAd.target_latitude ? parseFloat(newAd.target_latitude) : null,
+      target_longitude: newAd.target_longitude ? parseFloat(newAd.target_longitude) : null,
+      target_radius_km: newAd.target_radius_km ? parseFloat(newAd.target_radius_km) : null,
+      cpv_bid: newAd.cpv_bid ? parseFloat(newAd.cpv_bid) : null,
+      is_active: true,
+      status: 'active',
+      advertiser_id: null // system ad
     })
     if (!error) {
       setIsAddingAd(false)
-      setNewAd({ title: '', video_url: '', image_url: '', link_url: '', is_active: true })
+      setNewAd({
+        title: '', description: '', cta_text: '', category: '',
+        video_url: '', image_url: '', link_url: '',
+        target_latitude: '', target_longitude: '', target_radius_km: '',
+        cpv_bid: '', is_active: true
+      })
       fetchAds()
     } else {
       alert('Error adding ad: ' + error.message)
     }
+  }
+
+  const handleApproveAd = async (id: string) => {
+    setAdsModerating(id)
+    const { error } = await supabase.from('ads').update({ status: 'active', is_active: true }).eq('id', id)
+    if (!error) fetchAds()
+    else alert('Error approving ad: ' + error.message)
+    setAdsModerating(null)
+  }
+
+  const handleRejectAd = async (id: string) => {
+    setAdsModerating(id)
+    const { error } = await supabase.from('ads').update({ status: 'rejected', is_active: false }).eq('id', id)
+    if (!error) fetchAds()
+    else alert('Error rejecting ad: ' + error.message)
+    setAdsModerating(null)
   }
 
   const toggleAdActive = async (id: string, current: boolean) => {
@@ -206,6 +285,18 @@ export default function AdminPage() {
     setVerifyingId(null)
   }
 
+  const handleSaveLocation = async (merchantId: string) => {
+    setSavingLocation(true)
+    const updates: any = {}
+    if (locationForm.latitude) updates.latitude = parseFloat(locationForm.latitude)
+    if (locationForm.longitude) updates.longitude = parseFloat(locationForm.longitude)
+    if (locationForm.category) updates.category = locationForm.category
+    await updateMerchant(merchantId, updates)
+    setSavingLocation(false)
+    setLocationFormId(null)
+    setLocationForm({ latitude: '', longitude: '', category: '' })
+  }
+
   useEffect(() => {
     checkAdmin()
   }, [checkAdmin])
@@ -215,6 +306,11 @@ export default function AdminPage() {
     m.phone?.includes(searchQuery) ||
     m.id.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Derived ad lists
+  const pendingAds = ads.filter(a => a.status === 'pending_review')
+  const activeAds = ads.filter(a => a.status === 'active' || a.is_active)
+  const displayedAds = adsSubTab === 'pending' ? pendingAds : adsSubTab === 'active' ? activeAds : ads
 
   if (!isAdmin) return null
 
@@ -295,6 +391,9 @@ export default function AdminPage() {
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
             <Tv size={16} /> Ad Network
+            {pendingAds.length > 0 && activeTab !== 'ads' && (
+              <span className="ml-1 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingAds.length}</span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('infra')}
@@ -372,93 +471,188 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredMerchants.map((m) => {
+                    const isEditingLocation = locationFormId === m.id
                     return (
-                      <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-                              <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
-                                {m.name?.[0] || 'M'}
+                      <>
+                        <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
+                                <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
+                                  {m.name?.[0] || 'M'}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+                                    {m.is_verified ? 'Verified' : 'Pending'}
+                                  </span>
+                                  {m.category && (
+                                    <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{m.category}</span>
+                                  )}
+                                  <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
+                                </div>
+                                {(m.latitude || m.longitude) && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <MapPin size={9} className="text-indigo-400" />
+                                    <span className="text-[9px] text-slate-500 font-mono">{m.latitude?.toFixed(4)}, {m.longitude?.toFixed(4)}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
-                                  {m.is_verified ? 'Verified' : 'Pending'}
-                                </span>
-                                <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
+                              <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
+                              <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
+                              <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col gap-1.5 max-w-[120px]">
+                              <div className="flex items-end justify-between">
+                                <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-indigo-500 transition-all duration-1000"
+                                  style={{ width: '100%' }}
+                                />
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
-                            <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
-                            <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
-                            <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex flex-col gap-1.5 max-w-[120px]">
-                            <div className="flex items-end justify-between">
-                              <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
-                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-indigo-500 transition-all duration-1000"
-                                style={{ width: '100%' }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <select 
-                            value={m.plan_type}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              const updates: any = { plan_type: val }
-                              if (val === 'pro') {
-                                updates.subscription_status = 'active'
-                                const expiry = new Date()
-                                expiry.setDate(expiry.getDate() + 30)
-                                updates.expiry_date = expiry.toISOString()
-                              } else {
-                                updates.subscription_status = null
-                                updates.expiry_date = null
-                              }
-                              updateMerchant(m.id, updates)
-                            }}
-                            disabled={verifyingId === m.id}
-                            className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
-                          >
-                            <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
-                            <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
-                          </select>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
+                          </td>
+                          <td className="py-4 px-6">
+                            <select 
+                              value={m.plan_type}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                const updates: any = { plan_type: val }
+                                if (val === 'pro') {
+                                  updates.subscription_status = 'active'
+                                  const expiry = new Date()
+                                  expiry.setDate(expiry.getDate() + 30)
+                                  updates.expiry_date = expiry.toISOString()
+                                } else {
+                                  updates.subscription_status = null
+                                  updates.expiry_date = null
+                                }
+                                updateMerchant(m.id, updates)
+                              }}
                               disabled={verifyingId === m.id}
-                              className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
+                              className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
                             >
-                              {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
-                            </button>
-                            {m.phone && (
-                              <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
-                                <Smartphone size={14} />
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                              <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
+                              <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
+                            </select>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  if (isEditingLocation) {
+                                    setLocationFormId(null)
+                                  } else {
+                                    setLocationFormId(m.id)
+                                    setLocationForm({
+                                      latitude: m.latitude?.toString() || '',
+                                      longitude: m.longitude?.toString() || '',
+                                      category: m.category || ''
+                                    })
+                                  }
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${isEditingLocation ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 border border-white/10'}`}
+                              >
+                                <MapPin size={11} />
+                                {isEditingLocation ? 'Cancel' : 'Set Location'}
+                              </button>
+                              <button 
+                                onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
+                                disabled={verifyingId === m.id}
+                                className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
+                              >
+                                {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
+                              </button>
+                              {m.phone && (
+                                <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
+                                  <Smartphone size={14} />
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {/* Inline Location Form */}
+                        {isEditingLocation && (
+                          <tr key={`${m.id}-location`} className="bg-indigo-500/5 border-b border-indigo-500/20">
+                            <td colSpan={6} className="px-6 py-5">
+                              <div className="flex flex-col gap-4">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                  <MapPin size={12} /> Set Location & Category for {m.name || 'this merchant'}
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  <div className="space-y-1.5">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Latitude</label>
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={locationForm.latitude}
+                                      onChange={e => setLocationForm(f => ({ ...f, latitude: e.target.value }))}
+                                      placeholder="e.g. 3.1390"
+                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
+                                    />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Longitude</label>
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={locationForm.longitude}
+                                      onChange={e => setLocationForm(f => ({ ...f, longitude: e.target.value }))}
+                                      placeholder="e.g. 101.6869"
+                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
+                                    />
+                                  </div>
+                                  <div className="space-y-1.5 md:col-span-2">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                                    <select
+                                      value={locationForm.category}
+                                      onChange={e => setLocationForm(f => ({ ...f, category: e.target.value }))}
+                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                    >
+                                      <option value="" className="bg-[#0a0b0f]">Select category...</option>
+                                      {MERCHANT_CATEGORIES.map(cat => (
+                                        <option key={cat} value={cat} className="bg-[#0a0b0f]">{cat}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => handleSaveLocation(m.id)}
+                                    disabled={savingLocation}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                  >
+                                    {savingLocation ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                    Save Location
+                                  </button>
+                                  <button
+                                    onClick={() => setLocationFormId(null)}
+                                    className="px-5 py-2.5 rounded-xl bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest transition-all hover:bg-white/10"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     )
                   })}
                 </tbody>
@@ -491,10 +685,28 @@ export default function AdminPage() {
             </div>
 
             {/* Ads Stats */}
-            <div className="grid grid-cols-3 gap-6">
-              <StatCard icon={<Tv size={20} />} label="Total Ads" value={ads.length} color="indigo" trend="Active Network" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <StatCard icon={<Tv size={20} />} label="Total Ads" value={ads.length} color="indigo" trend="All Statuses" />
               <StatCard icon={<Eye size={20} />} label="Impressions" value={ads.reduce((acc, ad) => acc + ad.impressions, 0).toLocaleString()} color="amber" trend="Total Views" />
               <StatCard icon={<MousePointerClick size={20} />} label="Total Clicks" value={ads.reduce((acc, ad) => acc + ad.clicks, 0).toLocaleString()} color="emerald" trend="Engagements" />
+              <StatCard icon={<DollarSign size={20} />} label="CPV Revenue" value={`RM ${totalCpvRevenue.toFixed(2)}`} color="rose" trend="Total Debit" />
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-white/[0.02] border border-white/5 rounded-2xl w-max">
+              {(['active', 'pending', 'all'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setAdsSubTab(tab)}
+                  className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${adsSubTab === tab ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                >
+                  {tab === 'active' ? <CheckCircle size={12} /> : tab === 'pending' ? <Clock3 size={12} /> : <BarChart3 size={12} />}
+                  {tab === 'pending' ? 'Pending Review' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'pending' && pendingAds.length > 0 && (
+                    <span className="bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">{pendingAds.length}</span>
+                  )}
+                </button>
+              ))}
             </div>
 
             {isAddingAd && (
@@ -507,12 +719,31 @@ export default function AdminPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ad Title</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ad Title *</label>
                     <input type="text" required value={newAd.title} onChange={e => setNewAd({...newAd, title: e.target.value})} placeholder="e.g. KFC Promo" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                    <select value={newAd.category} onChange={e => setNewAd({...newAd, category: e.target.value})} className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm appearance-none cursor-pointer">
+                      <option value="" className="bg-[#0a0b0f]">Select category...</option>
+                      {AD_CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-[#0a0b0f]">{cat}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</label>
+                    <input type="text" value={newAd.description} onChange={e => setNewAd({...newAd, description: e.target.value})} placeholder="Short ad description..." className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CTA Text</label>
+                    <input type="text" value={newAd.cta_text} onChange={e => setNewAd({...newAd, cta_text: e.target.value})} placeholder="e.g. Order Now" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Out URL</label>
                     <input type="text" value={newAd.link_url} onChange={e => setNewAd({...newAd, link_url: e.target.value})} placeholder="e.g. https://kfc.com.my" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CPV Bid (RM)</label>
+                    <input type="number" step="0.001" min="0" value={newAd.cpv_bid} onChange={e => setNewAd({...newAd, cpv_bid: e.target.value})} placeholder="e.g. 0.05" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Video URL (9:16)</label>
@@ -523,12 +754,23 @@ export default function AdminPage() {
                     <input type="text" value={newAd.image_url} onChange={e => setNewAd({...newAd, image_url: e.target.value})} placeholder="e.g. https://cdn.example.com/ad.jpg" className="w-full p-4 rounded-2xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={newAd.is_active} onChange={e => setNewAd({...newAd, is_active: e.target.checked})} />
-                    <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                  </label>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Immediately</span>
+                {/* Geo Targeting */}
+                <div className="p-5 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 space-y-4">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={12} /> Geo Targeting (Optional)</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Target Latitude</label>
+                      <input type="number" step="any" value={newAd.target_latitude} onChange={e => setNewAd({...newAd, target_latitude: e.target.value})} placeholder="e.g. 3.1390" className="w-full p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Target Longitude</label>
+                      <input type="number" step="any" value={newAd.target_longitude} onChange={e => setNewAd({...newAd, target_longitude: e.target.value})} placeholder="e.g. 101.6869" className="w-full p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Radius (km)</label>
+                      <input type="number" step="0.1" min="0" value={newAd.target_radius_km} onChange={e => setNewAd({...newAd, target_radius_km: e.target.value})} placeholder="e.g. 5" className="w-full p-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono" />
+                    </div>
+                  </div>
                 </div>
                 <button type="submit" className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20">
                   Save Campaign
@@ -541,15 +783,68 @@ export default function AdminPage() {
                  <Loader2 size={32} className="text-indigo-500 animate-spin" />
                  <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Network Data...</p>
                </div>
+            ) : adsSubTab === 'pending' ? (
+              /* Pending Review Section */
+              <div className="space-y-4">
+                {pendingAds.length === 0 ? (
+                  <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
+                    <CheckCircle size={48} className="mx-auto text-slate-700 mb-4" />
+                    <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No pending ads. All caught up!</p>
+                  </div>
+                ) : pendingAds.map((ad) => (
+                  <div key={ad.id} className="flex items-center gap-6 p-6 rounded-[24px] bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-all">
+                    {/* Thumbnail */}
+                    <div className="w-16 h-28 rounded-xl overflow-hidden bg-[#0a0b0f] border border-white/10 shrink-0">
+                      {ad.image_url ? (
+                        <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Tv size={20} className="text-slate-700" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Pending Review</span>
+                        {ad.category && <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{ad.category}</span>}
+                      </div>
+                      <h4 className="font-black text-white text-base mb-1 truncate">{ad.title}</h4>
+                      {ad.description && <p className="text-xs text-slate-400 mb-2 line-clamp-1">{ad.description}</p>}
+                      <div className="flex items-center gap-4 text-[10px] text-slate-500 font-bold uppercase">
+                        {ad.cpv_bid && <span className="flex items-center gap-1 text-emerald-400"><DollarSign size={10} />RM {ad.cpv_bid}/view</span>}
+                        {ad.advertiser_id && <span className="font-mono text-slate-600 truncate max-w-[160px]">{ad.advertiser_id}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => handleApproveAd(ad.id)}
+                        disabled={adsModerating === ad.id}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
+                      >
+                        {adsModerating === ad.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleRejectAd(ad.id)}
+                        disabled={adsModerating === ad.id}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all border border-rose-500/20 disabled:opacity-50"
+                      >
+                        {adsModerating === ad.id ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ads.map((ad) => (
-                  <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
+                {displayedAds.map((ad) => (
+                  <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.status === 'rejected' ? 'border-rose-500/20 opacity-40 grayscale hover:grayscale-0 hover:opacity-100' : ad.status === 'paused' ? 'border-amber-500/20 opacity-60' : ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
                     <div className="aspect-[9/16] relative bg-[#0a0b0f] w-full">
                       {ad.video_url ? (
                         (() => {
-                          const ytMatch = ad.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
-                          const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                          const ytMatch = ad.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)
+                          const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
                           if (ytId) {
                             return (
                               <iframe
@@ -559,8 +854,8 @@ export default function AdminPage() {
                               />
                             )
                           }
-                          const tiktokMatch = ad.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
-                          const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
+                          const tiktokMatch = ad.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/)
+                          const tiktokId = tiktokMatch ? tiktokMatch[1] : null
                           if (tiktokId) {
                             return (
                               <iframe
@@ -583,7 +878,17 @@ export default function AdminPage() {
                       )}
                       
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-6 flex flex-col justify-end">
+                        {/* Status badge */}
+                        <div className="mb-2">
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${ad.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : ad.status === 'paused' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : ad.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-white/10 text-slate-400 border border-white/20'}`}>
+                            {ad.status || 'unknown'}
+                          </span>
+                          {ad.category && <span className="ml-1 text-[9px] font-bold text-slate-400 bg-white/10 px-1.5 py-0.5 rounded-lg border border-white/10">{ad.category}</span>}
+                        </div>
                         <h4 className="text-white font-black text-lg leading-tight uppercase tracking-tight line-clamp-2 mb-2">{ad.title}</h4>
+                        {ad.cpv_bid && (
+                          <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-2">RM {ad.cpv_bid}/view</p>
+                        )}
                         <div className="grid grid-cols-3 gap-2 mb-4 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
                            <div className="text-center">
                              <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">Views</p>
@@ -619,7 +924,7 @@ export default function AdminPage() {
               </div>
             )}
             
-            {ads.length === 0 && !adsLoading && (
+            {displayedAds.length === 0 && !adsLoading && adsSubTab !== 'pending' && (
               <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
                 <Tv size={48} className="mx-auto text-slate-700 mb-4" />
                 <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No active campaigns. Default Beepme ad is currently live.</p>

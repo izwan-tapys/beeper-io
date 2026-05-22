@@ -6,43 +6,86 @@ import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 
+const ADMIN_EMAIL = 'izwan.tapys@gmail.com'
+
+async function resolveRedirect(supabase: ReturnType<typeof createClient>, userId: string, email: string): Promise<string> {
+  if (email === ADMIN_EMAIL) return '/admin'
+
+  const [advertiserRes, merchantRes] = await Promise.all([
+    supabase.from('advertiser_profiles').select('id').eq('user_id', userId).single(),
+    supabase.from('merchants').select('id').eq('user_id', userId).single(),
+  ])
+
+  const isAdvertiser = !advertiserRes.error && !!advertiserRes.data
+  const isMerchant = !merchantRes.error && !!merchantRes.data
+
+  if (isMerchant) return '/dashboard'
+  if (isAdvertiser) return '/ads-manager'
+  return '/dashboard'
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [loadingRole, setLoadingRole] = useState<'merchant' | 'advertiser' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
     setMessage(null)
 
-    if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        setError(error.message)
-      } else {
-        // Small delay to ensure cookies are saved
-        setTimeout(() => {
-          router.push('/dashboard')
-          router.refresh()
-        }, 500)
-      }
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) {
-        setError(error.message)
-      } else {
-        setMessage('Account created! Please check your email to verify, then log in.')
-        setIsLogin(true)
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError(error.message)
+    } else if (data.user) {
+      const redirect = await resolveRedirect(supabase, data.user.id, data.user.email ?? '')
+      setTimeout(() => {
+        router.push(redirect)
+        router.refresh()
+      }, 500)
     }
     setLoading(false)
+  }
+
+  const handleSignUp = async (role: 'merchant' | 'advertiser') => {
+    setLoadingRole(role)
+    setError(null)
+    setMessage(null)
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      setError(error.message)
+      setLoadingRole(null)
+      return
+    }
+
+    if (role === 'advertiser' && data.user) {
+      // Auto-create advertiser_profile record
+      await supabase.from('advertiser_profiles').insert({ user_id: data.user.id })
+    }
+
+    if (role === 'merchant') {
+      setMessage('Account created! Please check your email to verify, then log in to set up your restaurant.')
+    } else {
+      setMessage('Account created! Please check your email to verify, then log in to access Ads Manager.')
+    }
+    setIsLogin(true)
+    setLoadingRole(null)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isLogin) {
+      await handleLogin(e)
+    }
+    // Sign-up is handled by the two role buttons directly
   }
 
   return (
@@ -106,16 +149,44 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
-              id="auth-submit-btn"
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 mt-2"
-              style={{ background: loading ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
-            >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-              {isLogin ? 'Sign In to Dashboard' : 'Create Account'}
-            </button>
+            {isLogin ? (
+              <button
+                id="auth-submit-btn"
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 mt-2"
+                style={{ background: loading ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
+              >
+                {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+                Sign In
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3 mt-2">
+                <p className="text-xs text-center" style={{ color: 'var(--muted-foreground)' }}>Choose how you want to use Beepme.pro</p>
+                <button
+                  id="signup-merchant-btn"
+                  type="button"
+                  disabled={loadingRole !== null}
+                  onClick={() => handleSignUp('merchant')}
+                  className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2"
+                  style={{ background: loadingRole === 'merchant' ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: loadingRole !== null ? 0.7 : 1, boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
+                >
+                  {loadingRole === 'merchant' ? <Loader2 size={18} className="animate-spin" /> : null}
+                  I am a Restaurant / Merchant
+                </button>
+                <button
+                  id="signup-advertiser-btn"
+                  type="button"
+                  disabled={loadingRole !== null}
+                  onClick={() => handleSignUp('advertiser')}
+                  className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 border border-white/10 hover:bg-white/5 active:scale-95"
+                  style={{ background: loadingRole === 'advertiser' ? 'rgba(99,102,241,0.3)' : '#0a0b0f', opacity: loadingRole !== null ? 0.7 : 1 }}
+                >
+                  {loadingRole === 'advertiser' ? <Loader2 size={18} className="animate-spin" /> : null}
+                  I want to Advertise
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Separator */}

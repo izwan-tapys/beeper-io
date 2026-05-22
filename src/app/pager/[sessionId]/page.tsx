@@ -29,6 +29,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [isAudioReady, setIsAudioReady] = useState(false)
   const [themeColor, setThemeColor] = useState('#6366f1')
   const [showInstructions, setShowInstructions] = useState(true)
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [merchantCategory, setMerchantCategory] = useState<string>('')
 
   const [isExpanded, setIsExpanded] = useState(false)
   const controls = useAnimation()
@@ -110,7 +112,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [])
 
-  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any) => {
+  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any, location: {lat: number, lng: number} | null, mCategory: string) => {
     try {
       if (isPremium) {
         if (upsellData.upsell_video_url || upsellData.upsell_image_url) {
@@ -136,35 +138,61 @@ const handleTouchStart = (e: React.TouchEvent) => {
         return
       }
 
-      // Fetch global active ads
-      const { data: adsData, error } = await supabase
-        .from('ads')
-        .select('*')
-        .eq('is_active', true)
+      const fallbackToAllAds = async () => {
+        const { data: adsData, error } = await supabase
+          .from('ads')
+          .select('*')
+          .eq('is_active', true)
 
-      if (error || !adsData || adsData.length === 0) {
-        setAdsList([{
-          id: 'default-beepme',
-          title: 'Beepme.pro - Pager F&B',
-          media_url: null,
-          fallback_image_url: null,
-          link_url: 'https://beepme.pro',
-          description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
-        }])
-        return
+        if (error || !adsData || adsData.length === 0) {
+          setAdsList([{
+            id: 'default-beepme',
+            title: 'Beepme.pro - Pager F&B',
+            media_url: null,
+            fallback_image_url: null,
+            link_url: 'https://beepme.pro',
+            description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
+          }])
+          return
+        }
+
+        const shuffledAds = adsData.map(adItem => ({
+          id: adItem.id,
+          title: adItem.title,
+          media_url: adItem.video_url,
+          fallback_image_url: adItem.image_url,
+          link_url: adItem.link_url,
+          description: adItem.description || ''
+        })).sort(() => 0.5 - Math.random())
+
+        setAdsList(shuffledAds)
       }
 
-      // We no longer pick just one ad. We use the full array and shuffle them.
-      const shuffledAds = adsData.map(adItem => ({
-        id: adItem.id,
-        title: adItem.title,
-        media_url: adItem.video_url,
-        fallback_image_url: adItem.image_url,
-        link_url: adItem.link_url,
-        description: adItem.description || ''
-      })).sort(() => 0.5 - Math.random())
+      // Try location-aware RPC first
+      if (location) {
+        const { data: adsData, error } = await supabase.rpc('get_targeted_ads', {
+          p_lat: location.lat,
+          p_lng: location.lng,
+          m_category: mCategory || ''
+        })
 
-      setAdsList(shuffledAds)
+        if (!error && adsData && adsData.length > 0) {
+          const shuffledAds = adsData.map((adItem: any) => ({
+            id: adItem.id,
+            title: adItem.title,
+            media_url: adItem.video_url,
+            fallback_image_url: adItem.image_url,
+            link_url: adItem.link_url,
+            description: adItem.description || ''
+          })).sort(() => 0.5 - Math.random())
+
+          setAdsList(shuffledAds)
+          return
+        }
+      }
+
+      // Fallback: fetch all active ads
+      await fallbackToAllAds()
     } catch (err) {
       console.error('Error fetching ads:', err)
     }
@@ -234,7 +262,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
       // Heavy fetch on initial load
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url)')
+        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, latitude, longitude, category)')
         .eq('id', sessionId)
         .single()
 
@@ -253,6 +281,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
         setMerchantLogo(merchantData.logo_url)
         setGmbUrl(merchantData.gmb_url)
         setThemeColor(merchantData.theme_color || '#6366f1')
+        setMerchantCategory(merchantData.category || '')
 
         isPremium = merchantData.plan_type === 'pro' &&
           merchantData.subscription_status === 'active' &&
@@ -267,7 +296,27 @@ const handleTouchStart = (e: React.TouchEvent) => {
       }
 
       if (!ad && merchantData) {
-        fetchAd(data.merchant_id, isPremium, merchantData)
+        // Try to get user GPS. If denied or unavailable, fallback to merchant location.
+        const tryGetLocation = (): Promise<{lat: number, lng: number} | null> => {
+          return new Promise((resolve) => {
+            if (!navigator.geolocation) { resolve(null); return }
+            navigator.geolocation.getCurrentPosition(
+              (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              () => resolve(null), // User denied - fallback to merchant
+              { timeout: 5000, maximumAge: 60000 }
+            )
+          })
+        }
+
+        let resolvedLocation: {lat: number, lng: number} | null = await tryGetLocation()
+
+        if (!resolvedLocation && merchantData.latitude != null && merchantData.longitude != null) {
+          resolvedLocation = { lat: merchantData.latitude, lng: merchantData.longitude }
+        }
+
+        if (resolvedLocation) setUserLocation(resolvedLocation)
+
+        fetchAd(data.merchant_id, isPremium, merchantData, resolvedLocation, merchantData.category || '')
       }
 
       processSessionStatus(data)
@@ -349,6 +398,15 @@ const handleTouchStart = (e: React.TouchEvent) => {
       }).then(({ error }) => {
         if (error) console.error('Failed to log impression:', error)
       })
+
+      // Deduct CPV bid from advertiser wallet for real ads
+      if (ad.id !== 'default-beepme' && ad.id !== 'merchant-upsell') {
+        fetch('/api/ads/charge-view', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ad_id: ad.id, session_id: sessionId })
+        }).catch((err) => console.error('Failed to charge view:', err))
+      }
     }
   }, [ad, status, sessionId, merchantId])
 
