@@ -57,6 +57,7 @@ export default function CreateCampaignPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [walletBalance, setWalletBalance] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -108,6 +109,27 @@ export default function CreateCampaignPage() {
       .from('merchant-logos')
       .getPublicUrl(fileName)
     return publicUrl
+  }
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Pelayar web anda tidak menyokong akses GPS.')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        set('target_lat', pos.coords.latitude.toString())
+        set('target_lng', pos.coords.longitude.toString())
+        setLocating(false)
+      },
+      (err) => {
+        console.error(err)
+        alert('Gagal mendapatkan lokasi semasa. Sila pastikan kebenaran GPS/lokasi dibenarkan dalam pelayar web anda.')
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
   }
 
   const set = (field: keyof FormData, value: string | boolean) => {
@@ -403,6 +425,28 @@ export default function CreateCampaignPage() {
                         onChange={e => set('target_location_name', e.target.value)}
                       />
                       {errors.target_location_name && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.target_location_name}</p>}
+                    </div>
+
+                    {/* Auto location button */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={handleGetCurrentLocation}
+                        disabled={locating}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-indigo-500/20 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 font-bold text-xs transition-all disabled:opacity-50"
+                      >
+                        {locating ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin text-indigo-400" />
+                            <span>Mendapatkan Lokasi Semasa...</span>
+                          </>
+                        ) : (
+                          <>
+                            <MapPin size={14} className="text-indigo-400" />
+                            <span>Gunakan Lokasi Semasa Saya</span>
+                          </>
+                        )}
+                      </button>
                     </div>
 
                     {/* Lat / Lng */}
