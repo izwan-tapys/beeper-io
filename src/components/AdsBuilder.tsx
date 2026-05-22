@@ -64,6 +64,7 @@ export interface AdsBuilderProps {
   description?: string
   ctaText?: string
   linkUrl?: string
+  videoUrl?: string
   onChange?: (values: {
     imageUrl: string
     title: string
@@ -92,6 +93,7 @@ export function AdsBuilder({
   description: propDescription,
   ctaText: propCtaText,
   linkUrl: propLinkUrl,
+  videoUrl,
   onChange,
   merchant,
   isPremiumActive = true,
@@ -104,6 +106,13 @@ export function AdsBuilder({
   editorTitle = 'Visual Ads Editor'
 }: AdsBuilderProps) {
   const supabase = createClient()
+
+  // Parse YouTube or TikTok video URLs for direct mockup previewing
+  const ytMatch = videoUrl ? videoUrl.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/) : null
+  const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
+
+  const tiktokMatch = videoUrl ? videoUrl.match(/tiktok\.com\/@.*\/video\/(\d+)/) : null
+  const tiktokId = tiktokMatch ? tiktokMatch[1] : null
   
   // Uncontrolled local states (used when onChange is not provided)
   const [localImageUrl, setLocalImageUrl] = useState(merchant?.upsell_image_url || '')
@@ -375,27 +384,61 @@ export function AdsBuilder({
             className="hidden"
             disabled={uploading}
           />
-          <label 
-            htmlFor="ad-bg-upload" 
-            className="w-full h-full flex flex-col items-center justify-center cursor-pointer relative"
-          >
-            {imageUrl ? (
-              <img src={imageUrl} alt="Ad Background" className="w-full h-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center text-slate-500 p-6 text-center">
-                <ImageIcon size={48} className="mb-4 opacity-50" />
-                <p className="text-sm font-bold uppercase tracking-widest mb-2">Klik untuk Muat Naik</p>
-                <p className="text-xs">Gambar Promosi Menegak (9:16)</p>
-              </div>
-            )}
-
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-              <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20">
-                <ImageIcon size={14} /> Tukar Gambar Background
-              </div>
+          {ytId ? (
+            <div className="w-full h-full pointer-events-none relative">
+              <iframe
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                className="w-full h-full object-cover scale-[1.15] absolute inset-0 z-0"
+                allow="autoplay; encrypted-media"
+              />
+              <label 
+                htmlFor="ad-bg-upload" 
+                className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-transparent group-hover:bg-black/40 transition-colors pointer-events-auto"
+              >
+                <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ImageIcon size={14} /> Tukar Gambar Fallback
+                </div>
+              </label>
             </div>
-          </label>
+          ) : tiktokId ? (
+            <div className="w-full h-full pointer-events-none relative">
+              <iframe
+                src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                className="w-full h-full object-cover absolute inset-0 z-0"
+                allow="autoplay; encrypted-media"
+              />
+              <label 
+                htmlFor="ad-bg-upload" 
+                className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-transparent group-hover:bg-black/40 transition-colors pointer-events-auto"
+              >
+                <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ImageIcon size={14} /> Tukar Gambar Fallback
+                </div>
+              </label>
+            </div>
+          ) : (
+            <label 
+              htmlFor="ad-bg-upload" 
+              className="w-full h-full flex flex-col items-center justify-center cursor-pointer relative"
+            >
+              {imageUrl ? (
+                <img src={imageUrl} alt="Ad Background" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center text-slate-500 p-6 text-center">
+                  <ImageIcon size={48} className="mb-4 opacity-50" />
+                  <p className="text-sm font-bold uppercase tracking-widest mb-2">Klik untuk Muat Naik</p>
+                  <p className="text-xs">Gambar Promosi Menegak (9:16)</p>
+                </div>
+              )}
+
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20">
+                  <ImageIcon size={14} /> Tukar Gambar Background
+                </div>
+              </div>
+            </label>
+          )}
         </div>
 
         {/* Top Gradient */}

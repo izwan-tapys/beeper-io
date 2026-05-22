@@ -353,6 +353,7 @@ export default function CreateCampaignPage() {
                     showSaveButton={false}
                     isPremiumActive={true}
                     editorTitle="Ad Creative Design"
+                    videoUrl={form.video_url}
                   />
                 </div>
 
