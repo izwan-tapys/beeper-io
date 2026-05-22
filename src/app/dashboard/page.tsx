@@ -305,12 +305,16 @@ export default function DashboardPage() {
 
     if (!m) {
       const storeName = user.email?.split('@')[0] || 'My Store'
-      const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName }).select().single()
+      const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName, email: user.email }).select().single()
       if (insertError) {
         console.error('Error creating merchant:', insertError)
         return
       }
       m = newMerchant
+    } else if (!m.email && user.email) {
+      // Auto-backfill email for existing merchants when they login
+      await supabase.from('merchants').update({ email: user.email }).eq('id', m.id)
+      m.email = user.email
     }
     
     if (m) {
