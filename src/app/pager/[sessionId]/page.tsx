@@ -120,7 +120,8 @@ const handleTouchStart = (e: React.TouchEvent) => {
             media_url: upsellData.upsell_video_url,
             fallback_image_url: upsellData.upsell_image_url,
             link_url: upsellData.upsell_link_url || '#',
-            description: upsellData.upsell_description || ''
+            description: upsellData.upsell_description || '',
+            cta_text: upsellData.upsell_cta_text ?? 'Ketahui Lebih Lanjut'
           }])
         } else {
           setAdsList([{
@@ -756,9 +757,11 @@ const handleTouchStart = (e: React.TouchEvent) => {
                         <div className="space-y-1.5 drop-shadow-lg">
                           <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-2 leading-tight">@{ad.title}</h4>
                           {ad.description && <p className="text-[11px] text-slate-100 font-medium leading-snug line-clamp-2">{ad.description}</p>}
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest mt-1 shadow-lg active:bg-white/30 transition-colors">
-                            Ketahui Lebih Lanjut
-                          </div>
+                          {ad.cta_text && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest mt-1 shadow-lg active:bg-white/30 transition-colors">
+                              {ad.cta_text}
+                            </div>
+                          )}
                         </div>
                       </a>
                     )}

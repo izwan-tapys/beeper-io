@@ -39,6 +39,7 @@ type Merchant = {
   upsell_image_url: string | null
   upsell_title: string | null
   upsell_description: string | null
+  upsell_cta_text: string | null
   upsell_link_url: string | null
 }
 

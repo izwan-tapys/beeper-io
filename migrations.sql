@@ -15,6 +15,7 @@ ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_video_url TEXT;
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_image_url TEXT;
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_title TEXT;
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_description TEXT;
+ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_cta_text TEXT;
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS upsell_link_url TEXT;
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS referred_by TEXT;
 

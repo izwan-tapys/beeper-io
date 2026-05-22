@@ -63,6 +63,7 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
   const [imageUrl, setImageUrl] = useState(merchant?.upsell_image_url || '')
   const [title, setTitle] = useState(merchant?.upsell_title || '')
   const [description, setDescription] = useState(merchant?.upsell_description || '')
+  const [ctaText, setCtaText] = useState(merchant?.upsell_cta_text || '')
   const [linkUrl, setLinkUrl] = useState(merchant?.upsell_link_url || '')
   
   const [uploading, setUploading] = useState(false)
@@ -142,6 +143,7 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
         upsell_image_url: imageUrl.trim() || null,
         upsell_title: title.trim() || null,
         upsell_description: description.trim() || null,
+        upsell_cta_text: ctaText.trim() || null,
         upsell_link_url: linkUrl.trim() || null,
         upsell_video_url: null, // Clear old video
       })
@@ -156,6 +158,7 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
         upsell_image_url: imageUrl.trim() || null,
         upsell_title: title.trim() || null,
         upsell_description: description.trim() || null,
+        upsell_cta_text: ctaText.trim() || null,
         upsell_link_url: linkUrl.trim() || null,
         upsell_video_url: null,
       })
@@ -293,20 +296,23 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
               className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[11px] text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
             />
 
-            {/* CTA Link Input */}
-            <div className="relative group/link mt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-lg hover:bg-white/30 transition-colors border border-transparent group-hover/link:border-white/40 cursor-text">
-                Ketahui Lebih Lanjut
-              </div>
-              <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] opacity-0 group-hover/link:opacity-100 transition-opacity pointer-events-none group-hover/link:pointer-events-auto">
-                <input
-                  type="text"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://link-ke-promosi.com"
-                  className="w-full bg-black/80 backdrop-blur-md border border-indigo-500/50 rounded-lg px-3 py-2 text-xs font-mono text-white outline-none focus:border-indigo-500 shadow-xl"
-                />
-              </div>
+            {/* CTA Button & Link Input */}
+            <div className="mt-3 flex flex-col items-start gap-2">
+              <input
+                type="text"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                placeholder="Ketahui Lebih Lanjut"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 focus:bg-white/40 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-lg border border-transparent focus:border-white/50 outline-none transition-colors w-auto"
+                style={{ width: `${Math.max(ctaText.length || 20, 20)}ch` }}
+              />
+              <input
+                type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://link-ke-promosi.com"
+                className="w-full bg-black/60 backdrop-blur-md border border-white/20 focus:border-indigo-500 rounded-lg px-3 py-2 text-[10px] font-mono text-white outline-none shadow-xl transition-all"
+              />
             </div>
           </div>
         </div>
