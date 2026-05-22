@@ -10,6 +10,7 @@ import {
   ChevronLeft, ChevronRight, Megaphone, MapPin, DollarSign,
   CheckCircle, Loader2, Globe, AlertCircle, ArrowRight
 } from 'lucide-react'
+import { AdsBuilder } from '@/components/AdsBuilder'
 
 const supabase = createClient()
 
@@ -92,6 +93,23 @@ export default function CreateCampaignPage() {
     init()
   }, [router])
 
+  const handleUploadImage = async (blob: Blob): Promise<string> => {
+    if (!userId) throw new Error('User not authenticated')
+    const fileName = `campaigns/${userId}/${Date.now()}.webp`
+    const { error: uploadError } = await supabase.storage
+      .from('merchant-logos')
+      .upload(fileName, blob, {
+        upsert: true,
+        contentType: 'image/webp'
+      })
+    if (uploadError) throw uploadError
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('merchant-logos')
+      .getPublicUrl(fileName)
+    return publicUrl
+  }
+
   const set = (field: keyof FormData, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }))
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
@@ -141,7 +159,7 @@ export default function CreateCampaignPage() {
       title: form.title.trim(),
       description: form.description.trim() || null,
       video_url: form.video_url.trim() || null,
-      fallback_image_url: form.fallback_image_url.trim() || null,
+      image_url: form.fallback_image_url.trim() || null,
       link_url: form.link_url.trim() || null,
       cta_text: form.cta_text.trim() || 'Learn More',
       category: form.category,
@@ -246,35 +264,11 @@ export default function CreateCampaignPage() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="p-8 space-y-5"
+                className="p-8 space-y-6"
               >
                 <div>
                   <h2 className="text-lg font-black text-white mb-1">Ad Creative</h2>
-                  <p className="text-sm text-slate-500">Set up your ad content and messaging</p>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className={labelClass}>Ad Title <span className="text-rose-500">*</span></label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    placeholder="e.g. 20% Off Nasi Kandar This Weekend!"
-                    value={form.title}
-                    onChange={e => set('title', e.target.value)}
-                  />
-                  {errors.title && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.title}</p>}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className={labelClass}>Description</label>
-                  <textarea
-                    className={inputClass + ' resize-none h-20'}
-                    placeholder="Short description shown under the ad..."
-                    value={form.description}
-                    onChange={e => set('description', e.target.value)}
-                  />
+                  <p className="text-sm text-slate-500">Design your ad and select a category</p>
                 </div>
 
                 {/* Category */}
@@ -305,39 +299,38 @@ export default function CreateCampaignPage() {
                   />
                 </div>
 
-                {/* Fallback Image */}
-                <div>
-                  <label className={labelClass}>Fallback Image URL</label>
-                  <input
-                    type="url"
-                    className={inputClass}
-                    placeholder="https://example.com/banner.jpg"
-                    value={form.fallback_image_url}
-                    onChange={e => set('fallback_image_url', e.target.value)}
-                  />
-                </div>
-
-                {/* Link URL */}
-                <div>
-                  <label className={labelClass}>Destination Link URL</label>
-                  <input
-                    type="url"
-                    className={inputClass}
-                    placeholder="https://yourstore.com or WhatsApp link..."
-                    value={form.link_url}
-                    onChange={e => set('link_url', e.target.value)}
-                  />
-                </div>
-
-                {/* CTA Text */}
-                <div>
-                  <label className={labelClass}>CTA Button Text</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    placeholder="e.g. Order Now, Learn More, Get Offer..."
-                    value={form.cta_text}
-                    onChange={e => set('cta_text', e.target.value)}
+                {/* Visual Ads Editor */}
+                <div className="pt-6 border-t border-white/5">
+                  <label className={labelClass + ' text-center block mb-6 text-indigo-400 font-black'}>Visual Ads Builder</label>
+                  {errors.title && (
+                    <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2.5">
+                      <AlertCircle size={16} className="text-rose-500 flex-shrink-0" />
+                      <span className="font-bold">{errors.title}</span>
+                    </div>
+                  )}
+                  <AdsBuilder
+                    imageUrl={form.fallback_image_url}
+                    title={form.title}
+                    description={form.description}
+                    ctaText={form.cta_text}
+                    linkUrl={form.link_url}
+                    onChange={({ imageUrl, title, description, ctaText, linkUrl }) => {
+                      setForm(prev => ({
+                        ...prev,
+                        fallback_image_url: imageUrl,
+                        title,
+                        description,
+                        cta_text: ctaText,
+                        link_url: linkUrl
+                      }))
+                      if (title.trim() && errors.title) {
+                        setErrors(prev => ({ ...prev, title: undefined }))
+                      }
+                    }}
+                    onUploadImage={handleUploadImage}
+                    showSaveButton={false}
+                    isPremiumActive={true}
+                    editorTitle="Ad Creative Design"
                   />
                 </div>
 

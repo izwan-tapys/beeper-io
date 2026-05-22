@@ -57,23 +57,96 @@ async function getCroppedImg(
   })
 }
 
-export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: { merchant: any, isPremiumActive?: boolean, onUpgrade?: () => void, onUpdate: (merchant: any) => void }) {
+export interface AdsBuilderProps {
+  // Controlled state (optional)
+  imageUrl?: string
+  title?: string
+  description?: string
+  ctaText?: string
+  linkUrl?: string
+  onChange?: (values: {
+    imageUrl: string
+    title: string
+    description: string
+    ctaText: string
+    linkUrl: string
+  }) => void
+
+  // Backward compatibility / Uncontrolled state (merchants)
+  merchant?: any
+  isPremiumActive?: boolean
+  onUpgrade?: () => void
+  onUpdate?: (merchant: any) => void
+
+  // Custom behavior overrides
+  onUploadImage?: (blob: Blob) => Promise<string>
+  onSave?: () => Promise<void> | void
+  saving?: boolean
+  showSaveButton?: boolean
+  editorTitle?: string
+}
+
+export function AdsBuilder({
+  imageUrl: propImageUrl,
+  title: propTitle,
+  description: propDescription,
+  ctaText: propCtaText,
+  linkUrl: propLinkUrl,
+  onChange,
+  merchant,
+  isPremiumActive = true,
+  onUpgrade,
+  onUpdate,
+  onUploadImage,
+  onSave,
+  saving: propSaving,
+  showSaveButton = true,
+  editorTitle = 'Visual Ads Editor'
+}: AdsBuilderProps) {
   const supabase = createClient()
   
-  const [imageUrl, setImageUrl] = useState(merchant?.upsell_image_url || '')
-  const [title, setTitle] = useState(merchant?.upsell_title || '')
-  const [description, setDescription] = useState(merchant?.upsell_description || '')
-  const [ctaText, setCtaText] = useState(merchant?.upsell_cta_text || '')
-  const [linkUrl, setLinkUrl] = useState(merchant?.upsell_link_url || '')
+  // Uncontrolled local states (used when onChange is not provided)
+  const [localImageUrl, setLocalImageUrl] = useState(merchant?.upsell_image_url || '')
+  const [localTitle, setLocalTitle] = useState(merchant?.upsell_title || '')
+  const [localDescription, setLocalDescription] = useState(merchant?.upsell_description || '')
+  const [localCtaText, setLocalCtaText] = useState(merchant?.upsell_cta_text || '')
+  const [localLinkUrl, setLocalLinkUrl] = useState(merchant?.upsell_link_url || '')
   
   const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [localSaving, setLocalSaving] = useState(false)
 
   // Cropper states
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+
+  const isControlled = onChange !== undefined
+  const imageUrl = isControlled ? (propImageUrl || '') : localImageUrl
+  const title = isControlled ? (propTitle || '') : localTitle
+  const description = isControlled ? (propDescription || '') : localDescription
+  const ctaText = isControlled ? (propCtaText || '') : localCtaText
+  const linkUrl = isControlled ? (propLinkUrl || '') : localLinkUrl
+  const saving = propSaving !== undefined ? propSaving : localSaving
+
+  const handleValueChange = (field: string, val: string) => {
+    if (isControlled && onChange) {
+      onChange({
+        imageUrl,
+        title,
+        description,
+        ctaText,
+        linkUrl,
+        [field]: val
+      })
+    } else {
+      if (field === 'imageUrl') setLocalImageUrl(val)
+      else if (field === 'title') setLocalTitle(val)
+      else if (field === 'description') setLocalDescription(val)
+      else if (field === 'ctaText') setLocalCtaText(val)
+      else if (field === 'linkUrl') setLocalLinkUrl(val)
+    }
+  }
 
   const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels)
@@ -91,7 +164,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
   }
 
   const handleConfirmCrop = async () => {
-    if (!cropImageSrc || !croppedAreaPixels || !merchant) return
+    if (!cropImageSrc || !croppedAreaPixels) return
     
     setUploading(true)
     try {
@@ -100,12 +173,23 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
 
       // Teaser mode for free users: just preview it locally
       if (!isPremiumActive) {
-        setImageUrl(URL.createObjectURL(croppedBlob))
+        const previewUrl = URL.createObjectURL(croppedBlob)
+        handleValueChange('imageUrl', previewUrl)
         setCropImageSrc(null)
         setUploading(false)
         return
       }
 
+      if (onUploadImage) {
+        const publicUrl = await onUploadImage(croppedBlob)
+        handleValueChange('imageUrl', publicUrl)
+        setCropImageSrc(null)
+        setUploading(false)
+        return
+      }
+
+      // Default fallback (backward compatibility for merchants)
+      if (!merchant) throw new Error('Merchant profile is required for default upload')
       const fileName = `ads/${merchant.id}/${Date.now()}.webp`
       
       // Delete old image if it exists to save space
@@ -131,7 +215,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
         .from('merchant-logos')
         .getPublicUrl(fileName)
 
-      setImageUrl(publicUrl)
+      handleValueChange('imageUrl', publicUrl)
       setCropImageSrc(null) // Close cropper
     } catch (error: any) {
       console.error('Error uploading ad image:', error)
@@ -142,6 +226,11 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
   }
 
   const handleSave = async () => {
+    if (onSave) {
+      await onSave()
+      return
+    }
+
     if (!merchant) return
     
     // Teaser mode for free users: prevent saving
@@ -151,7 +240,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
       return
     }
 
-    setSaving(true)
+    setLocalSaving(true)
     
     const { error } = await supabase
       .from('merchants')
@@ -169,21 +258,23 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
       alert('Gagal menyimpan iklan: ' + error.message)
     } else {
       alert('Iklan berjaya disimpan!')
-      onUpdate({
-        ...merchant,
-        upsell_image_url: imageUrl.trim() || null,
-        upsell_title: title.trim() || null,
-        upsell_description: description.trim() || null,
-        upsell_cta_text: ctaText.trim() || null,
-        upsell_link_url: linkUrl.trim() || null,
-        upsell_video_url: null,
-      })
+      if (onUpdate) {
+        onUpdate({
+          ...merchant,
+          upsell_image_url: imageUrl.trim() || null,
+          upsell_title: title.trim() || null,
+          upsell_description: description.trim() || null,
+          upsell_cta_text: ctaText.trim() || null,
+          upsell_link_url: linkUrl.trim() || null,
+          upsell_video_url: null,
+        })
+      }
     }
-    setSaving(false)
+    setLocalSaving(false)
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {/* CROPPER MODAL (Overlays the whole page) */}
       {cropImageSrc && (
         <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center p-4">
@@ -235,28 +326,30 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
         </div>
       )}
 
-      <div className="w-full flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Visual Ads Editor
-            {!isPremiumActive && (
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-500/30">
-                Preview Mode
-              </span>
-            )}
-          </h2>
+      {showSaveButton && (
+        <div className="w-full flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              {editorTitle}
+              {!isPremiumActive && (
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-500/30">
+                  Preview Mode
+                </span>
+              )}
+            </h2>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving || uploading}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+          >
+            {saving ? <Loader2 size={16} className="animate-spin" /> : !isPremiumActive ? <Check size={16} /> : <Save size={16} />}
+            {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan'}
+          </button>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving || uploading}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-        >
-          {saving ? <Loader2 size={16} className="animate-spin" /> : !isPremiumActive ? <Check size={16} /> : <Save size={16} />}
-          {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan'}
-        </button>
-      </div>
+      )}
 
-      {!isPremiumActive && (
+      {showSaveButton && !isPremiumActive && (
         <div className="w-full max-w-sm mx-auto mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
           <p className="text-sm text-amber-500 font-bold mb-1">Draf Iklan Percuma!</p>
           <p className="text-xs text-amber-500/80 mb-3">Rekaan anda tidak akan hilang. Naik taraf ke PRO untuk memaparkan iklan ini terus di telefon bimbit pelanggan anda.</p>
@@ -318,7 +411,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleValueChange('title', e.target.value)}
               placeholder="@Tajuk Promosi Anda..."
               className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-sm font-black text-white tracking-tight uppercase leading-tight outline-none transition-all"
             />
@@ -326,7 +419,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
             {/* Description Input */}
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => handleValueChange('description', e.target.value)}
               placeholder="Taip penerangan iklan di sini (max 2-3 baris)..."
               rows={2}
               className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[11px] text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
@@ -337,7 +430,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
               <input
                 type="text"
                 value={ctaText}
-                onChange={(e) => setCtaText(e.target.value)}
+                onChange={(e) => handleValueChange('ctaText', e.target.value)}
                 placeholder="Ketahui Lebih Lanjut"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 focus:bg-white/40 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-lg border border-transparent focus:border-white/50 outline-none transition-colors w-auto"
                 style={{ width: `${Math.max(ctaText.length || 20, 20)}ch` }}
@@ -345,7 +438,7 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
               <input
                 type="text"
                 value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
+                onChange={(e) => handleValueChange('linkUrl', e.target.value)}
                 placeholder="https://link-ke-promosi.com"
                 className="w-full bg-black/60 backdrop-blur-md border border-white/20 focus:border-indigo-500 rounded-lg px-3 py-2 text-[10px] font-mono text-white outline-none shadow-xl transition-all"
               />
@@ -361,8 +454,8 @@ export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: {
                <span className="text-white font-black tracking-tight text-sm">#001</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[#10b981] font-mono font-bold text-sm">05:00</span>
-              <div className="w-8 h-1 bg-white/30 rounded-full" />
+               <span className="text-[#10b981] font-mono font-bold text-sm">05:00</span>
+               <div className="w-8 h-1 bg-white/30 rounded-full" />
             </div>
           </div>
         </div>
