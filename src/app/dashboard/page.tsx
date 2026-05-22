@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
   const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
+  const [userEmail, setUserEmail] = useState('')
   const [settingsUpsellTitle, setSettingsUpsellTitle] = useState('')
   const [settingsUpsellLinkUrl, setSettingsUpsellLinkUrl] = useState('')
   const [settingsUpsellVideoUrl, setSettingsUpsellVideoUrl] = useState('')
@@ -282,6 +283,7 @@ export default function DashboardPage() {
   const fetchMerchant = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+    setUserEmail(user.email || '')
 
     let { data: m, error: fetchError } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
     
@@ -1148,6 +1150,17 @@ export default function DashboardPage() {
                 
                 {openSection === 'profile' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Registered Email</label>
+                      <input
+                        type="text"
+                        value={userEmail}
+                        readOnly
+                        disabled
+                        className="w-full p-3.5 rounded-xl bg-[#050608] border border-white/5 text-slate-400 outline-none text-sm cursor-not-allowed"
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Store Name</label>
                       <input
