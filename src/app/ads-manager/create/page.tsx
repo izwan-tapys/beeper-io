@@ -190,10 +190,9 @@ export default function CreateCampaignPage() {
     }
 
     if (!form.target_all) {
-      payload.target_location_name = form.target_location_name.trim()
-      payload.target_lat = Number(form.target_lat)
-      payload.target_lng = Number(form.target_lng)
-      payload.radius_km = Number(form.radius_km)
+      payload.target_latitude = Number(form.target_lat)
+      payload.target_longitude = Number(form.target_lng)
+      payload.target_radius_km = Number(form.radius_km)
     }
 
     const { error } = await supabase.from('ads').insert(payload)
