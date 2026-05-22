@@ -1143,6 +1143,8 @@ export default function DashboardPage() {
         <main className="max-w-5xl mx-auto px-4 py-6">
           <AdsBuilder 
             merchant={merchant} 
+            isPremiumActive={isPremiumActive}
+            onUpgrade={() => handleUpgrade('pro', 99)}
             onUpdate={(updatedMerchant) => {
               setMerchant(updatedMerchant)
               fetchMerchant() // Refresh to sync

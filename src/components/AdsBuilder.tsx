@@ -57,7 +57,7 @@ async function getCroppedImg(
   })
 }
 
-export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (merchant: any) => void }) {
+export function AdsBuilder({ merchant, isPremiumActive, onUpgrade, onUpdate }: { merchant: any, isPremiumActive?: boolean, onUpgrade?: () => void, onUpdate: (merchant: any) => void }) {
   const supabase = createClient()
   
   const [imageUrl, setImageUrl] = useState(merchant?.upsell_image_url || '')
@@ -98,6 +98,14 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
       const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels)
       if (!croppedBlob) throw new Error('Failed to crop image')
 
+      // Teaser mode for free users: just preview it locally
+      if (!isPremiumActive) {
+        setImageUrl(URL.createObjectURL(croppedBlob))
+        setCropImageSrc(null)
+        setUploading(false)
+        return
+      }
+
       const fileName = `ads/${merchant.id}/${Date.now()}.webp`
       
       // Delete old image if it exists to save space
@@ -135,6 +143,14 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
 
   const handleSave = async () => {
     if (!merchant) return
+    
+    // Teaser mode for free users: prevent saving
+    if (!isPremiumActive) {
+      if (onUpgrade) onUpgrade()
+      else alert('Upgrade ke pelan PRO untuk mula paparkan iklan ini kepada pelanggan anda!')
+      return
+    }
+
     setSaving(true)
     
     const { error } = await supabase
@@ -221,17 +237,37 @@ export function AdsBuilder({ merchant, onUpdate }: { merchant: any, onUpdate: (m
 
       <div className="w-full flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-bold text-white">Visual Ads Editor</h2>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            Visual Ads Editor
+            {!isPremiumActive && (
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-500/30">
+                Preview Mode
+              </span>
+            )}
+          </h2>
         </div>
         <button
           onClick={handleSave}
           disabled={saving || uploading}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
         >
-          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          Simpan Iklan
+          {saving ? <Loader2 size={16} className="animate-spin" /> : !isPremiumActive ? <Check size={16} /> : <Save size={16} />}
+          {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan'}
         </button>
       </div>
+
+      {!isPremiumActive && (
+        <div className="w-full max-w-sm mx-auto mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+          <p className="text-sm text-amber-500 font-bold mb-1">Draf Iklan Percuma!</p>
+          <p className="text-xs text-amber-500/80 mb-3">Rekaan anda tidak akan hilang. Naik taraf ke PRO untuk memaparkan iklan ini terus di telefon bimbit pelanggan anda.</p>
+          <button 
+            onClick={() => onUpgrade && onUpgrade()}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-lg transition-colors"
+          >
+            Upgrade ke PRO
+          </button>
+        </div>
+      )}
 
       {/* Editor & Preview Area */}
       <div className="w-full max-w-sm mx-auto relative rounded-[40px] overflow-hidden border-[8px] border-[#1e1e24] aspect-[9/16] bg-black shadow-2xl flex flex-col justify-between group">
