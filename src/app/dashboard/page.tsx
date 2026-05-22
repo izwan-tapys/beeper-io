@@ -41,7 +41,20 @@ type Merchant = {
   upsell_description: string | null
   upsell_cta_text: string | null
   upsell_link_url: string | null
+  state: string | null
+  category: string | null
 }
+
+const MALAYSIAN_STATES = [
+  'Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan',
+  'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'
+]
+
+const MERCHANT_CATEGORIES = [
+  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Seafood',
+  'Nasi Kandar', 'Mamak', 'Hawker & Street Food', 'Bakery & Desserts',
+  'Other F&B', 'Retail', 'Bank & Finance', 'Entertainment', 'Health & Wellness', 'Other'
+]
 
 const supabase = createClient()
 
@@ -84,6 +97,8 @@ export default function DashboardPage() {
   const [mfaError, setMfaError] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [settingsThemeColor, setSettingsThemeColor] = useState('#6366f1')
+  const [settingsState, setSettingsState] = useState('')
+  const [settingsCategory, setSettingsCategory] = useState('')
   const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
@@ -324,6 +339,8 @@ export default function DashboardPage() {
       setSettingsLoyverseToken(m.loyverse_token || '')
       setSettingsGmbUrl(m.gmb_url || '')
       setSettingsThemeColor(m.theme_color || '#6366f1')
+      setSettingsState(m.state || '')
+      setSettingsCategory(m.category || '')
 
       // Check for MFA Challenge
       const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -475,6 +492,8 @@ export default function DashboardPage() {
       settingsLoyverseToken !== (merchant.loyverse_token || '') ||
       settingsGmbUrl !== (merchant.gmb_url || '') ||
       settingsThemeColor !== (merchant.theme_color || '#6366f1') ||
+      settingsState !== (merchant.state || '') ||
+      settingsCategory !== (merchant.category || '') ||
       settingsUpsellTitle !== (merchant.upsell_title || '') ||
       settingsUpsellLinkUrl !== (merchant.upsell_link_url || '') ||
       settingsUpsellVideoUrl !== (merchant.upsell_video_url || '') ||
@@ -503,6 +522,8 @@ export default function DashboardPage() {
         loyverse_token: settingsLoyverseToken.trim() || null,
         gmb_url: settingsGmbUrl.trim() || null,
         theme_color: settingsThemeColor,
+        state: settingsState || null,
+        category: settingsCategory || null,
         upsell_title: settingsUpsellTitle.trim() || null,
         upsell_link_url: settingsUpsellLinkUrl.trim() || null,
         upsell_video_url: settingsUpsellVideoUrl.trim() || null,
@@ -521,6 +542,8 @@ export default function DashboardPage() {
         loyverse_token: settingsLoyverseToken.trim() || null,
         gmb_url: settingsGmbUrl.trim() || null,
         theme_color: settingsThemeColor,
+        state: settingsState || null,
+        category: settingsCategory || null,
         upsell_title: settingsUpsellTitle.trim() || null,
         upsell_link_url: settingsUpsellLinkUrl.trim() || null,
         upsell_video_url: settingsUpsellVideoUrl.trim() || null,
@@ -1230,6 +1253,36 @@ export default function DashboardPage() {
                         placeholder="Nama Kedai"
                         className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Negeri (State)</label>
+                        <select
+                          value={settingsState}
+                          onChange={(e) => setSettingsState(e.target.value)}
+                          className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm cursor-pointer"
+                        >
+                          <option value="">Pilih Negeri...</option>
+                          {MALAYSIAN_STATES.map((st) => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Kategori Restoran</label>
+                        <select
+                          value={settingsCategory}
+                          onChange={(e) => setSettingsCategory(e.target.value)}
+                          className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm cursor-pointer"
+                        >
+                          <option value="">Pilih Kategori...</option>
+                          {MERCHANT_CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div className="space-y-2">

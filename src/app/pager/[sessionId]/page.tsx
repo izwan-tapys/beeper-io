@@ -31,6 +31,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [showInstructions, setShowInstructions] = useState(true)
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [merchantCategory, setMerchantCategory] = useState<string>('')
+  const [merchantState, setMerchantState] = useState<string>('')
 
   const [isExpanded, setIsExpanded] = useState(false)
   const controls = useAnimation()
@@ -112,7 +113,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [])
 
-  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any, location: {lat: number, lng: number} | null, mCategory: string) => {
+  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any, location: {lat: number, lng: number} | null, mState: string, mCategory: string) => {
     try {
       if (isPremium) {
         if (upsellData.upsell_video_url || upsellData.upsell_image_url) {
@@ -168,27 +169,26 @@ const handleTouchStart = (e: React.TouchEvent) => {
         setAdsList(shuffledAds)
       }
 
-      // Try location-aware RPC first
-      if (location) {
-        const { data: adsData, error } = await supabase.rpc('get_targeted_ads', {
-          p_lat: location.lat,
-          p_lng: location.lng,
-          m_category: mCategory || ''
-        })
+      // Try targeted ads RPC (location-aware + state & category matched)
+      const { data: adsData, error } = await supabase.rpc('get_targeted_ads', {
+        p_lat: location?.lat ?? null,
+        p_lng: location?.lng ?? null,
+        m_state: mState || null,
+        m_category: mCategory || ''
+      })
 
-        if (!error && adsData && adsData.length > 0) {
-          const shuffledAds = adsData.map((adItem: any) => ({
-            id: adItem.id,
-            title: adItem.title,
-            media_url: adItem.video_url,
-            fallback_image_url: adItem.image_url,
-            link_url: adItem.link_url,
-            description: adItem.description || ''
-          })).sort(() => 0.5 - Math.random())
+      if (!error && adsData && adsData.length > 0) {
+        const shuffledAds = adsData.map((adItem: any) => ({
+          id: adItem.id,
+          title: adItem.title,
+          media_url: adItem.video_url,
+          fallback_image_url: adItem.image_url,
+          link_url: adItem.link_url,
+          description: adItem.description || ''
+        })).sort(() => 0.5 - Math.random())
 
-          setAdsList(shuffledAds)
-          return
-        }
+        setAdsList(shuffledAds)
+        return
       }
 
       // Fallback: fetch all active ads
@@ -262,7 +262,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
       // Heavy fetch on initial load
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, latitude, longitude, category)')
+        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, latitude, longitude, category, state)')
         .eq('id', sessionId)
         .single()
 
@@ -282,6 +282,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
         setGmbUrl(merchantData.gmb_url)
         setThemeColor(merchantData.theme_color || '#6366f1')
         setMerchantCategory(merchantData.category || '')
+        setMerchantState(merchantData.state || '')
 
         isPremium = merchantData.plan_type === 'pro' &&
           merchantData.subscription_status === 'active' &&
@@ -316,7 +317,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
         if (resolvedLocation) setUserLocation(resolvedLocation)
 
-        fetchAd(data.merchant_id, isPremium, merchantData, resolvedLocation, merchantData.category || '')
+        fetchAd(data.merchant_id, isPremium, merchantData, resolvedLocation, merchantData.state || '', merchantData.category || '')
       }
 
       processSessionStatus(data)

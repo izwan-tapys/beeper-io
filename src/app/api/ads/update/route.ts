@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       radius_km,
       target_all,
       cpv_bid,
+      target_states,
+      target_categories,
     } = body
 
     if (!id) {
@@ -69,6 +71,8 @@ export async function POST(request: Request) {
       cpv_bid: Number(cpv_bid) || 0.05,
       status: 'pending_review',
       is_active: false, // force moderation
+      target_states: Array.isArray(target_states) ? target_states : null,
+      target_categories: Array.isArray(target_categories) ? target_categories : null,
     }
 
     if (target_all) {

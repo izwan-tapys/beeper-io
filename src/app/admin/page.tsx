@@ -43,7 +43,7 @@ export default function AdminPage() {
 
   // Location form state per merchant
   const [locationFormId, setLocationFormId] = useState<string | null>(null)
-  const [locationForm, setLocationForm] = useState({ latitude: '', longitude: '', category: '' })
+  const [locationForm, setLocationForm] = useState({ latitude: '', longitude: '', category: '', state: '' })
   const [savingLocation, setSavingLocation] = useState(false)
 
   // Ads State
@@ -289,13 +289,14 @@ export default function AdminPage() {
   const handleSaveLocation = async (merchantId: string) => {
     setSavingLocation(true)
     const updates: any = {}
-    if (locationForm.latitude) updates.latitude = parseFloat(locationForm.latitude)
-    if (locationForm.longitude) updates.longitude = parseFloat(locationForm.longitude)
-    if (locationForm.category) updates.category = locationForm.category
+    updates.latitude = locationForm.latitude ? parseFloat(locationForm.latitude) : null
+    updates.longitude = locationForm.longitude ? parseFloat(locationForm.longitude) : null
+    updates.category = locationForm.category || null
+    updates.state = locationForm.state || null
     await updateMerchant(merchantId, updates)
     setSavingLocation(false)
     setLocationFormId(null)
-    setLocationForm({ latitude: '', longitude: '', category: '' })
+    setLocationForm({ latitude: '', longitude: '', category: '', state: '' })
   }
 
   useEffect(() => {
@@ -564,7 +565,8 @@ export default function AdminPage() {
                                     setLocationForm({
                                       latitude: m.latitude?.toString() || '',
                                       longitude: m.longitude?.toString() || '',
-                                      category: m.category || ''
+                                      category: m.category || '',
+                                      state: m.state || ''
                                     })
                                   }
                                 }}
@@ -596,7 +598,7 @@ export default function AdminPage() {
                                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                                   <MapPin size={12} /> Set Location & Category for {m.name || 'this merchant'}
                                 </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                   <div className="space-y-1.5">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Latitude</label>
                                     <input
@@ -618,6 +620,19 @@ export default function AdminPage() {
                                       placeholder="e.g. 101.6869"
                                       className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
                                     />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">State (Negeri)</label>
+                                    <select
+                                      value={locationForm.state}
+                                      onChange={e => setLocationForm(f => ({ ...f, state: e.target.value }))}
+                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                    >
+                                      <option value="" className="bg-[#0a0b0f]">Select state...</option>
+                                      {['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan', 'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'].map(st => (
+                                        <option key={st} value={st} className="bg-[#0a0b0f]">{st}</option>
+                                      ))}
+                                    </select>
                                   </div>
                                   <div className="space-y-1.5 md:col-span-2">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Category</label>

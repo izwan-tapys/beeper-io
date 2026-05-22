@@ -265,3 +265,73 @@ USING (
       AND ads.advertiser_id = auth.uid()
   )
 );
+
+-- 18. Add columns for state & category targeting and update get_targeted_ads function
+ALTER TABLE merchants ADD COLUMN IF NOT EXISTS state TEXT;
+
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS target_states TEXT[];
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS target_categories TEXT[];
+
+-- Drop the old 3-parameter function signature to prevent overload conflict
+DROP FUNCTION IF EXISTS get_targeted_ads(FLOAT, FLOAT, TEXT);
+
+-- Create new 4-parameter function signature
+CREATE OR REPLACE FUNCTION get_targeted_ads(
+  p_lat FLOAT, 
+  p_lng FLOAT, 
+  m_state TEXT, 
+  m_category TEXT
+)
+RETURNS SETOF ads
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT ads.*
+  FROM ads
+  WHERE
+    ads.is_active = true
+    AND ads.status = 'active'
+    AND ads.advertiser_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM advertiser_profiles ap
+      WHERE ap.user_id = ads.advertiser_id
+        AND ap.wallet_balance > 0
+    )
+    AND (ads.category IS NULL OR ads.category != m_category)
+    AND (
+      ads.target_states IS NULL 
+      OR cardinality(ads.target_states) = 0 
+      OR (m_state IS NOT NULL AND m_state = ANY(ads.target_states))
+    )
+    AND (
+      ads.target_categories IS NULL 
+      OR cardinality(ads.target_categories) = 0 
+      OR (m_category IS NOT NULL AND m_category = ANY(ads.target_categories))
+    )
+    AND (
+      ads.target_latitude IS NULL
+      OR
+      (
+        p_lat IS NOT NULL 
+        AND p_lng IS NOT NULL 
+        AND (
+          ads.target_radius_km IS NULL
+          OR
+          (
+            6371.0 * 2 * ASIN(
+              SQRT(
+                POWER(SIN(RADIANS(p_lat - ads.target_latitude) / 2), 2) +
+                COS(RADIANS(p_lat)) * COS(RADIANS(ads.target_latitude)) *
+                POWER(SIN(RADIANS(p_lng - ads.target_longitude) / 2), 2)
+              )
+            ) <= ads.target_radius_km
+          )
+        )
+      )
+    )
+  ORDER BY ads.cpv_bid DESC NULLS LAST;
+END;
+$$;

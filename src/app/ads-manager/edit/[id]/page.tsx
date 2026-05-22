@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -32,6 +32,45 @@ const CATEGORIES = [
   'Other',
 ]
 
+const MALAYSIAN_STATES = [
+  'Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan',
+  'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'
+]
+
+const MERCHANT_CATEGORIES = [
+  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Seafood',
+  'Nasi Kandar', 'Mamak', 'Hawker & Street Food', 'Bakery & Desserts',
+  'Other F&B', 'Retail', 'Bank & Finance', 'Entertainment', 'Health & Wellness', 'Other'
+]
+
+let leafletPromise: Promise<any> | null = null
+
+const loadLeaflet = () => {
+  if (typeof window === 'undefined') return Promise.resolve(null)
+  if (leafletPromise) return leafletPromise
+
+  leafletPromise = new Promise((resolve) => {
+    if ((window as any).L) {
+      resolve((window as any).L)
+      return
+    }
+
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    document.head.appendChild(link)
+
+    const script = document.createElement('script')
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    script.onload = () => {
+      resolve((window as any).L)
+    }
+    document.head.appendChild(script)
+  })
+
+  return leafletPromise
+}
+
 type FormData = {
   title: string
   description: string
@@ -40,12 +79,14 @@ type FormData = {
   link_url: string
   cta_text: string
   category: string
-  // Geo
+  // Targeting
+  target_states: string[]
+  target_categories: string[]
+  gps_enabled: boolean
   target_location_name: string
   target_lat: string
   target_lng: string
   radius_km: string
-  target_all: boolean
   // Bidding
   cpv_bid: string
 }
@@ -79,6 +120,24 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const [categorySearch, setCategorySearch] = useState('')
 
+  // State multi-select targeting
+  const [isStatesOpen, setIsStatesOpen] = useState(false)
+  const [stateSearch, setStateSearch] = useState('')
+  const [isTargetCatsOpen, setIsTargetCatsOpen] = useState(false)
+  const [targetCatSearch, setTargetCatSearch] = useState('')
+
+  // Geocoding & Nominatim
+  const [addressSearch, setAddressSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchingAddress, setSearchingAddress] = useState(false)
+
+  // Map references
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
+  const markerInstanceRef = useRef<any>(null)
+  const circleInstanceRef = useRef<any>(null)
+
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
@@ -87,11 +146,13 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     link_url: '',
     cta_text: 'Learn More',
     category: '',
+    target_states: [],
+    target_categories: [],
+    gps_enabled: false,
     target_location_name: '',
     target_lat: '',
     target_lng: '',
     radius_km: '5',
-    target_all: false,
     cpv_bid: '0.05',
   })
 
@@ -142,11 +203,13 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
           link_url: adData.link_url || '',
           cta_text: adData.cta_text || 'Learn More',
           category: adData.category || '',
-          target_location_name: adData.target_latitude ? 'Targeted Area' : '',
+          target_states: adData.target_states || [],
+          target_categories: adData.target_categories || [],
+          gps_enabled: !!adData.target_latitude,
+          target_location_name: adData.target_latitude ? (adData.target_location_name || 'Targeted Area') : '',
           target_lat: adData.target_latitude ? adData.target_latitude.toString() : '',
           target_lng: adData.target_longitude ? adData.target_longitude.toString() : '',
           radius_km: adData.target_radius_km ? adData.target_radius_km.toString() : '5',
-          target_all: !adData.target_latitude,
           cpv_bid: adData.cpv_bid ? adData.cpv_bid.toString() : '0.05',
         })
       } catch (err: any) {
@@ -157,6 +220,116 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     }
     init()
   }, [id, router])
+
+  // Load Leaflet and construct the map
+  useEffect(() => {
+    let active = true
+
+    if (form.gps_enabled) {
+      const initMap = async () => {
+        const L = await loadLeaflet()
+        if (!active) return
+
+        const DefaultIcon = L.icon({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        })
+        L.Marker.prototype.options.icon = DefaultIcon
+
+        const lat = parseFloat(form.target_lat) || 3.1390
+        const lng = parseFloat(form.target_lng) || 101.6869
+        const radius = parseFloat(form.radius_km) || 5
+
+        if (!mapInstanceRef.current && mapContainerRef.current) {
+          mapInstanceRef.current = L.map(mapContainerRef.current).setView([lat, lng], 12)
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(mapInstanceRef.current)
+
+          markerInstanceRef.current = L.marker([lat, lng], { draggable: true }).addTo(mapInstanceRef.current)
+          
+          circleInstanceRef.current = L.circle([lat, lng], {
+            color: '#4f46e5',
+            fillColor: '#4f46e5',
+            fillOpacity: 0.15,
+            radius: radius * 1000
+          }).addTo(mapInstanceRef.current)
+
+          mapInstanceRef.current.on('click', (e: any) => {
+            const { lat: clickLat, lng: clickLng } = e.latlng
+            setForm(prev => ({
+              ...prev,
+              target_lat: clickLat.toFixed(6),
+              target_lng: clickLng.toFixed(6)
+            }))
+          })
+
+          markerInstanceRef.current.on('dragend', () => {
+            const pos = markerInstanceRef.current.getLatLng()
+            setForm(prev => ({
+              ...prev,
+              target_lat: pos.lat.toFixed(6),
+              target_lng: pos.lng.toFixed(6)
+            }))
+          })
+          
+          setMapLoaded(true)
+        } else if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView([lat, lng])
+          if (markerInstanceRef.current) {
+            markerInstanceRef.current.setLatLng([lat, lng])
+          }
+          if (circleInstanceRef.current) {
+            circleInstanceRef.current.setLatLng([lat, lng])
+            circleInstanceRef.current.setRadius(radius * 1000)
+          }
+        }
+      }
+
+      initMap()
+    } else {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+        markerInstanceRef.current = null
+        circleInstanceRef.current = null
+      }
+      setMapLoaded(false)
+    }
+
+    return () => {
+      active = false
+    }
+  }, [form.gps_enabled, form.target_lat, form.target_lng, form.radius_km])
+
+  const toggleGps = () => {
+    const nextVal = !form.gps_enabled
+    setForm(prev => {
+      const updates: Partial<FormData> = { gps_enabled: nextVal }
+      if (nextVal) {
+        if (!prev.target_lat) updates.target_lat = '3.1390'
+        if (!prev.target_lng) updates.target_lng = '101.6869'
+        if (!prev.target_location_name) updates.target_location_name = 'Kuala Lumpur'
+      }
+      return { ...prev, ...updates }
+    })
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
+    }
+  }, [])
 
   const handleUploadImage = async (blob: Blob): Promise<string> => {
     if (!userId) throw new Error('User not authenticated')
@@ -209,8 +382,38 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     return Object.keys(e).length === 0
   }
 
+  const handleSearchAddress = async () => {
+    if (!addressSearch.trim()) return
+    setSearchingAddress(true)
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(addressSearch)}`, {
+        headers: { 'User-Agent': 'BeepmeAdManager/1.0' }
+      })
+      const data = await res.json()
+      setSearchResults(data)
+    } catch (err) {
+      console.error(err)
+      alert('Gagal mencari alamat. Sila cuba lagi.')
+    } finally {
+      setSearchingAddress(false)
+    }
+  }
+
+  const handleSelectAddress = (result: any) => {
+    const lat = parseFloat(result.lat)
+    const lon = parseFloat(result.lon)
+    setForm(prev => ({
+      ...prev,
+      target_location_name: result.display_name,
+      target_lat: lat.toFixed(6),
+      target_lng: lon.toFixed(6)
+    }))
+    setSearchResults([])
+    setAddressSearch('')
+  }
+
   const validateStep2 = () => {
-    if (form.target_all) return true
+    if (!form.gps_enabled) return true
     const e: typeof errors = {}
     if (!form.target_location_name.trim()) e.target_location_name = 'Location name is required'
     if (!form.target_lat.trim()) e.target_lat = 'Latitude is required'
@@ -258,8 +461,10 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
           target_lat: form.target_lat,
           target_lng: form.target_lng,
           radius_km: form.radius_km,
-          target_all: form.target_all,
+          target_all: !form.gps_enabled,
           cpv_bid: form.cpv_bid,
+          target_states: form.target_states.length > 0 ? form.target_states : null,
+          target_categories: form.target_categories.length > 0 ? form.target_categories : null,
         }),
       })
 
@@ -535,45 +740,255 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="p-8 space-y-5"
+                className="p-8 space-y-6"
               >
                 <div>
-                  <h2 className="text-lg font-black text-white mb-1">Geo-Targeting</h2>
-                  <p className="text-sm text-slate-500">Define where your ad will be shown</p>
+                  <h2 className="text-lg font-black text-white mb-1">Targeting</h2>
+                  <p className="text-sm text-slate-500">Define where and who will see your ad</p>
                 </div>
 
-                {/* Target All */}
-                <label className="flex items-center gap-3 p-4 rounded-xl border border-white/10 cursor-pointer hover:border-indigo-500/30 transition-all">
-                  <div
-                    className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${form.target_all ? 'bg-indigo-600 border-indigo-600' : 'border-slate-600'}`}
-                    onClick={() => set('target_all', !form.target_all)}
-                  >
-                    {form.target_all && <CheckCircle size={12} className="text-white" />}
+                {/* Target States */}
+                <div className="relative">
+                  <label className={labelClass}>Target States / Negeri</label>
+                  <div className="relative z-30">
+                    <button
+                      type="button"
+                      onClick={() => setIsStatesOpen(!isStatesOpen)}
+                      className={`${inputClass} flex items-center justify-between text-left cursor-pointer`}
+                    >
+                      <span className={form.target_states.length === 0 ? 'text-slate-500' : 'text-white'}>
+                        {form.target_states.length === 0 
+                          ? 'All States (Global)' 
+                          : `${form.target_states.length} State(s) Selected`}
+                      </span>
+                      <ChevronDown size={16} className="text-slate-500" />
+                    </button>
+
+                    {isStatesOpen && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-xl bg-[#0d0e16] border border-white/10 p-2 shadow-2xl z-50">
+                        <div className="flex items-center gap-2 mb-2 p-1 border-b border-white/5">
+                          <Search size={14} className="text-slate-500" />
+                          <input
+                            type="text"
+                            placeholder="Search state..."
+                            value={stateSearch}
+                            onChange={e => setStateSearch(e.target.value)}
+                            className="w-full bg-transparent text-white text-xs outline-none"
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] font-bold text-indigo-400 px-2 mb-1">
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, target_states: MALAYSIAN_STATES }))}
+                            className="hover:underline cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, target_states: [] }))}
+                            className="hover:underline cursor-pointer"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="space-y-0.5">
+                          {MALAYSIAN_STATES.filter(s => s.toLowerCase().includes(stateSearch.toLowerCase())).map(s => {
+                            const isSelected = form.target_states.includes(s)
+                            return (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => {
+                                  setForm(prev => {
+                                    const exists = prev.target_states.includes(s)
+                                    const updated = exists
+                                      ? prev.target_states.filter(x => x !== s)
+                                      : [...prev.target_states, s]
+                                    return { ...prev, target_states: updated }
+                                  })
+                                }}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 text-left text-xs rounded-lg transition-colors cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-indigo-600/20 text-indigo-400 font-semibold' 
+                                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                }`}
+                              >
+                                <span>{s}</span>
+                                {isSelected && <Check size={12} className="text-indigo-400" />}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div>
+                  {isStatesOpen && (
+                    <div 
+                      className="fixed inset-0 z-20 bg-transparent" 
+                      onClick={() => {
+                        setIsStatesOpen(false)
+                        setStateSearch('')
+                      }}
+                    />
+                  )}
+                  <p className="text-[10px] text-slate-500 mt-1 ml-1">If no state is selected, the campaign targets all states.</p>
+                </div>
+
+                {/* Target Merchant Categories */}
+                <div className="relative">
+                  <label className={labelClass}>Target Restaurant Categories</label>
+                  <div className="relative z-20">
+                    <button
+                      type="button"
+                      onClick={() => setIsTargetCatsOpen(!isTargetCatsOpen)}
+                      className={`${inputClass} flex items-center justify-between text-left cursor-pointer`}
+                    >
+                      <span className={form.target_categories.length === 0 ? 'text-slate-500' : 'text-white'}>
+                        {form.target_categories.length === 0 
+                          ? 'All Categories' 
+                          : `${form.target_categories.length} Category(ies) Selected`}
+                      </span>
+                      <ChevronDown size={16} className="text-slate-500" />
+                    </button>
+
+                    {isTargetCatsOpen && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-xl bg-[#0d0e16] border border-white/10 p-2 shadow-2xl z-50">
+                        <div className="flex items-center gap-2 mb-2 p-1 border-b border-white/5">
+                          <Search size={14} className="text-slate-500" />
+                          <input
+                            type="text"
+                            placeholder="Search category..."
+                            value={targetCatSearch}
+                            onChange={e => setTargetCatSearch(e.target.value)}
+                            className="w-full bg-transparent text-white text-xs outline-none"
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] font-bold text-indigo-400 px-2 mb-1">
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, target_categories: MERCHANT_CATEGORIES }))}
+                            className="hover:underline cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, target_categories: [] }))}
+                            className="hover:underline cursor-pointer"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="space-y-0.5">
+                          {MERCHANT_CATEGORIES.filter(c => c.toLowerCase().includes(targetCatSearch.toLowerCase())).map(c => {
+                            const isSelected = form.target_categories.includes(c)
+                            return (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => {
+                                  setForm(prev => {
+                                    const exists = prev.target_categories.includes(c)
+                                    const updated = exists
+                                      ? prev.target_categories.filter(x => x !== c)
+                                      : [...prev.target_categories, c]
+                                    return { ...prev, target_categories: updated }
+                                  })
+                                }}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 text-left text-xs rounded-lg transition-colors cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-indigo-600/20 text-indigo-400 font-semibold' 
+                                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                }`}
+                              >
+                                <span>{c}</span>
+                                {isSelected && <Check size={12} className="text-indigo-400" />}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {isTargetCatsOpen && (
+                    <div 
+                      className="fixed inset-0 z-10 bg-transparent" 
+                      onClick={() => {
+                        setIsTargetCatsOpen(false)
+                        setTargetCatSearch('')
+                      }}
+                    />
+                  )}
+                  <p className="text-[10px] text-slate-500 mt-1 ml-1">If no category is selected, the campaign targets all merchant categories.</p>
+                </div>
+
+                {/* Limit by GPS Radius Toggle */}
+                <label className="flex items-center gap-3 p-4 rounded-xl border border-white/10 cursor-pointer hover:border-indigo-500/30 transition-all bg-white/3">
+                  <div
+                    className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${form.gps_enabled ? 'bg-indigo-600 border-indigo-600' : 'border-slate-600'}`}
+                    onClick={toggleGps}
+                  >
+                    {form.gps_enabled && <Check size={12} className="text-white" />}
+                  </div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Globe size={16} className="text-indigo-400" />
-                      <span className="text-white font-semibold text-sm">Target All Locations</span>
+                      <MapPin size={16} className="text-indigo-400" />
+                      <span className="text-white font-semibold text-sm">Limit by GPS Radius</span>
                     </div>
-                    <p className="text-slate-500 text-xs mt-0.5">Show your ad to all Beepme users regardless of location</p>
+                    <p className="text-slate-500 text-xs mt-0.5">Show this ad only to users near specific coordinates</p>
                   </div>
                 </label>
 
-                {!form.target_all && (
+                {form.gps_enabled && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="space-y-5"
+                    className="space-y-4 pt-2"
                   >
-                    {/* Helper */}
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
-                      <AlertCircle size={16} className="text-indigo-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-slate-400 text-xs leading-relaxed">
-                        You can find coordinates by right-clicking any location on{' '}
-                        <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">Google Maps</a>{' '}
-                        and selecting the coordinates shown.
-                      </p>
+                    {/* Address search via Nominatim */}
+                    <div className="relative">
+                      <label className={labelClass}>Search Address / Location</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. Mid Valley Megamall..."
+                          value={addressSearch}
+                          onChange={e => setAddressSearch(e.target.value)}
+                          className={inputClass}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleSearchAddress()
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSearchAddress}
+                          disabled={searchingAddress}
+                          className="px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center min-w-[80px]"
+                        >
+                          {searchingAddress ? <Loader2 size={16} className="animate-spin" /> : 'Search'}
+                        </button>
+                      </div>
+
+                      {searchResults.length > 0 && (
+                        <div className="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl bg-[#0d0e16] border border-white/10 p-1 shadow-2xl z-50">
+                          {searchResults.map((r, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleSelectAddress(r)}
+                              className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors border-b border-white/5 last:border-0 truncate block cursor-pointer"
+                              title={r.display_name}
+                            >
+                              {r.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Location Name */}
@@ -590,28 +1005,36 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                     </div>
 
                     {/* Auto location button */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={handleGetCurrentLocation}
-                        disabled={locating}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-indigo-500/20 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 font-bold text-xs transition-all disabled:opacity-50"
-                      >
-                        {locating ? (
-                          <>
-                            <Loader2 size={14} className="animate-spin text-indigo-400" />
-                            <span>Mendapatkan Lokasi Semasa...</span>
-                          </>
-                        ) : (
-                          <>
-                            <MapPin size={14} className="text-indigo-400" />
-                            <span>Gunakan Lokasi Semasa Saya</span>
-                          </>
-                        )}
-                      </button>
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={locating}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 font-bold text-xs transition-all disabled:opacity-50"
+                    >
+                      {locating ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin text-indigo-400" />
+                          <span>Mendapatkan Lokasi Semasa...</span>
+                        </>
+                      ) : (
+                        <>
+                          <MapPin size={14} className="text-indigo-400" />
+                          <span>Gunakan Lokasi Semasa Saya</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Leaflet Map Preview Container */}
+                    <div className="relative">
+                      <div 
+                        ref={mapContainerRef} 
+                        className="h-60 w-full rounded-xl border border-white/10 overflow-hidden bg-slate-950 z-10" 
+                        style={{ minHeight: '240px' }}
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1 ml-1">You can drag the marker or click on the map to set the center coordinate.</p>
                     </div>
 
-                    {/* Lat / Lng */}
+                    {/* Lat / Lng inputs */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className={labelClass}>Latitude <span className="text-rose-500">*</span></label>
@@ -639,24 +1062,37 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                       </div>
                     </div>
 
-                    {/* Radius */}
+                    {/* Radius Slider / input */}
                     <div>
-                      <label className={labelClass}>Radius (km) <span className="text-rose-500">*</span></label>
-                      <input
-                        type="number"
-                        min="0.5"
-                        step="0.5"
-                        className={inputClass}
-                        placeholder="5"
-                        value={form.radius_km}
-                        onChange={e => set('radius_km', e.target.value)}
-                      />
+                      <div className="flex justify-between items-center mb-1">
+                        <label className={labelClass}>Radius (km) <span className="text-rose-500">*</span></label>
+                        <span className="text-xs font-semibold text-indigo-400">{form.radius_km} km</span>
+                      </div>
+                      <div className="flex gap-4 items-center">
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="50"
+                          step="0.5"
+                          value={form.radius_km}
+                          onChange={e => set('radius_km', e.target.value)}
+                          className="flex-1 accent-indigo-600"
+                        />
+                        <input
+                          type="number"
+                          min="0.5"
+                          step="0.5"
+                          className={`${inputClass} w-24 py-1.5 px-3 text-center`}
+                          value={form.radius_km}
+                          onChange={e => set('radius_km', e.target.value)}
+                        />
+                      </div>
                       {errors.radius_km && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.radius_km}</p>}
                     </div>
                   </motion.div>
                 )}
 
-                <div className="flex gap-3 mt-2">
+                <div className="flex gap-3 mt-4">
                   <button
                     onClick={prevStep}
                     className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white font-bold transition-all"
@@ -730,14 +1166,15 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                       { label: 'Category', value: form.category || '—' },
                       { label: 'CTA', value: form.cta_text || '—' },
                       { label: 'Video', value: form.video_url ? '✓ Set' : '—' },
-                      { label: 'Target', value: form.target_all ? 'All Locations' : form.target_location_name || '—' },
-                      { label: 'Radius', value: form.target_all ? 'Global' : `${form.radius_km} km` },
+                      { label: 'Target States', value: form.target_states.length === 0 ? 'All States (Global)' : form.target_states.join(', ') },
+                      { label: 'Target Categories', value: form.target_categories.length === 0 ? 'All Categories' : form.target_categories.join(', ') },
+                      { label: 'GPS Radius', value: form.gps_enabled ? `${form.target_location_name || 'Custom GPS'} (${form.radius_km} km)` : 'No Limit' },
                       { label: 'Bid', value: `RM ${Number(form.cpv_bid).toFixed(2)}/view` },
-                      { label: 'Status After Edit', value: 'Pending Review (Disabled)' },
+                      { label: 'Status After Edit', value: 'Pending Review' },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between px-5 py-3">
                         <span className="text-xs text-slate-500">{row.label}</span>
-                        <span className="text-sm text-white font-medium text-right max-w-[55%] truncate">{row.value}</span>
+                        <span className="text-sm text-white font-medium text-right max-w-[55%] truncate" title={row.value}>{row.value}</span>
                       </div>
                     ))}
                   </div>
