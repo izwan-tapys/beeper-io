@@ -24,7 +24,7 @@ export function Logo({
       </div>
       {showText && (
         <span className={`text-2xl font-black tracking-tighter uppercase italic ${textColor}`}>
-          Beepme<span className="text-indigo-500">.pro</span>
+          Beepme<span className="text-orange-500">.pro</span>
         </span>
       )}
     </div>
