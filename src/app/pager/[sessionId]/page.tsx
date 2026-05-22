@@ -233,7 +233,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
       // Heavy fetch on initial load
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_link_url, upsell_video_url, upsell_image_url)')
+        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url)')
         .eq('id', sessionId)
         .single()
 
