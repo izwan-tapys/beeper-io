@@ -8,17 +8,28 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, ChevronRight, Megaphone, MapPin, DollarSign,
-  CheckCircle, Loader2, Globe, AlertCircle, ArrowRight
+  CheckCircle, Loader2, Globe, AlertCircle, ArrowRight,
+  Search, ChevronDown, Check
 } from 'lucide-react'
 import { AdsBuilder } from '@/components/AdsBuilder'
 
 const supabase = createClient()
 
 const CATEGORIES = [
-  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining',
-  'Seafood', 'Nasi Kandar', 'Mamak', 'Hawker & Street Food',
-  'Bakery & Desserts', 'Other F&B', 'Retail', 'Bank & Finance',
-  'Entertainment', 'Health & Wellness', 'Other',
+  'Retail & Shopping',
+  'Bank & Finance',
+  'Entertainment & Leisure',
+  'Health & Wellness',
+  'Automotive & Vehicles',
+  'Education & Training',
+  'Real Estate & Housing',
+  'Travel & Tourism',
+  'IT & Technology',
+  'Beauty & Personal Care',
+  'Professional Services',
+  'Events & Weddings',
+  'Fashion & Apparel',
+  'Other',
 ]
 
 type FormData = {
@@ -61,6 +72,12 @@ export default function CreateCampaignPage() {
   const [walletBalance, setWalletBalance] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [categorySearch, setCategorySearch] = useState('')
+
+  const filteredCategories = CATEGORIES.filter(c =>
+    c.toLowerCase().includes(categorySearch.toLowerCase())
+  )
 
   const [form, setForm] = useState<FormData>({
     title: '',
@@ -293,18 +310,75 @@ export default function CreateCampaignPage() {
                 </div>
 
                 {/* Category */}
-                <div>
+                <div className="relative">
                   <label className={labelClass}>Category <span className="text-rose-500">*</span></label>
-                  <select
-                    className={inputClass}
-                    value={form.category}
-                    onChange={e => set('category', e.target.value)}
-                  >
-                    <option value="" disabled>Select a category...</option>
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  
+                  <div className="relative z-50">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className={inputClass + " pr-10 cursor-pointer"}
+                        placeholder="Select or search category..."
+                        value={isCategoryOpen ? categorySearch : form.category}
+                        onChange={e => {
+                          setCategorySearch(e.target.value)
+                          if (!isCategoryOpen) setIsCategoryOpen(true)
+                        }}
+                        onFocus={() => {
+                          setIsCategoryOpen(true)
+                          setCategorySearch('')
+                        }}
+                        readOnly={!isCategoryOpen}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                        {isCategoryOpen ? <Search size={16} /> : <ChevronDown size={16} />}
+                      </div>
+                    </div>
+
+                    {isCategoryOpen && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto rounded-xl bg-[#0d0e16] border border-white/10 p-1.5 shadow-2xl z-50">
+                        {filteredCategories.length === 0 ? (
+                          <div className="px-4 py-2.5 text-xs text-slate-500 text-center">
+                            No categories found
+                          </div>
+                        ) : (
+                          filteredCategories.map(c => {
+                            const isSelected = form.category === c
+                            return (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => {
+                                  set('category', c)
+                                  setIsCategoryOpen(false)
+                                  setCategorySearch('')
+                                }}
+                                className={`w-full flex items-center justify-between px-3 py-2 text-left text-sm rounded-lg transition-colors cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-indigo-600/20 text-indigo-400 font-semibold' 
+                                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                }`}
+                              >
+                                <span>{c}</span>
+                                {isSelected && <Check size={14} className="text-indigo-400" />}
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {isCategoryOpen && (
+                    <div 
+                      className="fixed inset-0 z-40 bg-transparent" 
+                      onClick={() => {
+                        setIsCategoryOpen(false)
+                        setCategorySearch('')
+                      }}
+                    />
+                  )}
+
                   {errors.category && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.category}</p>}
                 </div>
 
