@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [togglingStore, setTogglingStore] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settingsName, setSettingsName] = useState('')
+  const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
   const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
   const [userEmail, setUserEmail] = useState('')
