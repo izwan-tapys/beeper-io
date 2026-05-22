@@ -38,6 +38,7 @@ type Merchant = {
   upsell_video_url: string | null
   upsell_image_url: string | null
   upsell_title: string | null
+  upsell_description: string | null
   upsell_link_url: string | null
 }
 

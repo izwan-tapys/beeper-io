@@ -119,7 +119,8 @@ const handleTouchStart = (e: React.TouchEvent) => {
             title: upsellData.upsell_title || 'Promosi Kedai',
             media_url: upsellData.upsell_video_url,
             fallback_image_url: upsellData.upsell_image_url,
-            link_url: upsellData.upsell_link_url || '#'
+            link_url: upsellData.upsell_link_url || '#',
+            description: upsellData.upsell_description || ''
           }])
         } else {
           setAdsList([{
