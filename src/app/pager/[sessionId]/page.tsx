@@ -751,7 +751,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={handleAdClick}
-                        className="absolute left-4 bottom-[96px] max-w-[70%] text-left"
+                        className="absolute left-4 bottom-[84px] max-w-[70%] text-left"
                       >
                         <div className="space-y-1.5 drop-shadow-lg">
                           <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-2 leading-tight">@{ad.title}</h4>
