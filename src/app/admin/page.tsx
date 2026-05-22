@@ -408,8 +408,8 @@ export default function AdminPage() {
                             disabled={verifyingId === m.id}
                             className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
                           >
-                            <option value="free">Trial (Free)</option>
-                            <option value="pro">Pro (RM39)</option>
+                            <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
+                            <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
                           </select>
                         </td>
                         <td className="py-4 px-6 text-right">
