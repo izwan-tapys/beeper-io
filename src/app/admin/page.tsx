@@ -67,6 +67,7 @@ export default function AdminPage() {
     is_active: true
   })
   const [adsModerating, setAdsModerating] = useState<string | null>(null)
+  const [previewAd, setPreviewAd] = useState<any | null>(null)
   const [totalCpvRevenue, setTotalCpvRevenue] = useState(0)
 
   // Infra State
@@ -817,6 +818,13 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <button
+                        onClick={() => setPreviewAd(ad)}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-black text-[10px] uppercase tracking-widest transition-all border border-white/10"
+                      >
+                        <Eye size={12} />
+                        Preview
+                      </button>
+                      <button
                         onClick={() => handleApproveAd(ad.id)}
                         disabled={adsModerating === ad.id}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
@@ -992,6 +1000,171 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Ad Preview Modal Overlay */}
+      {previewAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-4xl bg-[#0a0b0f] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+            
+            {/* Phone/Ad Preview Frame (Left/Top side) */}
+            <div className="w-full md:w-[380px] bg-black flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-white/5 relative shrink-0">
+              <div className="w-[240px] md:w-[280px] aspect-[9/16] rounded-[24px] overflow-hidden border border-white/10 relative shadow-2xl bg-[#020203]">
+                {previewAd.video_url ? (
+                  (() => {
+                    const ytMatch = previewAd.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)
+                    const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
+                    if (ytId) {
+                      return (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                          className="w-full h-full object-cover pointer-events-none scale-105"
+                          allow="autoplay; encrypted-media"
+                        />
+                      )
+                    }
+                    const tiktokMatch = previewAd.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/)
+                    const tiktokId = tiktokMatch ? tiktokMatch[1] : null
+                    if (tiktokId) {
+                      return (
+                        <iframe
+                          src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                          className="w-full h-full object-cover pointer-events-none"
+                          allow="autoplay; encrypted-media"
+                        />
+                      )
+                    }
+                    return (
+                      <video src={previewAd.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                    )
+                  })()
+                ) : previewAd.image_url ? (
+                  <img src={previewAd.image_url} alt={previewAd.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/50 to-black p-6 text-center">
+                    <p className="text-white font-black text-xl">{previewAd.title}</p>
+                  </div>
+                )}
+                
+                {/* Foreground Overlay mimicking customer view */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent p-4 flex flex-col justify-end">
+                  <h4 className="text-white font-black text-base leading-tight uppercase tracking-tight line-clamp-2 mb-1">{previewAd.title}</h4>
+                  {previewAd.description && (
+                    <p className="text-[11px] text-slate-300 leading-normal line-clamp-3 mb-3">{previewAd.description}</p>
+                  )}
+                  {previewAd.link_url && (
+                    <div className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-center text-xs font-black uppercase tracking-widest cursor-pointer shadow-lg shadow-indigo-600/35">
+                      {previewAd.cta_text || 'Learn More'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Campaign Details & Moderate Actions (Right/Bottom side) */}
+            <div className="flex-1 p-8 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="font-black text-white text-2xl uppercase tracking-tighter">Campaign Moderation</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Review the creative, links, and targeting configuration.</p>
+                  </div>
+                  <button 
+                    onClick={() => setPreviewAd(null)}
+                    className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Campaign Title</p>
+                      <p className="text-white font-bold text-sm">{previewAd.title}</p>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ad Category</p>
+                      <p className="text-white font-bold text-sm">{previewAd.category || 'Uncategorized'}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Description</p>
+                    <p className="text-slate-300 text-xs leading-relaxed">{previewAd.description || 'No description provided.'}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">CPV Bid Rate</p>
+                      <p className="text-emerald-400 font-bold text-sm">RM {previewAd.cpv_bid || '0.00'}/view</p>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Advertiser Profile</p>
+                      <p className="text-slate-400 font-mono text-[10px] truncate" title={previewAd.advertiser_id}>{previewAd.advertiser_id || 'System Campaign'}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><MapPin size={11} className="text-indigo-400" /> Targeting Range</p>
+                    {previewAd.target_latitude && previewAd.target_longitude ? (
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <span className="text-slate-300 text-xs font-mono">GPS: {previewAd.target_latitude}, {previewAd.target_longitude}</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Radius: {previewAd.target_radius_km || 5} km</span>
+                      </div>
+                    ) : (
+                      <span className="text-indigo-400 font-black text-[10px] uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/20">Global Campaign (All Pagers)</span>
+                    )}
+                  </div>
+
+                  {previewAd.link_url && (
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Link URL</p>
+                        <p className="text-slate-300 font-mono text-xs truncate">{previewAd.link_url}</p>
+                      </div>
+                      <a 
+                        href={previewAd.link_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all shrink-0"
+                      >
+                        Visit Link <ExternalLink size={10} />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Moderate Buttons */}
+              <div className="flex flex-col md:flex-row items-center gap-4 mt-8 pt-6 border-t border-white/5">
+                <button
+                  onClick={async () => {
+                    await handleApproveAd(previewAd.id)
+                    setPreviewAd(null)
+                  }}
+                  disabled={adsModerating === previewAd.id}
+                  className="w-full md:flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {adsModerating === previewAd.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                  Approve Campaign
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleRejectAd(previewAd.id)
+                    setPreviewAd(null)
+                  }}
+                  disabled={adsModerating === previewAd.id}
+                  className="w-full md:flex-1 py-4 rounded-2xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-xs uppercase tracking-widest transition-all border border-rose-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {adsModerating === previewAd.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                  Reject Campaign
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   )
 }
