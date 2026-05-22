@@ -252,3 +252,16 @@ CREATE POLICY "Allow public read access to active ads"
 ON ads FOR SELECT
 TO anon, authenticated
 USING (is_active = true AND status = 'active');
+
+-- 17. Allow advertisers to select their own ad analytics
+DROP POLICY IF EXISTS "Advertiser can read own ad analytics" ON ad_analytics;
+CREATE POLICY "Advertiser can read own ad analytics"
+ON ad_analytics FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM ads
+    WHERE ads.id = ad_analytics.ad_id
+      AND ads.advertiser_id = auth.uid()
+  )
+);
