@@ -12,6 +12,7 @@ import {
   LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { AdsBuilder } from '@/components/AdsBuilder'
 
 type Session = {
   id: string
@@ -55,10 +56,10 @@ export default function DashboardPage() {
   const [togglingStore, setTogglingStore] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settingsName, setSettingsName] = useState('')
-  const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
   const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [activeTab, setActiveTab] = useState<'home' | 'promosi'>('home')
   const [settingsUpsellTitle, setSettingsUpsellTitle] = useState('')
   const [settingsUpsellLinkUrl, setSettingsUpsellLinkUrl] = useState('')
   const [settingsUpsellVideoUrl, setSettingsUpsellVideoUrl] = useState('')
@@ -878,8 +879,32 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center gap-6 overflow-x-auto no-scrollbar border-t" style={{ borderColor: 'var(--card-border)' }}>
+          <button
+            onClick={() => setActiveTab('home')}
+            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
+              activeTab === 'home' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Smartphone size={16} /> Home / Orders
+          </button>
+          <button
+            onClick={() => setActiveTab('promosi')}
+            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
+              activeTab === 'promosi' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Zap size={16} /> Promosi (Ads Editor)
+            {merchant?.plan_type === 'pro' && (
+              <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase tracking-widest border border-yellow-500/20 ml-1">PRO</span>
+            )}
+          </button>
+        </div>
       </header>
 
+      {activeTab === 'home' ? (
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Only show content if merchant data is loaded */}
         {!merchant ? (
@@ -1098,7 +1123,19 @@ export default function DashboardPage() {
             </div>
           </>
         )}
+        )}
       </main>
+      ) : (
+        <main className="max-w-5xl mx-auto px-4 py-6">
+          <AdsBuilder 
+            merchant={merchant} 
+            onUpdate={(updatedMerchant) => {
+              setMerchant(updatedMerchant)
+              fetchMerchant() // Refresh to sync
+            }} 
+          />
+        </main>
+      )}
 
       {/* QR Modal */}
       {qrSession && (
@@ -1289,7 +1326,7 @@ export default function DashboardPage() {
                         <div className="text-2xl">🔒</div>
                         <h4 className="text-white font-bold text-sm">Beepme Premium Feature</h4>
                         <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                          Urus promosi & upsell video/banner anda sendiri di halaman wait customer. Sila langgan Beepme Premium.
+                          Urus promosi & banner anda sendiri di halaman wait customer menggunakan Ads Editor interaktif kami. Sila langgan Beepme Premium.
                         </p>
                         <button
                           type="button"
@@ -1300,53 +1337,26 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Promotion Title</label>
-                          <input
-                            type="text"
-                            value={settingsUpsellTitle}
-                            onChange={(e) => setSettingsUpsellTitle(e.target.value)}
-                            placeholder="e.g. Diskaun 10% untuk Kopi Seterusnya!"
-                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                          />
+                      <div className="p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 flex items-center justify-center mx-auto border border-indigo-500/30 shadow-xl shadow-indigo-500/10">
+                          <Smartphone size={32} className="text-indigo-400" />
                         </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Upsell Video URL (TikTok/Reels format)</label>
-                          <input
-                            type="text"
-                            value={settingsUpsellVideoUrl}
-                            onChange={(e) => setSettingsUpsellVideoUrl(e.target.value)}
-                            placeholder="e.g. https://cdn.example.com/videos/promo.mp4"
-                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
-                          />
-                          <p className="text-[9px] text-slate-600">Video 9:16 dimainkan semasa pelanggan sedang menunggu.</p>
+                        <div>
+                          <h4 className="text-white font-bold text-lg mb-1">Visual Ads Editor</h4>
+                          <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                            Bina dan edit iklan promosi anda secara interaktif. Apa yang anda lihat adalah apa yang pelanggan nampak (WYSIWYG).
+                          </p>
                         </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Fallback Image URL</label>
-                          <input
-                            type="text"
-                            value={settingsUpsellImageUrl}
-                            onChange={(e) => setSettingsUpsellImageUrl(e.target.value)}
-                            placeholder="e.g. https://cdn.example.com/images/banner.jpg"
-                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
-                          />
-                          <p className="text-[9px] text-slate-600">Imej banner dipaparkan jika video tidak dapat dimuatkan.</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Action Link URL (Link Out)</label>
-                          <input
-                            type="text"
-                            value={settingsUpsellLinkUrl}
-                            onChange={(e) => setSettingsUpsellLinkUrl(e.target.value)}
-                            placeholder="e.g. https://shopee.com.my/yourstore"
-                            className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
-                          />
-                          <p className="text-[9px] text-slate-600 font-medium">Link dihantar apabila pelanggan menekan banner promosi.</p>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            setActiveTab('promosi');
+                          }}
+                          className="w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
+                        >
+                          Buka Ads Editor <ArrowRight size={16} />
+                        </button>
                       </div>
                     )}
                   </div>
