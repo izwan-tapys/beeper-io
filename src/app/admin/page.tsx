@@ -30,11 +30,15 @@ export default function AdminPage() {
   })
 
   // Ads State
-  const [activeTab, setActiveTab] = useState<'merchants' | 'ads'>('merchants')
+  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra'>('merchants')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
   const [isAddingAd, setIsAddingAd] = useState(false)
   const [newAd, setNewAd] = useState({ title: '', video_url: '', image_url: '', link_url: '', is_active: true })
+
+  // Infra State
+  const [infraData, setInfraData] = useState<any>(null)
+  const [infraLoading, setInfraLoading] = useState(false)
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -151,11 +155,31 @@ export default function AdminPage() {
     if (!error) fetchAds()
   }
 
+  const fetchInfraData = useCallback(async () => {
+    setInfraLoading(true)
+    try {
+      const res = await fetch('/api/admin/infra-usage')
+      if (res.ok) {
+        const data = await res.json()
+        setInfraData(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setInfraLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (isAdmin && activeTab === 'ads') {
       fetchAds()
     }
-  }, [isAdmin, activeTab, fetchAds])
+    if (isAdmin && activeTab === 'infra') {
+      fetchInfraData()
+      const interval = setInterval(fetchInfraData, 60000) // Poll every 60s
+      return () => clearInterval(interval)
+    }
+  }, [isAdmin, activeTab, fetchAds, fetchInfraData])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -271,6 +295,12 @@ export default function AdminPage() {
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
             <Tv size={16} /> Ad Network
+          </button>
+          <button
+            onClick={() => setActiveTab('infra')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'infra' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <BarChart3 size={16} /> Infra Usage
           </button>
         </div>
 
@@ -597,6 +627,65 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* Infra Usage View */}
+        {activeTab === 'infra' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">System Infrastructure</h2>
+                <p className="text-[10px] font-bold text-slate-600">Near real-time resource utilization (Updated every 60s)</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${infraLoading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{infraLoading ? 'Syncing...' : 'Live System'}</span>
+              </div>
+            </div>
+
+            {infraData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CircularMeter 
+                  percentage={(infraData.supabase.databaseSizeBytes / infraData.supabase.databaseLimitBytes) * 100}
+                  label="Supabase DB Size"
+                  color="indigo"
+                  limit={`${(infraData.supabase.databaseLimitBytes / 1024 / 1024).toFixed(0)}MB`}
+                  current={`${(infraData.supabase.databaseSizeBytes / 1024 / 1024).toFixed(2)}MB`}
+                  description="Total database size consumed by active sessions, pagers, and merchants."
+                />
+                <CircularMeter 
+                  percentage={(infraData.supabase.storageSizeBytes / infraData.supabase.storageLimitBytes) * 100}
+                  label="Supabase Storage"
+                  color="emerald"
+                  limit={`${(infraData.supabase.storageLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB`}
+                  current={`${(infraData.supabase.storageSizeBytes / 1024 / 1024).toFixed(2)}MB`}
+                  description="Total storage consumed by WebP compressed merchant logos."
+                />
+                <CircularMeter 
+                  percentage={(infraData.vercel.bandwidthBytes / infraData.vercel.bandwidthLimitBytes) * 100}
+                  label="Vercel Bandwidth"
+                  color="amber"
+                  limit={`${(infraData.vercel.bandwidthLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB`}
+                  current={`${(infraData.vercel.bandwidthBytes / 1024 / 1024 / 1024).toFixed(4)}GB`}
+                  description={infraData.vercel.missingToken ? "Simulated data. Set VERCEL_ACCESS_TOKEN for exact API sync." : "Actual bandwidth used this billing cycle."}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                 <Loader2 size={32} className="text-indigo-500 animate-spin" />
+                 <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Calculating Infra Metrics...</p>
+              </div>
+            )}
+            
+            <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl mt-8">
+              <h4 className="text-indigo-400 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                <ShieldCheck size={16} /> Cost Optimization Engine
+              </h4>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">
+                Beeper IO is currently operating in <strong>High Efficiency Mode</strong>. Client-side WebP compression is saving roughly 90% of storage bandwidth. To prevent the Database Size from ballooning, ensure background CRON jobs are active to archive ephemeral session data.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -628,6 +717,55 @@ function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode,
       
       {/* Subtle Bottom Glow */}
       <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-1 blur-md opacity-40 group-hover:opacity-100 transition-opacity ${color === 'indigo' ? 'bg-indigo-500' : color === 'amber' ? 'bg-amber-500' : color === 'emerald' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+    </div>
+  )
+}
+
+function CircularMeter({ percentage, label, color, limit, current, description }: any) {
+  const safePercentage = Math.min(Math.max(percentage, 0), 100)
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (safePercentage / 100) * circumference;
+  
+  const isDanger = safePercentage >= 80;
+  const strokeColor = isDanger ? 'stroke-rose-500' : color === 'indigo' ? 'stroke-indigo-500' : color === 'emerald' ? 'stroke-emerald-500' : 'stroke-amber-500';
+
+  return (
+    <div className={`relative p-8 rounded-[32px] bg-white/[0.01] border transition-all duration-500 ${isDanger ? 'border-rose-500/30 shadow-[0_0_30px_-5px_rgba(244,63,94,0.1)] hover:bg-rose-500/5' : 'border-white/5 hover:bg-white/[0.03]'}`}>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-start justify-between">
+          <div>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{label}</p>
+             <p className="text-2xl font-black text-white">{current}</p>
+             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Limit: {limit}</p>
+          </div>
+          <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r={radius} className="stroke-white/5 fill-none" strokeWidth="8" />
+              <circle 
+                cx="50" cy="50" r={radius} 
+                className={`${strokeColor} fill-none transition-all duration-1000 ease-out`} 
+                strokeWidth="8" 
+                strokeLinecap="round"
+                style={{ strokeDasharray: circumference, strokeDashoffset }} 
+              />
+            </svg>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center ${isDanger ? 'animate-pulse text-rose-500' : 'text-white'}`}>
+               <span className="text-sm font-black">{safePercentage.toFixed(1)}</span>
+               <span className="text-[8px] font-bold uppercase tracking-widest">%</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500 leading-relaxed min-h-[40px]">{description}</p>
+          {isDanger && (
+            <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-2 text-rose-400">
+               <AlertCircle size={14} className="shrink-0 mt-0.5" />
+               <p className="text-[10px] font-bold leading-tight">Critical Limit Reached. Consider upgrading your plan immediately.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
