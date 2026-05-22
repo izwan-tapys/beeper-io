@@ -334,21 +334,14 @@ export default function AdminPage() {
                   <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
                     <th className="py-5 px-6 font-black">Merchant</th>
                     <th className="py-5 px-6 font-black">Contact</th>
-                    <th className="py-5 px-6 font-black">Usage / Quota</th>
+                    <th className="py-5 px-6 font-black">Email</th>
+                    <th className="py-5 px-6 font-black">Usage</th>
                     <th className="py-5 px-6 font-black">Subscription Plan</th>
                     <th className="py-5 px-6 font-black text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredMerchants.map((m) => {
-                    const quota = m.plan_type === 'pro' ? Infinity : 20;
-                    let usagePercent = 0;
-                    if (quota !== Infinity) {
-                      usagePercent = Math.min((m.monthly_count / quota) * 100, 100);
-                    } else {
-                      usagePercent = 100; // Full bar for infinite
-                    }
-                    
                     return (
                       <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="py-4 px-6">
@@ -377,15 +370,20 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="py-4 px-6">
+                          <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
+                            <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
                           <div className="flex flex-col gap-1.5 max-w-[120px]">
                             <div className="flex items-end justify-between">
                               <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
-                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">/ {quota === Infinity ? '∞' : quota}</span>
+                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
                             </div>
                             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                               <div 
-                                className={`h-full transition-all duration-1000 ${quota === Infinity ? 'bg-indigo-500' : usagePercent > 90 ? 'bg-rose-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                                style={{ width: `${usagePercent}%` }}
+                                className="h-full bg-indigo-500 transition-all duration-1000"
+                                style={{ width: '100%' }}
                               />
                             </div>
                           </div>
