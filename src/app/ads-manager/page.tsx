@@ -71,6 +71,11 @@ export default function AdsManagerPage() {
       setTimeout(() => setSuccessMsg(''), 6000)
       // Clean up URL
       window.history.replaceState({}, '', '/ads-manager')
+    } else if (params.get('success') === '2') {
+      setSuccessMsg('Campaign updated and resubmitted for review! ✅')
+      setTimeout(() => setSuccessMsg(''), 6000)
+      // Clean up URL
+      window.history.replaceState({}, '', '/ads-manager')
     }
   }, [])
 
@@ -390,6 +395,17 @@ export default function AdsManagerPage() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/ads-manager/edit/${ad.id}`)
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-indigo-600 hover:text-white border border-white/10 text-xs font-black uppercase tracking-wider text-slate-300 transition-all active:scale-95 shrink-0"
+                      >
+                        Edit
+                      </button>
 
                       {/* Arrow */}
                       <ChevronRight size={16} className="text-slate-700 group-hover:text-slate-500 transition-colors flex-shrink-0" />
