@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { getWebhookToken } from '@/lib/webhook'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
@@ -100,6 +99,7 @@ export default function DashboardPage() {
   const [settingsState, setSettingsState] = useState('')
   const [settingsCategory, setSettingsCategory] = useState('')
   const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
+  const [webhookUrl, setWebhookUrl] = useState('')
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -341,6 +341,15 @@ export default function DashboardPage() {
       setSettingsThemeColor(m.theme_color || '#6366f1')
       setSettingsState(m.state || '')
       setSettingsCategory(m.category || '')
+
+      // Fetch webhook URL securely from backend API
+      fetch('/api/merchant/webhook-url')
+        .then(res => res.json())
+        .then(data => {
+          if (data.webhookUrl) setWebhookUrl(data.webhookUrl)
+        })
+        .catch(err => console.error('Failed to fetch webhook URL:', err))
+
 
       // Check for MFA Challenge
       const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -706,10 +715,6 @@ export default function DashboardPage() {
         (!!merchant.expiry_date && new Date(merchant.expiry_date) < new Date()))
     : false
 
-  // Webhook URL with secure token (only computed when merchant is loaded)
-  const webhookUrl = merchant
-    ? `${baseUrl}/api/webhooks/loyverse?merchant_id=${merchant.id}&token=${getWebhookToken(merchant.id)}`
-    : ''
   const isOverQuota = false
 
   const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`

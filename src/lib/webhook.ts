@@ -13,11 +13,10 @@ import crypto from 'crypto'
  */
 export function getWebhookToken(merchantId: string): string {
   // Use SERVICE_ROLE_KEY as the HMAC secret — it's server-only and strong
-  // Fall back to SUPABASE_URL (available on both client/server) as a weaker salt
-  const secret =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    'beepme-fallback-salt'
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!secret) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined in server environment variables.')
+  }
 
   return crypto
     .createHmac('sha256', secret)
@@ -25,3 +24,4 @@ export function getWebhookToken(merchantId: string): string {
     .digest('hex')
     .substring(0, 24) // 24 hex chars = 96 bits of entropy, easy to embed in URLs
 }
+

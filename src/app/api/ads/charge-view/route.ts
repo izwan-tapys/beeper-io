@@ -34,6 +34,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, charged: false, reason: 'system_ad' })
     }
 
+    // 2b. Check if we already charged for this session and ad (idempotency check)
+    const { data: existingTx, error: txCheckError } = await supabase
+      .from('ad_wallet_transactions')
+      .select('id')
+      .eq('session_id', session_id)
+      .eq('ad_id', ad_id)
+      .eq('type', 'debit')
+      .maybeSingle()
+
+    if (existingTx) {
+      return NextResponse.json({ success: true, charged: false, reason: 'already_charged' })
+    }
+
+
     // 3. Fetch the advertiser_profile for that advertiser_id
     const { data: profile, error: profileError } = await supabase
       .from('advertiser_profiles')
