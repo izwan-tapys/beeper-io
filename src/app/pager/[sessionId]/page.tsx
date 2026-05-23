@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
 import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -41,7 +42,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const ad = adsList[currentAdIndex] || null
 
   const [isAdExpanded, setIsAdExpanded] = useState(false)
-  const [lang, setLang] = useState<'bm' | 'en'>('bm')
+  const { lang, setLang } = useLanguage()
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
 
   const resetSlideTimer = useCallback(() => {
@@ -535,7 +536,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
       {/* Language Toggle Button */}
       <button 
-        onClick={() => setLang(l => l === 'bm' ? 'en' : 'bm')}
+        onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
         className="fixed top-4 right-4 z-[999] bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full text-white text-[10px] font-black tracking-widest uppercase transition-transform active:scale-95 flex items-center gap-2"
       >
         <span className={lang === 'bm' ? 'text-white' : 'text-white/40'}>BM</span>

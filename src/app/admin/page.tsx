@@ -12,6 +12,7 @@ import {
   Tv, PlayCircle, Image, Plus, Trash2, Eye, MousePointerClick, Percent,
   MapPin, DollarSign, Clock3
 } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const supabase = createClient()
 const ADMIN_EMAIL = 'izwan.tapys@gmail.com'
@@ -29,6 +30,7 @@ const AD_CATEGORIES = [
 
 export default function AdminPage() {
   const router = useRouter()
+  const { lang, setLang } = useLanguage()
   const [merchants, setMerchants] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
@@ -360,12 +362,22 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Language Toggle Button */}
+            <button 
+              onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
+              className="px-2 py-1.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1.5"
+              title="Toggle Language"
+            >
+              <span className={lang === 'bm' ? 'text-white' : 'opacity-40'}>BM</span>
+              <span className="w-[1px] h-3 bg-white/20"></span>
+              <span className={lang === 'en' ? 'text-white' : 'opacity-40'}>EN</span>
+            </button>
             <button 
               onClick={() => router.push('/dashboard')}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
             >
               <ArrowLeft size={16} />
-              Dashboard
+              {lang === 'bm' ? 'Papan Pemuka' : 'Dashboard'}
             </button>
             <button 
               onClick={async () => {
@@ -375,7 +387,7 @@ export default function AdminPage() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
             >
               <LogOut size={16} />
-              Sign Out
+              {lang === 'bm' ? 'Log Keluar' : 'Sign Out'}
             </button>
           </div>
         </header>
@@ -386,13 +398,13 @@ export default function AdminPage() {
             onClick={() => setActiveTab('merchants')}
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'merchants' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
-            <Store size={16} /> Directory
+            <Store size={16} /> {lang === 'bm' ? 'Direktori' : 'Directory'}
           </button>
           <button
             onClick={() => setActiveTab('ads')}
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
-            <Tv size={16} /> Ad Network
+            <Tv size={16} /> {lang === 'bm' ? 'Rangkaian Iklan' : 'Ad Network'}
             {pendingAds.length > 0 && activeTab !== 'ads' && (
               <span className="ml-1 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingAds.length}</span>
             )}

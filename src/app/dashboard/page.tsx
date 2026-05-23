@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
-  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon
+  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon, Languages
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type Session = {
   id: string
@@ -59,6 +60,7 @@ const supabase = createClient()
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { lang, setLang } = useLanguage()
 
   const [merchant, setMerchant] = useState<Merchant | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
@@ -900,6 +902,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Language Toggle Button */}
+            <button 
+              onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
+              className="px-2 py-1.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1.5"
+              title="Toggle Language"
+            >
+              <span className={lang === 'bm' ? 'text-white' : 'opacity-40'}>BM</span>
+              <span className="w-[1px] h-3 bg-white/20"></span>
+              <span className={lang === 'en' ? 'text-white' : 'opacity-40'}>EN</span>
+            </button>
             <button
               id="store-toggle-btn"
               onClick={toggleStore}
@@ -931,7 +943,7 @@ export default function DashboardPage() {
               activeTab === 'home' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Smartphone size={16} /> Home / Orders
+            <Smartphone size={16} /> {lang === 'bm' ? 'Pesanan' : 'Home / Orders'}
           </button>
           <button
             onClick={() => setActiveTab('promosi')}
@@ -939,7 +951,7 @@ export default function DashboardPage() {
               activeTab === 'promosi' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Zap size={16} /> Promosi
+            <Zap size={16} /> {lang === 'bm' ? 'Promosi' : 'Promotion'}
             {merchant?.plan_type === 'pro' && (
               <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase tracking-widest border border-yellow-500/20 ml-1">PRO</span>
             )}
