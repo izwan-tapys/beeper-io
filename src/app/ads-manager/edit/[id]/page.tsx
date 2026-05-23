@@ -345,6 +345,15 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     const { data: { publicUrl } } = supabase.storage
       .from('merchant-logos')
       .getPublicUrl(fileName)
+
+    // Delete old image if it exists and upload was successful
+    if (form.fallback_image_url && form.fallback_image_url !== publicUrl) {
+      const bucketMatch = form.fallback_image_url.split('/merchant-logos/');
+      if (bucketMatch.length === 2) {
+        await supabase.storage.from('merchant-logos').remove([bucketMatch[1]]);
+      }
+    }
+
     return publicUrl
   }
 

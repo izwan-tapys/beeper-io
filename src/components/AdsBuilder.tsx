@@ -201,16 +201,7 @@ export function AdsBuilder({
       if (!merchant) throw new Error('Merchant profile is required for default upload')
       const fileName = `ads/${merchant.id}/${Date.now()}.webp`
       
-      // Delete old image if it exists to save space
-      if (merchant.upsell_image_url) {
-        const oldUrl = merchant.upsell_image_url;
-        const bucketMatch = oldUrl.split('/merchant-logos/');
-        if (bucketMatch.length === 2) {
-          const oldPath = bucketMatch[1];
-          await supabase.storage.from('merchant-logos').remove([oldPath]);
-        }
-      }
-
+      // 1. Upload new image first
       const { error: uploadError } = await supabase.storage
         .from('merchant-logos')
         .upload(fileName, croppedBlob, { 
@@ -220,9 +211,20 @@ export function AdsBuilder({
 
       if (uploadError) throw uploadError
 
+      // 2. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('merchant-logos')
         .getPublicUrl(fileName)
+
+      // 3. Delete old image if it exists and upload was successful
+      if (merchant.upsell_image_url && merchant.upsell_image_url !== publicUrl) {
+        const oldUrl = merchant.upsell_image_url;
+        const bucketMatch = oldUrl.split('/merchant-logos/');
+        if (bucketMatch.length === 2) {
+          const oldPath = bucketMatch[1];
+          await supabase.storage.from('merchant-logos').remove([oldPath]);
+        }
+      }
 
       handleValueChange('imageUrl', publicUrl)
       setCropImageSrc(null) // Close cropper
