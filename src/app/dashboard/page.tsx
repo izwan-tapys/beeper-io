@@ -1380,62 +1380,6 @@ export default function DashboardPage() {
                 )}
               </section>
 
-              {/* 3. Upsell & Promosi */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('upsell')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Upsell & Promosi</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'upsell' ? 'rotate-90' : ''}`} />
-                </button>
-                
-                {openSection === 'upsell' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    {!isPremiumActive ? (
-                      <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-center space-y-3">
-                        <div className="text-2xl">🔒</div>
-                        <h4 className="text-white font-bold text-sm">Beepme Premium Feature</h4>
-                        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                          Urus promosi & banner anda sendiri di halaman wait customer menggunakan Ads Editor interaktif kami. Sila langgan Beepme Premium.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setOpenSection('subscription')}
-                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/20"
-                        >
-                          Upgrade Sekarang
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-center space-y-4">
-                        <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 flex items-center justify-center mx-auto border border-indigo-500/30 shadow-xl shadow-indigo-500/10">
-                          <Smartphone size={32} className="text-indigo-400" />
-                        </div>
-                        <div>
-                          <h4 className="text-white font-bold text-lg mb-1">Visual Ads Editor</h4>
-                          <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                            Bina dan edit iklan promosi anda secara interaktif. Apa yang anda lihat adalah apa yang pelanggan nampak (WYSIWYG).
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettingsOpen(false);
-                            setActiveTab('promosi');
-                          }}
-                          className="w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
-                        >
-                          Buka Ads Editor <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
 
               {/* 2. Integrations */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
