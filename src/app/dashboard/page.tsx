@@ -939,7 +939,7 @@ export default function DashboardPage() {
               activeTab === 'promosi' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Zap size={16} /> Promosi (Ads Editor)
+            <Zap size={16} /> Promosi
             {merchant?.plan_type === 'pro' && (
               <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase tracking-widest border border-yellow-500/20 ml-1">PRO</span>
             )}
@@ -961,7 +961,7 @@ export default function DashboardPage() {
               <Power size={32} style={{ color: 'var(--muted)' }} />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Store is Closed</h2>
-            <p style={{ color: 'var(--muted-foreground)' }}>Click "Open Store" to start accepting orders.</p>
+            <p style={{ color: 'var(--muted-foreground)' }}>Click &quot;Open Store&quot; to start accepting orders.</p>
           </div>
         ) : (
           <>
