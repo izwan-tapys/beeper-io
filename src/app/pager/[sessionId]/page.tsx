@@ -818,7 +818,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
                     {/* Left Ad Details */}
                     {ad && (
-                      <div className={`absolute left-2 bottom-[64px] w-[85%] max-w-[320px] text-left z-50 p-3 rounded-3xl transition-all duration-500 ease-in-out ${isAdExpanded ? 'bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl translate-y-[-10px]' : 'bg-transparent'}`}>
+                      <div className={`absolute left-2 bottom-[86px] w-[85%] max-w-[320px] text-left z-50 pt-3 px-3 ${isAdExpanded ? 'pb-3 bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl translate-y-[-10px] rounded-3xl' : 'pb-0 bg-transparent rounded-none'} transition-all duration-500 ease-in-out`}>
                         <div className="space-y-1.5 drop-shadow-lg">
                           <h4 className="text-sm font-black text-white tracking-tight uppercase leading-tight">
                             <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}>@{ad.title}</a>
