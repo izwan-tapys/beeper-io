@@ -598,7 +598,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                   <span className="text-2xl animate-bounce" style={{animationDelay: '300ms'}}>⭐</span>
                   <span className="text-2xl animate-bounce" style={{animationDelay: '400ms'}}>⭐</span>
                 </div>
-                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">Nilai Kami di Google</span>
+                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800 text-center">Nilai Kami di Google /<br/>Rate Us on Google</span>
               </a>
             </motion.div>
           ) : (
@@ -608,7 +608,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center shadow-2xl"
             >
-              <p className="text-xs text-slate-500 uppercase tracking-widest font-black">Jumpa Lagi!</p>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-black">Jumpa Lagi! / See You Again!</p>
             </motion.div>
           )}
         </motion.div>
@@ -903,9 +903,11 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           )}
                           <span className="text-white font-black tracking-tight text-sm">#{receiptNumber}</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[#10b981] font-mono font-bold text-sm">{formatWaitTime()}</span>
-                          <div className="w-8 h-1 bg-white/30 rounded-full" />
+                        <div className="flex flex-col items-center gap-6 relative z-10">
+                          <span className="text-4xl text-[#10b981] font-black uppercase tracking-tighter leading-none text-center">
+                            Pesanan Selesai /<br/>Order Completed
+                          </span>
+                          <div className="w-16 h-1 bg-[#10b981] rounded-full" />
                         </div>
                       </motion.div>
                     ) : (
@@ -932,14 +934,14 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           </div>
                           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981]/10 rounded-full border border-[#10b981]/20">
                             <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">Sibuk</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">Sibuk / Busy</span>
                           </div>
                         </div>
 
                         {/* Baris 2: Nombor Pesanan & Masa */}
                         <div className="flex items-end justify-between mb-6">
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">No. Pesanan</p>
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">No. Pesanan / Order No.</p>
                             <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                               #{receiptNumber}
                             </p>
@@ -948,11 +950,11 @@ const handleTouchStart = (e: React.TouchEvent) => {
                             {isGhostActive() ? (
                               <>
                                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
-                                <p className="text-sm font-bold text-slate-500 italic animate-pulse leading-tight">Sibuk</p>
+                                <p className="text-sm font-bold text-slate-500 italic animate-pulse leading-tight">Sibuk / Busy</p>
                               </>
                             ) : (
                               <>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Masa Menunggu</p>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Masa Menunggu / Wait Time</p>
                                 <p className="text-3xl font-black font-mono tracking-tight text-[#10b981] leading-none">{formatWaitTime()}</p>
                               </>
                             )}
@@ -966,11 +968,17 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           style={{ backgroundColor: themeColor, boxShadow: `0 8px 24px ${themeColor}40` }}
                         >
                           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                          {/* Pulsing Central Text */}
+                          <div className="relative z-10 flex flex-col items-center mt-[-10vh]">
+                            <p className="text-white text-5xl font-black uppercase tracking-tighter mb-4 text-center">
+                              Pesanan Sedia /<br/>Order Ready
+                            </p>
+                          </div>
                           <div className="relative z-10 flex items-center gap-2 text-white font-black text-sm uppercase tracking-wider">
                             <Volume2 size={16} />
-                            Uji Bunyi Pager
+                            Uji Bunyi Pager / Test Sound
                           </div>
-                          <span className="relative z-10 text-[9px] text-white/80 font-medium">Pastikan 'Silent Mode' dimatikan</span>
+                          <span className="relative z-10 text-[9px] text-white/80 font-medium text-center px-4">Pastikan 'Silent Mode' dimatikan / Disable 'Silent Mode'</span>
                         </button>
                       </motion.div>
                     )}
@@ -989,29 +997,39 @@ const handleTouchStart = (e: React.TouchEvent) => {
                     <AlertTriangle size={32} className="text-amber-500" />
                   </div>
                   
-                  <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Penting: Amaran Bunyi</h3>
-                  <p className="text-xs font-medium text-slate-400 leading-relaxed mb-6">Sila pastikan anda mengikut arahan di bawah supaya pager ini berfungsi dengan sempurna.</p>
-                  
-                  <ul className="w-full space-y-3 mb-6 text-left">
-                    <li className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <Volume2 size={12} className="text-white" />
+                  <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">Perhatian! / Attention!</h3>
+                  <p className="text-xs font-medium text-slate-400 leading-relaxed mb-6">Sila pastikan anda mengikut arahan di bawah supaya pager ini berfungsi dengan sempurna. <br/><br/> Please follow the instructions below so this pager works perfectly.</p>
+
+                  <div className="w-full space-y-3 mb-8">
+                    <div className="flex items-center gap-4 bg-white/5 rounded-2xl p-4 border border-white/10">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+                        <Volume2 size={20} className="text-indigo-400" />
                       </div>
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wide">Kuatkan Volume Audio</span>
-                    </li>
-                    <li className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <AlertTriangle size={12} className="text-white" />
+                      <div className="text-left">
+                        <h4 className="text-sm font-bold text-white leading-tight">Tutup "Silent Mode" / Disable "Silent Mode"</h4>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">Pastikan telefon berdering supaya anda dengar bunyi pesanan. / Ensure your phone is not on silent.</p>
                       </div>
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wide">Matikan "Silent Mode"</span>
-                    </li>
-                  </ul>
+                    </div>
+
+                    <div className="flex items-center gap-4 bg-white/5 rounded-2xl p-4 border border-white/10">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <Smartphone size={20} className="text-emerald-400" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="text-sm font-bold text-white leading-tight">Kuatkan Bunyi / Maximize Volume</h4>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">Sila kuatkan bunyi (volume) pada tahap paling maksimum. / Please turn up the volume to maximum.</p>
+                      </div>
+                    </div>
+                  </div>
 
                   <button 
-                    onClick={() => setShowInstructions(false)}
-                    className="w-full py-4 rounded-xl font-black text-[#111] text-xs uppercase tracking-widest bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-transform"
+                    onClick={initAudio}
+                    className="w-full flex items-center justify-center py-4 bg-white hover:bg-slate-200 text-[#111] font-black uppercase tracking-widest text-sm rounded-[24px] transition-all group overflow-hidden relative shadow-[0_0_40px_rgba(255,255,255,0.1)]"
                   >
-                    Saya Faham
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite]" />
+                    <span className="relative z-10 flex flex-col items-center">
+                      <span className="text-[11px] font-black">Tutup skrin ini / Close</span>
+                    </span>
                   </button>
                 </div>
               </div>
