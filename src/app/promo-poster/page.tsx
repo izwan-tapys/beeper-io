@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Bell, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 export default function PromoPoster() {
   const themeColor = '#10b981' // emerald-500
@@ -96,7 +96,7 @@ export default function PromoPoster() {
         <h3 className="text-white font-bold text-xl mb-2">📸 Cara ambil gambar:</h3>
         <ol className="list-decimal pl-5 space-y-2 text-sm">
           <li>Buka <code className="text-emerald-400 bg-neutral-800 px-1 rounded">localhost:3000/promo-poster</code></li>
-          <li>Gunakan "Snipping Tool" atau screenshot phone.</li>
+          <li>Gunakan &quot;Snipping Tool&quot; atau screenshot phone.</li>
           <li>Design ini dibina menggunakan <strong className="text-white">Real UI (Tailwind & Framer Motion)</strong> dari app Beepme.</li>
         </ol>
       </div>

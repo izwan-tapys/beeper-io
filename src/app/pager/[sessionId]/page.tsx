@@ -926,7 +926,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           </div>
                           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981]/10 rounded-full border border-[#10b981]/20">
                             <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">Disediakan</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">Sibuk</span>
                           </div>
                         </div>
 
