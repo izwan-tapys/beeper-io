@@ -40,7 +40,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const ad = adsList[currentAdIndex] || null
 
-    const [touchStartY, setTouchStartY] = useState<number | null>(null)
+  const [isAdExpanded, setIsAdExpanded] = useState(false)
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
 
   const resetSlideTimer = useCallback(() => {
     if (slideTimerRef.current) clearInterval(slideTimerRef.current)
@@ -817,23 +818,42 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
                     {/* Left Ad Details */}
                     {ad && (
-                      <a
-                        href={ad.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={handleAdClick}
-                        className="absolute left-4 bottom-[84px] max-w-[70%] text-left"
-                      >
+                      <div className={`absolute left-2 bottom-[64px] w-[85%] max-w-[320px] text-left z-50 p-3 rounded-3xl transition-all duration-500 ease-in-out ${isAdExpanded ? 'bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl translate-y-[-10px]' : 'bg-transparent'}`}>
                         <div className="space-y-1.5 drop-shadow-lg">
-                          <h4 className="text-sm font-black text-white tracking-tight uppercase line-clamp-2 leading-tight">@{ad.title}</h4>
-                          {ad.description && <p className="text-[11px] text-slate-100 font-medium leading-snug line-clamp-2">{ad.description}</p>}
-                          {ad.cta_text && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest mt-1 shadow-lg active:bg-white/30 transition-colors">
-                              {ad.cta_text}
+                          <h4 className="text-sm font-black text-white tracking-tight uppercase leading-tight">
+                            <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}>@{ad.title}</a>
+                          </h4>
+                          
+                          {ad.description && (
+                            <div 
+                              className="cursor-pointer" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsAdExpanded(!isAdExpanded);
+                              }}
+                            >
+                              <p className={`text-[11px] text-slate-100 font-medium leading-snug transition-all duration-500 ${isAdExpanded ? 'line-clamp-none' : 'line-clamp-2'}`}>
+                                {ad.description}
+                              </p>
+                              {!isAdExpanded && ad.description.length > 80 && (
+                                <span className="text-[10px] font-bold text-white/80 hover:text-white inline-block mt-0.5">... Baca lagi</span>
+                              )}
                             </div>
                           )}
+                          
+                          {ad.cta_text && (
+                            <a
+                              href={ad.link_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={handleAdClick}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest mt-2 shadow-lg active:scale-95 transition-all"
+                            >
+                              {ad.cta_text}
+                            </a>
+                          )}
                         </div>
-                      </a>
+                      </div>
                     )}
                   </motion.div>
                 )}

@@ -448,7 +448,7 @@ export function AdsBuilder({
         <div className="absolute bottom-0 inset-x-0 h-56 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-10" />
 
         {/* Ad Details Overlay (Editable) */}
-        <div className="absolute left-4 bottom-[84px] right-16 z-40">
+        <div className="absolute left-2 bottom-[64px] right-16 z-40 p-3">
           <div className="space-y-1.5 drop-shadow-lg">
             {/* Title Input */}
             <input
