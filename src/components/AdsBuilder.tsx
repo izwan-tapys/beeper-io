@@ -336,21 +336,21 @@ export function AdsBuilder({
       )}
 
       {showSaveButton && (
-        <div className="w-full flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <h2 className="text-xl font-bold text-white">
               {editorTitle}
-              {!isPremiumActive && (
-                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-500/30">
-                  Preview Mode
-                </span>
-              )}
             </h2>
+            {!isPremiumActive && (
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-500/30">
+                Preview Mode
+              </span>
+            )}
           </div>
           <button
             onClick={handleSave}
             disabled={saving || uploading}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+            className="w-full sm:w-auto flex justify-center items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : !isPremiumActive ? <Check size={16} /> : <Save size={16} />}
             {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan'}
