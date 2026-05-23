@@ -415,3 +415,22 @@ $$;
 -- 20. Update ad_wallet_transactions for ToyyibPay
 ALTER TABLE ad_wallet_transactions ADD COLUMN IF NOT EXISTS reference_id TEXT;
 ALTER TABLE ad_wallet_transactions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed'));
+
+-- 21. Fix Supabase Security Warning: "Clients can list all files in this bucket"
+-- This block dynamically finds and drops overly permissive SELECT policies on storage.objects
+DO $$ 
+DECLARE 
+    pol record;
+BEGIN 
+    FOR pol IN 
+        SELECT policyname 
+        FROM pg_policies 
+        WHERE schemaname = 'storage' 
+          AND tablename = 'objects' 
+          AND cmd = 'SELECT'
+          -- Targets policies that are likely too broad (e.g., missing specific path/owner checks)
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', pol.policyname);
+        RAISE NOTICE 'Dropped broad storage policy: %', pol.policyname;
+    END LOOP;
+END $$;

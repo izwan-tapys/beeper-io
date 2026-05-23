@@ -588,11 +588,17 @@ const handleTouchStart = (e: React.TouchEvent) => {
                 href={gmbUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 px-8 py-5 rounded-[24px] bg-white text-black font-black text-lg hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden"
+                className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-100 to-yellow-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="text-2xl relative z-10 animate-bounce">⭐</span>
-                <span className="relative z-10 uppercase tracking-wide text-sm">Nilai Kami di Google</span>
+                <div className="flex gap-1 relative z-10">
+                  <span className="text-2xl animate-bounce" style={{animationDelay: '0ms'}}>⭐</span>
+                  <span className="text-2xl animate-bounce" style={{animationDelay: '100ms'}}>⭐</span>
+                  <span className="text-2xl animate-bounce" style={{animationDelay: '200ms'}}>⭐</span>
+                  <span className="text-2xl animate-bounce" style={{animationDelay: '300ms'}}>⭐</span>
+                  <span className="text-2xl animate-bounce" style={{animationDelay: '400ms'}}>⭐</span>
+                </div>
+                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">Nilai Kami di Google</span>
               </a>
             </motion.div>
           ) : (
