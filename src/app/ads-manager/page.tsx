@@ -69,12 +69,14 @@ export default function AdsManagerPage() {
     if (params.get('success') === '1') {
       setSuccessMsg('Campaign submitted for review! ✅')
       setTimeout(() => setSuccessMsg(''), 6000)
-      // Clean up URL
       window.history.replaceState({}, '', '/ads-manager')
     } else if (params.get('success') === '2') {
       setSuccessMsg('Campaign updated and resubmitted for review! ✅')
       setTimeout(() => setSuccessMsg(''), 6000)
-      // Clean up URL
+      window.history.replaceState({}, '', '/ads-manager')
+    } else if (params.get('success') === '3') {
+      setSuccessMsg('Payment successful! Your wallet has been topped up. 💸')
+      setTimeout(() => setSuccessMsg(''), 6000)
       window.history.replaceState({}, '', '/ads-manager')
     }
   }, [])
@@ -285,25 +287,88 @@ export default function AdsManagerPage() {
           className="rounded-2xl p-6 border border-indigo-500/20"
           style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(109,40,217,0.05) 100%)' }}
         >
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col md:flex-row items-start gap-6">
             <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-              <MessageCircle size={20} className="text-indigo-400" />
+              <Wallet size={20} className="text-indigo-400" />
             </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-white font-bold mb-1">Top Up Wallet</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Add credit securely via FPX or Credit Card to keep your ad campaigns running.
+                </p>
+              </div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const form = e.target as HTMLFormElement
+                  const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value)
+                  if (!amount || amount < 10) return alert('Minimum top-up is RM 10')
+                  
+                  const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement
+                  btn.disabled = true
+                  btn.innerHTML = 'Processing...'
+                  
+                  try {
+                    const res = await fetch('/api/toyyibpay/create-bill', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        advertiser_id: profile?.user_id,
+                        amount 
+                      })
+                    })
+                    const data = await res.json()
+                    if (data.url) {
+                      window.location.href = data.url
+                    } else {
+                      throw new Error(data.error || 'Failed to create bill')
+                    }
+                  } catch (err: any) {
+                    alert('Error: ' + err.message)
+                    btn.disabled = false
+                    btn.innerHTML = 'Top Up Now'
+                  }
+                }}
+                className="flex items-center gap-3"
+              >
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">RM</span>
+                  <input 
+                    type="number" 
+                    name="amount"
+                    min="10" 
+                    step="1"
+                    placeholder="100" 
+                    defaultValue="50"
+                    required
+                    className="w-32 pl-12 pr-4 py-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/20"
+                >
+                  Top Up Now
+                </button>
+              </form>
+            </div>
+            
+            <div className="hidden md:block w-px h-24 bg-white/10" />
+            
             <div className="flex-1">
-              <h3 className="text-white font-bold mb-1">Top Up Wallet</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                To add credit to your wallet, WhatsApp us at{' '}
-                <span className="text-indigo-400 font-semibold">+60 19-469 6158</span>{' '}
-                with your desired top-up amount and your account email. Our team will manually credit your account within 1 business day.
+              <h3 className="text-white font-bold mb-1">Manual Transfer</h3>
+              <p className="text-slate-400 text-xs leading-relaxed mb-3">
+                For large amounts (RM1000+) or manual bank transfer.
               </p>
               <a
-                href={`https://wa.me/60194696158?text=${encodeURIComponent('Hi Beepme, I would like to top up my Ad Network wallet.\n\nAmount: RM ___\nEmail: ___')}`}
+                href={`https://wa.me/60194696158?text=${encodeURIComponent('Hi Beepme, I would like to manually top up my Ad Network wallet.\n\nAmount: RM ___\nEmail: ___')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] text-sm font-semibold transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] text-xs font-semibold transition-all"
               >
-                <MessageCircle size={16} />
-                WhatsApp to Top Up
+                <MessageCircle size={14} />
+                WhatsApp Us
               </a>
             </div>
           </div>

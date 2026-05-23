@@ -387,41 +387,52 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [status, sessionId, fetchSession, processSessionStatus])
 
-  // Track ad impression
-  useEffect(() => {
-    if (ad && status === 'waiting' && !impressionLoggedRef.current) {
-      impressionLoggedRef.current = true
-      supabase.from('ad_analytics').insert({
-        ad_id: ad.id === 'default-beepme' || ad.id === 'merchant-upsell' ? null : ad.id,
-        merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
-        session_id: sessionId,
-        event_type: 'impression'
-      }).then(({ error }) => {
-        if (error) console.error('Failed to log impression:', error)
-      })
+  // Track ad impressions per ad
+  const seenAdsRef = useRef<Set<string>>(new Set())
 
-      // Deduct CPV bid from advertiser wallet for real ads
+  useEffect(() => {
+    if (ad && status === 'waiting') {
+      // Don't track default/upsell ads for billing, but log analytics if needed.
+      // For real ads, track via API route which handles DB deduplication and billing.
       if (ad.id !== 'default-beepme' && ad.id !== 'merchant-upsell') {
-        fetch('/api/ads/charge-view', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ad_id: ad.id, session_id: sessionId })
-        }).catch((err) => console.error('Failed to charge view:', err))
+        if (!seenAdsRef.current.has(ad.id)) {
+          seenAdsRef.current.add(ad.id)
+          fetch('/api/ads/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'impression' })
+          }).catch((err) => console.error('Failed to track impression:', err))
+        }
+      } else {
+        // Track free ads directly to analytics
+        if (!seenAdsRef.current.has(ad.id)) {
+          seenAdsRef.current.add(ad.id)
+          supabase.from('ad_analytics').insert({
+            ad_id: null,
+            merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
+            session_id: sessionId,
+            event_type: 'impression'
+          }).catch((err) => console.error('Failed to log impression:', err))
+        }
       }
     }
   }, [ad, status, sessionId, merchantId])
 
   const handleAdClick = async () => {
     if (!ad) return
-    try {
-      await supabase.from('ad_analytics').insert({
-        ad_id: ad.id === 'default-beepme' || ad.id === 'merchant-upsell' ? null : ad.id,
+    if (ad.id !== 'default-beepme' && ad.id !== 'merchant-upsell') {
+      fetch('/api/ads/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'click' })
+      }).catch(console.error)
+    } else {
+      supabase.from('ad_analytics').insert({
+        ad_id: null,
         merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
         session_id: sessionId,
         event_type: 'click'
-      })
-    } catch (err) {
-      console.error('Failed to log click:', err)
+      }).catch(console.error)
     }
   }
 
@@ -838,7 +849,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                   height: isExpanded ? 'auto' : '64px',
                   borderRadius: isExpanded ? '32px 32px 0 0' : '9999px',
                   width: isExpanded ? '100%' : '90%',
-                  marginBottom: isExpanded ? '0px' : '24px',
+                  marginBottom: isExpanded ? '0px' : '12px',
                   backgroundColor: isExpanded ? '#ffffff' : 'rgba(0,0,0,0.65)',
                   backdropFilter: isExpanded ? 'none' : 'blur(16px)',
                 }}

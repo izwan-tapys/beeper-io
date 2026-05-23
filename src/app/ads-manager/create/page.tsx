@@ -375,7 +375,17 @@ export default function CreateCampaignPage() {
 
   const validateStep3 = () => {
     const e: typeof errors = {}
-    if (!form.cpv_bid || Number(form.cpv_bid) < 0.01) e.cpv_bid = 'Minimum bid is RM 0.01'
+    
+    // Enforce RM 0.05 for Restaurant targeting, RM 0.03 otherwise.
+    // If no specific categories selected (targeting all), it includes restaurants.
+    const restaurantCategories = ['Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Seafood', 'Nasi Kandar', 'Mamak', 'Hawker & Street Food', 'Bakery & Desserts', 'Other F&B']
+    const targetsRestaurants = form.target_categories.length === 0 || form.target_categories.some(c => restaurantCategories.includes(c))
+    const minBid = targetsRestaurants ? 0.05 : 0.03
+
+    if (!form.cpv_bid || Number(form.cpv_bid) < minBid) {
+      e.cpv_bid = `Minimum bid is RM ${minBid.toFixed(2)} based on your targeting.`
+    }
+    
     setErrors(e)
     return Object.keys(e).length === 0
   }

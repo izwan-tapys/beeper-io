@@ -490,7 +490,7 @@ export function AdsBuilder({
         </div>
 
         {/* Fake Pager UI at the bottom (Read-only representation) */}
-        <div className="absolute bottom-6 left-0 right-0 z-30 pointer-events-none flex justify-center">
+        <div className="absolute bottom-3 left-0 right-0 z-30 pointer-events-none flex justify-center">
           <div className="w-[90%] h-[64px] rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between px-6">
             <div className="flex items-center gap-3">
                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20" />
