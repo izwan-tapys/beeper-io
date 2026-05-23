@@ -24,9 +24,10 @@ export default function PromoPoster() {
             <span className="text-white text-xs font-bold tracking-widest uppercase">Digital Pager F&B</span>
           </motion.div>
           <h1 className="text-3xl font-black text-white leading-tight mb-2">
-            TINGGALKAN PAGER<br/>LAMA ANDA.
+            TINGGALKAN PAGER LAMA ANDA.<br/>
+            <span className="text-xl font-bold text-white/80">REPLACE YOUR OLD PAGER.</span>
           </h1>
-          <p className="text-emerald-400 font-semibold text-sm">Alert terus ke phone pelanggan!</p>
+          <p className="text-emerald-400 font-semibold text-sm">Alert terus ke telefon pelanggan! / Direct alert to customer's phone!</p>
         </div>
 
         {/* Real UI Replica (The "Pesanan Sedia" Screen) */}
@@ -50,8 +51,8 @@ export default function PromoPoster() {
             <span className="text-7xl drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]">🔔</span>
           </motion.div>
           
-          <h2 className="text-4xl font-black text-white mb-2 tracking-widest uppercase relative z-10">
-            Pesanan Sedia
+          <h2 className="text-4xl font-black text-white mb-2 tracking-widest uppercase relative z-10 text-center">
+            Pesanan Sedia /<br/>Order Ready
           </h2>
 
           <div className="mb-8 relative z-10">
@@ -63,9 +64,9 @@ export default function PromoPoster() {
             </p>
           </div>
 
-          <div className="mt-4 px-6 py-3 rounded-full border border-white/20 bg-black/40 backdrop-blur-md relative z-10">
+          <div className="mt-4 px-6 py-3 rounded-full border border-white/20 bg-black/40 backdrop-blur-md relative z-10 text-center">
             <span className="text-white font-bold text-xs tracking-widest uppercase">
-              Ketik Di Mana-mana Untuk Berhenti
+              Ketik Di Mana-mana Untuk Berhenti /<br/>Tap Anywhere To Stop
             </span>
           </div>
         </motion.div>
@@ -74,7 +75,7 @@ export default function PromoPoster() {
         <div className="absolute bottom-10 left-0 w-full px-8 z-20">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-white font-bold text-sm">Daftar Percuma</p>
+              <p className="text-white font-bold text-sm">Daftar Percuma / Sign Up Free</p>
               <p className="text-white/60 text-xs">beepme.pro</p>
             </div>
             <div className="bg-emerald-500 text-black p-2 rounded-full">

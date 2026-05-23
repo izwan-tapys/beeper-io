@@ -330,7 +330,7 @@ export function AdsBuilder({
                 className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
               >
                 {uploading ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
-                {uploading ? 'Memuat naik...' : 'Sahkan Potongan'}
+                {uploading ? 'Memuat naik / Uploading...' : 'Sahkan Potongan / Confirm Crop'}
               </button>
             </div>
           </div>
@@ -355,20 +355,20 @@ export function AdsBuilder({
             className="w-full sm:w-auto flex justify-center items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : !isPremiumActive ? <Check size={16} /> : <Save size={16} />}
-            {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan'}
+            {!isPremiumActive ? 'Unlock & Publish' : 'Simpan Iklan / Save Ad'}
           </button>
         </div>
       )}
 
       {showSaveButton && !isPremiumActive && (
         <div className="w-full max-w-sm mx-auto mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
-          <p className="text-sm text-amber-500 font-bold mb-1">Draf Iklan Percuma!</p>
-          <p className="text-xs text-amber-500/80 mb-3">Rekaan anda tidak akan hilang. Naik taraf ke PRO untuk memaparkan iklan ini terus di telefon bimbit pelanggan anda.</p>
+          <p className="text-sm text-amber-500 font-bold mb-1">Draf Iklan Percuma! / Free Ad Draft!</p>
+          <p className="text-xs text-amber-500/80 mb-3">Rekaan anda tidak akan hilang. Naik taraf ke PRO untuk memaparkan iklan ini terus di telefon bimbit pelanggan anda. / Your design is safe. Upgrade to PRO to display this ad directly on your customers' phones.</p>
           <button 
             onClick={() => onUpgrade && onUpgrade()}
             className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-lg transition-colors"
           >
-            Upgrade ke PRO
+            Naik Taraf / Upgrade to PRO
           </button>
         </div>
       )}
@@ -428,15 +428,15 @@ export function AdsBuilder({
               ) : (
                 <div className="flex flex-col items-center text-slate-500 p-6 text-center">
                   <ImageIcon size={48} className="mb-4 opacity-50" />
-                  <p className="text-sm font-bold uppercase tracking-widest mb-2">Klik untuk Muat Naik</p>
-                  <p className="text-xs">Gambar Promosi Menegak (9:16)</p>
+                  <p className="text-sm font-bold uppercase tracking-widest mb-2">Klik untuk Muat Naik / Click to Upload</p>
+                  <p className="text-xs">Gambar Promosi Menegak / Vertical Promo Image (9:16)</p>
                 </div>
               )}
 
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
                 <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20">
-                  <ImageIcon size={14} /> Tukar Gambar Background
+                  <ImageIcon size={14} /> Tukar Gambar / Change Background
                 </div>
               </div>
             </label>
