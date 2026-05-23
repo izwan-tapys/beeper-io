@@ -412,7 +412,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
             merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
             session_id: sessionId,
             event_type: 'impression'
-          }).catch((err) => console.error('Failed to log impression:', err))
+          }).then(({ error }) => { if (error) console.error('Failed to log impression:', error) })
         }
       }
     }
@@ -432,7 +432,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
         merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
         session_id: sessionId,
         event_type: 'click'
-      }).catch(console.error)
+      }).then(({ error }) => { if (error) console.error('Failed to log click:', error) })
     }
   }
 
