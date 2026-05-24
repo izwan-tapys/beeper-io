@@ -102,28 +102,18 @@ export function RetroPagerZone({
           </div>
 
           {/* Divider */}
-          <div className="my-1 border-t border-[#39ff14]/20" />
+          <div className="my-1.5 border-t border-[#39ff14]/20" />
 
           {/* Line 2: Order Number */}
-          <div className="flex items-baseline justify-between text-2xl tracking-widest leading-tight">
-            <span className="opacity-60 text-lg">ORDER</span>
-            <span className="text-3xl">#{receiptNumber}</span>
-          </div>
-
-          {/* Line 3: Wait Time */}
-          <div className="flex items-baseline justify-between text-xl tracking-widest leading-tight mt-0.5">
-            <span className="opacity-60 text-base">WAIT</span>
-            {isGhostActive ? (
-              <span className="text-2xl opacity-50">BUSY...</span>
-            ) : (
-              <span className="text-3xl tabular-nums">{formattedWaitTime}</span>
-            )}
+          <div className="flex items-baseline justify-between py-2.5 text-3xl tracking-widest leading-none">
+            <span className="opacity-60 text-xl">ORDER</span>
+            <span className="text-5xl">#{receiptNumber}</span>
           </div>
 
           {/* Divider */}
-          <div className="my-1 border-t border-[#39ff14]/20" />
+          <div className="my-1.5 border-t border-[#39ff14]/20" />
 
-          {/* Line 4: Footer */}
+          {/* Line 3: Footer */}
           <div className="text-sm tracking-[0.3em] opacity-40 text-right leading-tight">BEEPME.PRO</div>
         </div>
 
