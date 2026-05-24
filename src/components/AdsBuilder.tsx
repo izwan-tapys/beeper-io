@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Image as ImageIcon, Save, Link as LinkIcon, Check, X, Volume2 } from 'lucide-react'
 import Cropper from 'react-easy-crop'
+import { RetroPagerZone } from '@/components/pager/RetroPagerZone'
 
 // Helper function to create an Image from a URL
 const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -487,88 +488,13 @@ export function AdsBuilder({
         </div>
 
         {/* ── BOTTOM 50%: Retro LCD Pager Zone (Read-only mockup) ── */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-3 relative overflow-hidden"
-          style={{ background: 'linear-gradient(160deg, #0d0d0d 0%, #111 50%, #0a0a0a 100%)' }}>
-
-          {/* Dark chassis texture */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.5) 3px, rgba(255,255,255,0.5) 4px)' }} />
-
-          {/* Merchant label above LCD */}
-          <div className="flex items-center gap-1.5 mb-2 relative z-10">
-            <div className="w-5 h-5 rounded-full border border-[#39ff14]/30 bg-[#001a00] flex items-center justify-center">
-              <span style={{ fontFamily: "'VT323', monospace", color: '#39ff14', fontSize: '10px', lineHeight: 1 }}>B</span>
-            </div>
-            <span style={{ fontFamily: "'VT323', monospace", color: 'rgba(57,255,20,0.7)', fontSize: '16px', letterSpacing: '0.2em', textShadow: '0 0 6px rgba(57,255,20,0.4)' }}>
-              NAMA KEDAI ANDA
-            </span>
-          </div>
-
-          {/* LCD Screen Panel */}
-          <div className="relative w-full rounded-sm overflow-hidden animate-lcd-flicker"
-            style={{
-              background: '#001800',
-              border: '3px solid #1a2e1a',
-              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8), 0 0 20px rgba(57,255,20,0.08), inset 0 0 40px rgba(57,255,20,0.04)'
-            }}>
-
-            {/* Scanlines */}
-            <div className="absolute inset-0 pointer-events-none z-20"
-              style={{
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px)',
-                mixBlendMode: 'multiply'
-              }} />
-
-            {/* LCD Content */}
-            <div className="relative z-10 px-3 py-2"
-              style={{ fontFamily: "'VT323', monospace", color: '#39ff14', textShadow: '0 0 8px rgba(57,255,20,0.8), 0 0 20px rgba(57,255,20,0.4)' }}>
-              <div style={{ fontSize: '14px', letterSpacing: '0.15em', opacity: 0.75 }}>&gt; MENYEDIA PESANAN...</div>
-              <div style={{ borderTop: '1px solid rgba(57,255,20,0.2)', margin: '4px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '22px', letterSpacing: '0.1em' }}>
-                <span style={{ opacity: 0.6, fontSize: '14px' }}>ORDER</span>
-                <span>#001<span className="animate-lcd-blink" style={{ fontSize: '18px' }}>_</span></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', letterSpacing: '0.1em', marginTop: '2px' }}>
-                <span style={{ opacity: 0.6, fontSize: '13px' }}>WAIT</span>
-                <span>05:00</span>
-              </div>
-              <div style={{ borderTop: '1px solid rgba(57,255,20,0.2)', margin: '4px 0' }} />
-              <div style={{ fontSize: '11px', letterSpacing: '0.3em', opacity: 0.4, textAlign: 'right' }}>BEEPME.PRO</div>
-            </div>
-
-            {/* Corner reflection */}
-            <div className="absolute top-0 left-0 w-10 h-6 pointer-events-none z-30"
-              style={{ background: 'linear-gradient(135deg, rgba(57,255,20,0.06) 0%, transparent 60%)' }} />
-          </div>
-
-          {/* Retro buttons */}
-          <div className="flex gap-2 mt-2 w-full relative z-10">
-            <div className="flex-1 flex items-center justify-center gap-1.5 py-2"
-              style={{
-                fontFamily: "'VT323', monospace",
-                fontSize: '16px',
-                letterSpacing: '0.2em',
-                background: '#0d1a0d',
-                border: '2px solid #39ff14',
-                color: '#39ff14',
-                textShadow: '0 0 8px rgba(57,255,20,0.8)',
-                boxShadow: '0 0 8px rgba(57,255,20,0.15)'
-              }}>
-              <Volume2 size={12} /> [UJI BUNYI]
-            </div>
-            <div className="w-10 flex items-center justify-center"
-              style={{
-                background: '#1a1200',
-                border: '2px solid #f59e0b',
-                color: '#f59e0b',
-                textShadow: '0 0 6px rgba(245,158,11,0.7)',
-                fontSize: '18px',
-                fontFamily: "'VT323', monospace"
-              }}>
-              !
-            </div>
-          </div>
-        </div>
+        <RetroPagerZone
+          merchantName="NAMA KEDAI ANDA"
+          receiptNumber="001"
+          lang="bm"
+          formattedWaitTime="05:00"
+          previewMode={true}
+        />
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-6 max-w-md">
