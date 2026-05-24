@@ -786,7 +786,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                       <div className="flex-1 mr-2">
                         {ad.title && (
                           <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}
-                            className="text-[11px] font-black text-white uppercase tracking-tight leading-tight line-clamp-1 drop-shadow-lg block">
+                            className="text-sm font-black text-white uppercase tracking-tight leading-tight line-clamp-1 drop-shadow-lg block">
                             @{ad.title}
                           </a>
                         )}
@@ -796,7 +796,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                               e.stopPropagation()
                               setIsDescExpanded(!isDescExpanded)
                             }}
-                            className={`text-[10px] text-slate-200 hover:text-white font-medium leading-snug drop-shadow-md mt-0.5 cursor-pointer select-none transition-all ${
+                            className={`text-xs text-slate-200 hover:text-white font-medium leading-snug drop-shadow-md mt-0.5 cursor-pointer select-none transition-all ${
                               isDescExpanded ? 'line-clamp-none max-h-24 overflow-y-auto' : 'line-clamp-2'
                             }`}
                           >

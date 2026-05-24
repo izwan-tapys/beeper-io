@@ -489,7 +489,7 @@ export function AdsBuilder({
                 onChange={(e) => handleValueChange('description', e.target.value)}
                 placeholder="Penerangan iklan (2-3 baris)..."
                 rows={2}
-                className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[11px] text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
+                className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-xs text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
               />
               <div className="flex items-center gap-2">
                 <input
