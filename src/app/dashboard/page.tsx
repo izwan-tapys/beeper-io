@@ -132,6 +132,11 @@ export default function DashboardPage() {
     }
   }, [qrSession])
 
+  // Keep qrSessionRef updated for the realtime subscription callback
+  useEffect(() => {
+    qrSessionRef.current = qrSession
+  }, [qrSession])
+
   // Reset settings state when modal opens
   useEffect(() => {
     if (isSettingsOpen && merchant) {
@@ -370,22 +375,17 @@ export default function DashboardPage() {
     const channel = supabase
       .channel('dashboard-sessions')
       .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
+        { event: '*', schema: 'public', table: 'sessions' }, 
         (payload: any) => {
-          fetchSessions()
-          // AUTO-CLOSE QR MODAL IF CONFIRMED
-          if (qrSessionRef.current?.id === payload.new.id && payload.new.is_confirmed) {
-            setQrSession(null)
+          const record = payload.new || payload.old
+          if (record && record.merchant_id === merchant.id) {
+            fetchSessions()
+            // AUTO-CLOSE QR MODAL IF CONFIRMED
+            if (payload.eventType === 'UPDATE' && qrSessionRef.current?.id === record.id && record.is_confirmed) {
+              setQrSession(null)
+            }
           }
         }
-      )
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
-        () => fetchSessions()
-      )
-      .on('postgres_changes', 
-        { event: 'DELETE', schema: 'public', table: 'sessions', filter: `merchant_id=eq.${merchant.id}` }, 
-        () => fetchSessions()
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -434,6 +434,7 @@ export default function DashboardPage() {
     } else if (data) {
       setReceiptInput('')
       setQrSession(data)
+      fetchSessions()
     }
     setCreating(false)
   }
@@ -452,6 +453,8 @@ export default function DashboardPage() {
       console.error('Call session error:', error)
       alert('Gagal panggil: ' + error.message)
       setCooldowns(prev => ({ ...prev, [id]: false })) // release cooldown on error
+    } else {
+      fetchSessions()
     }
   }
 
@@ -469,6 +472,8 @@ export default function DashboardPage() {
     if (error) {
       console.error('Done session error:', error)
       alert('Gagal set selesai: ' + error.message)
+    } else {
+      fetchSessions()
     }
   }
 
