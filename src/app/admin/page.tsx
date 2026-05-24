@@ -811,158 +811,186 @@ export default function AdminPage() {
                  <Loader2 size={32} className="text-indigo-500 animate-spin" />
                  <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Network Data...</p>
                </div>
-            ) : adsSubTab === 'pending' ? (
-              /* Pending Review Section */
-              <div className="space-y-4">
-                {pendingAds.length === 0 ? (
-                  <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
-                    <CheckCircle size={48} className="mx-auto text-slate-700 mb-4" />
-                    <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No pending ads. All caught up!</p>
-                  </div>
-                ) : pendingAds.map((ad) => (
-                  <div key={ad.id} className="flex items-center gap-6 p-6 rounded-[24px] bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-all">
-                    {/* Thumbnail */}
-                    <div className="w-16 h-28 rounded-xl overflow-hidden bg-[#0a0b0f] border border-white/10 shrink-0">
-                      {ad.image_url ? (
-                        <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Tv size={20} className="text-slate-700" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Pending Review</span>
-                        {ad.category && <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{ad.category}</span>}
-                      </div>
-                      <h4 className="font-black text-white text-base mb-1 truncate">{ad.title}</h4>
-                      {ad.description && <p className="text-xs text-slate-400 mb-2 line-clamp-1">{ad.description}</p>}
-                      <div className="flex items-center gap-4 text-[10px] text-slate-500 font-bold uppercase">
-                        {ad.cpv_bid && <span className="flex items-center gap-1 text-emerald-400"><DollarSign size={10} />RM {ad.cpv_bid}/view</span>}
-                        {ad.advertiser_id && <span className="font-mono text-slate-600 truncate max-w-[160px]">{ad.advertiser_id}</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <button
-                        onClick={() => setPreviewAd(ad)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-black text-[10px] uppercase tracking-widest transition-all border border-white/10"
-                      >
-                        <Eye size={12} />
-                        Preview
-                      </button>
-                      <button
-                        onClick={() => handleApproveAd(ad.id)}
-                        disabled={adsModerating === ad.id}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
-                      >
-                        {adsModerating === ad.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleRejectAd(ad.id)}
-                        disabled={adsModerating === ad.id}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all border border-rose-500/20 disabled:opacity-50"
-                      >
-                        {adsModerating === ad.id ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayedAds.map((ad) => (
-                  <div key={ad.id} className={`group relative rounded-[32px] overflow-hidden border transition-all duration-500 bg-black ${ad.status === 'rejected' ? 'border-rose-500/20 opacity-40 grayscale hover:grayscale-0 hover:opacity-100' : ad.status === 'paused' ? 'border-amber-500/20 opacity-60' : ad.is_active ? 'border-indigo-500/30 hover:border-indigo-500/60 shadow-2xl shadow-indigo-500/10' : 'border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`}>
-                    <div className="aspect-[9/16] relative bg-[#0a0b0f] w-full">
-                      {ad.video_url ? (
-                        (() => {
-                          const ytMatch = ad.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)
-                          const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
-                          if (ytId) {
-                            return (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                                className="w-full h-full object-cover pointer-events-none scale-105"
-                                allow="autoplay; encrypted-media"
-                              />
-                            )
-                          }
-                          const tiktokMatch = ad.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/)
-                          const tiktokId = tiktokMatch ? tiktokMatch[1] : null
-                          if (tiktokId) {
-                            return (
-                              <iframe
-                                src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
-                                className="w-full h-full object-cover pointer-events-none"
-                                allow="autoplay; encrypted-media"
-                              />
-                            )
-                          }
-                          return (
-                            <video src={ad.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
-                          )
-                        })()
-                      ) : ad.image_url ? (
-                        <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/50 to-black p-6 text-center">
-                          <p className="text-white font-black text-xl">{ad.title}</p>
-                        </div>
-                      )}
-                      
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-6 flex flex-col justify-end">
-                        {/* Status badge */}
-                        <div className="mb-2">
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${ad.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : ad.status === 'paused' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : ad.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-white/10 text-slate-400 border border-white/20'}`}>
-                            {ad.status || 'unknown'}
-                          </span>
-                          {ad.category && <span className="ml-1 text-[9px] font-bold text-slate-400 bg-white/10 px-1.5 py-0.5 rounded-lg border border-white/10">{ad.category}</span>}
-                        </div>
-                        <h4 className="text-white font-black text-lg leading-tight uppercase tracking-tight line-clamp-2 mb-2">{ad.title}</h4>
-                        {ad.cpv_bid && (
-                          <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-2">RM {ad.cpv_bid}/view</p>
-                        )}
-                        <div className="grid grid-cols-3 gap-2 mb-4 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
-                           <div className="text-center">
-                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">Views</p>
-                             <p className="text-sm font-black text-white">{ad.impressions}</p>
-                           </div>
-                           <div className="text-center border-x border-white/10">
-                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">Clicks</p>
-                             <p className="text-sm font-black text-white">{ad.clicks}</p>
-                           </div>
-                           <div className="text-center">
-                             <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest mb-0.5">CTR</p>
-                             <p className="text-sm font-black text-emerald-400">{ad.ctr}%</p>
-                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <button 
-                             onClick={() => toggleAdActive(ad.id, ad.is_active)}
-                             className={`flex-1 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${ad.is_active ? 'bg-indigo-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                           >
-                             {ad.is_active ? 'ON' : 'OFF'}
-                           </button>
-                           <button 
-                             onClick={() => deleteAd(ad.id)}
-                             className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shrink-0"
-                           >
-                             <Trash2 size={14} />
-                           </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                        <th className="py-5 px-6 font-black">Ad Campaign</th>
+                        <th className="py-5 px-6 font-black">CPV Bid</th>
+                        <th className="py-5 px-6 font-black">Category</th>
+                        <th className="py-5 px-6 font-black">Performance Stats</th>
+                        <th className="py-5 px-6 font-black">Status</th>
+                        <th className="py-5 px-6 font-black text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {displayedAds.map((ad) => (
+                        <tr key={ad.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="absolute -inset-1 blur-sm rounded-lg opacity-20 bg-indigo-500" />
+                                <div className="relative w-10 h-16 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                  {ad.image_url ? (
+                                    <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+                                  ) : ad.video_url ? (
+                                    <div className="w-full h-full flex items-center justify-center bg-indigo-950/20">
+                                      <PlayCircle size={18} className="text-indigo-400" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                      <Tv size={18} className="text-slate-600" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors truncate max-w-[200px]" title={ad.title}>
+                                  {ad.title}
+                                </p>
+                                {ad.description && (
+                                  <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]" title={ad.description}>
+                                    {ad.description}
+                                  </p>
+                                )}
+                                {ad.link_url && (
+                                  <a 
+                                    href={ad.link_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="flex items-center gap-1 mt-1 text-[10px] text-indigo-400/80 hover:text-indigo-400 font-mono truncate max-w-[200px]"
+                                  >
+                                    {ad.cta_text || 'Link'} <ExternalLink size={8} />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            {ad.cpv_bid ? (
+                              <span className="text-emerald-400 text-xs font-mono font-bold">RM {ad.cpv_bid.toFixed(3)}</span>
+                            ) : (
+                              <span className="text-slate-600 text-xs">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6">
+                            {ad.category ? (
+                              <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg border border-white/10">
+                                {ad.category}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600 text-xs">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col gap-0.5 text-xs text-slate-400">
+                              <div>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Views:</span>{' '}
+                                <span className="font-mono text-white font-bold">{ad.impressions || 0}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Clicks:</span>{' '}
+                                <span className="font-mono text-white font-bold">{ad.clicks || 0}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CTR:</span>{' '}
+                                <span className="font-mono text-emerald-400 font-bold">{ad.ctr || '0.0'}%</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
+                              ad.status === 'active' 
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                : ad.status === 'pending_review' 
+                                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+                                  : ad.status === 'paused' 
+                                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
+                                    : ad.status === 'rejected'
+                                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                      : 'bg-white/5 text-slate-400 border-white/10'
+                            }`}>
+                              {ad.status || 'unknown'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewAd(ad)}
+                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 font-black text-[9px] uppercase tracking-widest transition-all"
+                                title="Preview Ad"
+                              >
+                                <Eye size={11} />
+                                Preview
+                              </button>
+                              
+                              {ad.status === 'pending_review' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveAd(ad.id)}
+                                    disabled={adsModerating === ad.id}
+                                    className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                    title="Approve"
+                                  >
+                                    {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectAd(ad.id)}
+                                    disabled={adsModerating === ad.id}
+                                    className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                    title="Reject"
+                                  >
+                                    {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                                className={`px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                                  ad.is_active 
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500' 
+                                    : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                }`}
+                                title={ad.is_active ? 'Turn OFF' : 'Turn ON'}
+                              >
+                                {ad.is_active ? 'ON' : 'OFF'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => deleteAd(ad.id)}
+                                className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shrink-0"
+                                title="Delete Ad"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
             
-            {displayedAds.length === 0 && !adsLoading && adsSubTab !== 'pending' && (
+            {displayedAds.length === 0 && !adsLoading && (
               <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
                 <Tv size={48} className="mx-auto text-slate-700 mb-4" />
-                <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">No active campaigns. Default Beepme ad is currently live.</p>
+                <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">
+                  {adsSubTab === 'pending' 
+                    ? 'No pending ads. All caught up!' 
+                    : 'No campaigns found for this section.'}
+                </p>
               </div>
             )}
           </div>
