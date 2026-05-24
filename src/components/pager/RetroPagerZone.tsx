@@ -28,7 +28,7 @@ export function RetroPagerZone({
 }: RetroPagerZoneProps) {
   return (
     <div
-      className="h-[50dvh] w-full flex-shrink-0 flex flex-col items-center justify-center px-5 py-3 relative overflow-hidden"
+      className="h-1/2 w-full flex-shrink-0 flex flex-col items-center justify-center px-5 py-3 relative overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #0d0d0d 0%, #111 50%, #0a0a0a 100%)' }}
     >
       {/* Dark chassis texture */}

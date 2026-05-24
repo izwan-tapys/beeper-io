@@ -378,7 +378,7 @@ export function AdsBuilder({
       <div className="w-full max-w-sm mx-auto relative rounded-[40px] overflow-hidden border-[8px] border-[#1e1e24] aspect-[9/16] bg-black shadow-2xl flex flex-col group">
 
         {/* ── TOP 50%: Ad Zone ── */}
-        <div className="relative flex-1 overflow-hidden cursor-pointer">
+        <div className="relative h-1/2 overflow-hidden cursor-pointer">
           <input
             type="file"
             accept="image/*"

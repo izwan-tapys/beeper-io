@@ -719,7 +719,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
           <div className="w-full h-full flex flex-col" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
             {/* ── TOP 50%: Ad Zone ── */}
-            <div className="h-[50dvh] relative overflow-hidden flex-shrink-0 animate-fade-in" key={currentAdIndex}>
+            <div className="h-1/2 relative overflow-hidden flex-shrink-0 animate-fade-in" key={currentAdIndex}>
               {ad ? (
                 <>
                   {ad.media_url ? (
