@@ -144,7 +144,7 @@ export function RetroPagerZone({
         <button
           onClick={!previewMode ? onShowWarning : undefined}
           disabled={previewMode}
-          className="w-12 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform font-['VT323'] text-base disabled:pointer-events-none"
+          className="w-12 flex items-center justify-center active:scale-95 transition-transform disabled:pointer-events-none"
           style={{
             background: '#1a1200',
             border: '2px solid #f59e0b',
@@ -153,8 +153,7 @@ export function RetroPagerZone({
             boxShadow: '0 0 6px rgba(245,158,11,0.1)',
           }}
         >
-          <AlertTriangle size={14} />
-          <span className="text-[10px]">!</span>
+          <AlertTriangle size={18} />
         </button>
       </div>
     </div>
