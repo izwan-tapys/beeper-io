@@ -515,7 +515,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
     if (!createdAt) return false
     const start = new Date(createdAt).getTime()
     const seconds = Math.floor((now - start) / 1000)
-    return seconds > 900 // 15 minutes
+    return seconds > 1800 // 30 minutes
   }
 
   if (status === 'loading') {
