@@ -486,42 +486,86 @@ export function AdsBuilder({
           </div>
         </div>
 
-        {/* ── BOTTOM 50%: Pager Zone (Read-only mockup) ── */}
-        <div className="flex-1 bg-[#0a0a0f] border-t border-white/8 flex flex-col items-center justify-between px-4 py-3 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #6366f1, transparent 70%)' }} />
+        {/* ── BOTTOM 50%: Retro LCD Pager Zone (Read-only mockup) ── */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-3 relative overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, #0d0d0d 0%, #111 50%, #0a0a0a 100%)' }}>
 
-          {/* Branding */}
-          <div className="flex flex-col items-center gap-1 relative z-10">
-            <div className="w-10 h-10 rounded-full bg-indigo-600/20 border-2 border-indigo-500 flex items-center justify-center shadow-lg">
-              <span className="text-white font-black text-xs">LOGO</span>
+          {/* Dark chassis texture */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.5) 3px, rgba(255,255,255,0.5) 4px)' }} />
+
+          {/* Merchant label above LCD */}
+          <div className="flex items-center gap-1.5 mb-2 relative z-10">
+            <div className="w-5 h-5 rounded-full border border-[#39ff14]/30 bg-[#001a00] flex items-center justify-center">
+              <span style={{ fontFamily: "'VT323', monospace", color: '#39ff14', fontSize: '10px', lineHeight: 1 }}>B</span>
             </div>
-            <p className="font-black text-white text-[11px] tracking-tight uppercase">Nama Kedai Anda</p>
-            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Menyedia Pesanan</span>
-            </div>
+            <span style={{ fontFamily: "'VT323', monospace", color: 'rgba(57,255,20,0.7)', fontSize: '16px', letterSpacing: '0.2em', textShadow: '0 0 6px rgba(57,255,20,0.4)' }}>
+              NAMA KEDAI ANDA
+            </span>
           </div>
 
-          {/* Order Info */}
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="text-center">
-              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">No. Pesanan</p>
-              <p className="text-2xl font-black text-white tracking-tighter leading-none">#001</p>
+          {/* LCD Screen Panel */}
+          <div className="relative w-full rounded-sm overflow-hidden animate-lcd-flicker"
+            style={{
+              background: '#001800',
+              border: '3px solid #1a2e1a',
+              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8), 0 0 20px rgba(57,255,20,0.08), inset 0 0 40px rgba(57,255,20,0.04)'
+            }}>
+
+            {/* Scanlines */}
+            <div className="absolute inset-0 pointer-events-none z-20"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px)',
+                mixBlendMode: 'multiply'
+              }} />
+
+            {/* LCD Content */}
+            <div className="relative z-10 px-3 py-2"
+              style={{ fontFamily: "'VT323', monospace", color: '#39ff14', textShadow: '0 0 8px rgba(57,255,20,0.8), 0 0 20px rgba(57,255,20,0.4)' }}>
+              <div style={{ fontSize: '14px', letterSpacing: '0.15em', opacity: 0.75 }}>&gt; MENYEDIA PESANAN...</div>
+              <div style={{ borderTop: '1px solid rgba(57,255,20,0.2)', margin: '4px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '22px', letterSpacing: '0.1em' }}>
+                <span style={{ opacity: 0.6, fontSize: '14px' }}>ORDER</span>
+                <span>#001<span className="animate-lcd-blink" style={{ fontSize: '18px' }}>_</span></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', letterSpacing: '0.1em', marginTop: '2px' }}>
+                <span style={{ opacity: 0.6, fontSize: '13px' }}>WAIT</span>
+                <span>05:00</span>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(57,255,20,0.2)', margin: '4px 0' }} />
+              <div style={{ fontSize: '11px', letterSpacing: '0.3em', opacity: 0.4, textAlign: 'right' }}>BEEPME.PRO</div>
             </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Masa Tunggu</p>
-              <p className="text-xl font-black font-mono text-indigo-400 tracking-tight leading-none">05:00</p>
-            </div>
+
+            {/* Corner reflection */}
+            <div className="absolute top-0 left-0 w-10 h-6 pointer-events-none z-30"
+              style={{ background: 'linear-gradient(135deg, rgba(57,255,20,0.06) 0%, transparent 60%)' }} />
           </div>
 
-          {/* Test Sound Button mock */}
-          <div className="w-full flex gap-2 relative z-10">
-            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wide">
-              <Volume2 size={10} /> Uji Bunyi
+          {/* Retro buttons */}
+          <div className="flex gap-2 mt-2 w-full relative z-10">
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2"
+              style={{
+                fontFamily: "'VT323', monospace",
+                fontSize: '16px',
+                letterSpacing: '0.2em',
+                background: '#0d1a0d',
+                border: '2px solid #39ff14',
+                color: '#39ff14',
+                textShadow: '0 0 8px rgba(57,255,20,0.8)',
+                boxShadow: '0 0 8px rgba(57,255,20,0.15)'
+              }}>
+              <Volume2 size={12} /> [UJI BUNYI]
             </div>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <span className="text-[10px]">⚠️</span>
+            <div className="w-10 flex items-center justify-center"
+              style={{
+                background: '#1a1200',
+                border: '2px solid #f59e0b',
+                color: '#f59e0b',
+                textShadow: '0 0 6px rgba(245,158,11,0.7)',
+                fontSize: '18px',
+                fontFamily: "'VT323', monospace"
+              }}>
+              !
             </div>
           </div>
         </div>
