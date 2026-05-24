@@ -91,7 +91,10 @@ export function RetroPagerZone({
           {/* Line 1: Status */}
           <div className="text-lg tracking-widest leading-tight opacity-80 flex items-center gap-1">
             <span>{'> '}</span>
-            <span>{lang === 'bm' ? 'MENYEDIA PESANAN...' : 'PREPARING ORDER...'}</span>
+            <span>
+              {lang === 'bm' ? 'MENYEDIA PESANAN' : 'PREPARING ORDER'}
+              <span className="animate-lcd-blink">...</span>
+            </span>
           </div>
 
           {/* Divider */}
@@ -100,10 +103,7 @@ export function RetroPagerZone({
           {/* Line 2: Order Number */}
           <div className="flex items-baseline justify-between text-2xl tracking-widest leading-tight">
             <span className="opacity-60 text-lg">ORDER</span>
-            <span className="text-3xl">
-              #{receiptNumber}
-              <span className="animate-lcd-blink text-2xl">_</span>
-            </span>
+            <span className="text-3xl">#{receiptNumber}</span>
           </div>
 
           {/* Line 3: Wait Time */}
