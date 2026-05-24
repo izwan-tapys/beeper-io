@@ -39,6 +39,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [adsList, setAdsList] = useState<any[]>([])
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const ad = adsList[currentAdIndex] || null
+  const [isDescExpanded, setIsDescExpanded] = useState(false)
+
+  useEffect(() => {
+    setIsDescExpanded(false)
+  }, [currentAdIndex])
 
   const { lang, setLang } = useLanguage()
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
@@ -786,7 +791,17 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           </a>
                         )}
                         {ad.description && (
-                          <p className="text-[10px] text-slate-200 font-medium leading-snug line-clamp-2 drop-shadow-md mt-0.5">{ad.description}</p>
+                          <p 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setIsDescExpanded(!isDescExpanded)
+                            }}
+                            className={`text-[10px] text-slate-200 hover:text-white font-medium leading-snug drop-shadow-md mt-0.5 cursor-pointer select-none transition-all ${
+                              isDescExpanded ? 'line-clamp-none max-h-24 overflow-y-auto' : 'line-clamp-2'
+                            }`}
+                          >
+                            {ad.description}
+                          </p>
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-1">
