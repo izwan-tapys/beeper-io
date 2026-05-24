@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, Image as ImageIcon, Save, Link as LinkIcon, Check, X } from 'lucide-react'
+import { Loader2, Image as ImageIcon, Save, Link as LinkIcon, Check, X, Volume2 } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 
 // Helper function to create an Image from a URL
@@ -302,7 +302,7 @@ export function AdsBuilder({
                 image={cropImageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={9 / 16}
+                aspect={1 / 1}
                 onCropChange={setCrop}
                 onCropComplete={onCropComplete}
                 onZoomChange={setZoom}
@@ -373,11 +373,11 @@ export function AdsBuilder({
         </div>
       )}
 
-      {/* Editor & Preview Area */}
-      <div className="w-full max-w-sm mx-auto relative rounded-[40px] overflow-hidden border-[8px] border-[#1e1e24] aspect-[9/16] bg-black shadow-2xl flex flex-col justify-between group">
-        
-        {/* Background Image / Upload Area */}
-        <div className="absolute inset-0 z-0 cursor-pointer">
+      {/* Editor & Preview Area — 50-50 Mockup */}
+      <div className="w-full max-w-sm mx-auto relative rounded-[40px] overflow-hidden border-[8px] border-[#1e1e24] aspect-[9/16] bg-black shadow-2xl flex flex-col group">
+
+        {/* ── TOP 50%: Ad Zone ── */}
+        <div className="relative flex-1 overflow-hidden cursor-pointer">
           <input
             type="file"
             accept="image/*"
@@ -390,11 +390,11 @@ export function AdsBuilder({
             <div className="w-full h-full pointer-events-none relative">
               <iframe
                 src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                className="w-full h-full object-cover scale-[1.15] absolute inset-0 z-0"
+                className="w-full h-full object-cover absolute inset-0 z-0"
                 allow="autoplay; encrypted-media"
               />
-              <label 
-                htmlFor="ad-bg-upload" 
+              <label
+                htmlFor="ad-bg-upload"
                 className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-transparent group-hover:bg-black/40 transition-colors pointer-events-auto"
               >
                 <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -409,8 +409,8 @@ export function AdsBuilder({
                 className="w-full h-full object-cover absolute inset-0 z-0"
                 allow="autoplay; encrypted-media"
               />
-              <label 
-                htmlFor="ad-bg-upload" 
+              <label
+                htmlFor="ad-bg-upload"
                 className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-transparent group-hover:bg-black/40 transition-colors pointer-events-auto"
               >
                 <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -419,96 +419,116 @@ export function AdsBuilder({
               </label>
             </div>
           ) : (
-            <label 
-              htmlFor="ad-bg-upload" 
+            <label
+              htmlFor="ad-bg-upload"
               className="w-full h-full flex flex-col items-center justify-center cursor-pointer relative"
             >
               {imageUrl ? (
                 <img src={imageUrl} alt="Ad Background" className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center text-slate-500 p-6 text-center">
-                  <ImageIcon size={48} className="mb-4 opacity-50" />
-                  <p className="text-sm font-bold uppercase tracking-widest mb-2">Klik untuk Muat Naik / Click to Upload</p>
-                  <p className="text-xs">Gambar Promosi Menegak / Vertical Promo Image (9:16)</p>
+                  <ImageIcon size={40} className="mb-3 opacity-50" />
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1">Klik untuk Muat Naik</p>
+                  <p className="text-[10px]">Gambar Iklan Petak (1:1)</p>
                 </div>
               )}
-
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
                 <div className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white font-bold text-xs flex items-center gap-2 border border-white/20">
-                  <ImageIcon size={14} /> Tukar Gambar / Change Background
+                  <ImageIcon size={14} /> Tukar Gambar
                 </div>
               </div>
             </label>
           )}
-        </div>
 
-        {/* Top Gradient */}
-        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
-        
-        {/* Bottom Gradient */}
-        <div className="absolute bottom-0 inset-x-0 h-56 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-10" />
+          {/* Bottom gradient */}
+          <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
+          {/* Sponsored badge */}
+          <div className="absolute top-2 right-2 z-20">
+            <span className="text-[8px] text-white/50 font-bold uppercase tracking-widest bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">Sponsored</span>
+          </div>
 
-        {/* Ad Details Overlay (Editable) */}
-        <div className="absolute left-2 bottom-[86px] right-16 z-40 pt-3 px-3 pb-0">
-          <div className="space-y-1.5 drop-shadow-lg">
-            {/* Title Input */}
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleValueChange('title', e.target.value)}
-              placeholder="@Tajuk Promosi Anda..."
-              className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-sm font-black text-white tracking-tight uppercase leading-tight outline-none transition-all"
-            />
-            
-            {/* Description Input */}
-            <textarea
-              value={description}
-              onChange={(e) => handleValueChange('description', e.target.value)}
-              placeholder="Taip penerangan iklan di sini (max 2-3 baris)..."
-              rows={2}
-              className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[11px] text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
-            />
-
-            {/* CTA Button & Link Input */}
-            <div className="mt-3 flex flex-col items-start gap-2">
+          {/* Ad Overlay: Editable Title, Description, CTA */}
+          <div className="absolute left-2 bottom-3 right-2 z-40 px-2">
+            <div className="space-y-1 drop-shadow-lg">
               <input
                 type="text"
-                value={ctaText}
-                onChange={(e) => handleValueChange('ctaText', e.target.value)}
-                placeholder="Ketahui Lebih Lanjut"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 focus:bg-white/40 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-lg border border-transparent focus:border-white/50 outline-none transition-colors w-auto"
-                style={{ width: `${Math.max(ctaText.length || 20, 20)}ch` }}
+                value={title}
+                onChange={(e) => handleValueChange('title', e.target.value)}
+                placeholder="@Tajuk Promosi Anda..."
+                className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-sm font-black text-white tracking-tight uppercase leading-tight outline-none transition-all"
               />
-              <input
-                type="text"
-                value={linkUrl}
-                onChange={(e) => handleValueChange('linkUrl', e.target.value)}
-                placeholder="https://link-ke-promosi.com"
-                className="w-full bg-black/60 backdrop-blur-md border border-white/20 focus:border-indigo-500 rounded-lg px-3 py-2 text-[10px] font-mono text-white outline-none shadow-xl transition-all"
+              <textarea
+                value={description}
+                onChange={(e) => handleValueChange('description', e.target.value)}
+                placeholder="Penerangan iklan (2-3 baris)..."
+                rows={2}
+                className="w-full bg-black/20 hover:bg-black/40 focus:bg-black/60 border border-transparent hover:border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[11px] text-slate-100 font-medium leading-snug outline-none transition-all resize-none"
               />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={ctaText}
+                  onChange={(e) => handleValueChange('ctaText', e.target.value)}
+                  placeholder="Ketahui Lebih Lanjut"
+                  className="inline-flex px-2.5 py-1 bg-white/20 hover:bg-white/30 focus:bg-white/40 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest border border-transparent focus:border-white/50 outline-none transition-colors"
+                  style={{ width: `${Math.max((ctaText?.length || 0) + 4, 18)}ch` }}
+                />
+                <input
+                  type="text"
+                  value={linkUrl}
+                  onChange={(e) => handleValueChange('linkUrl', e.target.value)}
+                  placeholder="https://link.com"
+                  className="flex-1 bg-black/60 backdrop-blur-md border border-white/20 focus:border-indigo-500 rounded-lg px-2 py-1 text-[9px] font-mono text-white outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Fake Pager UI at the bottom (Read-only representation) */}
-        <div className="absolute bottom-3 left-0 right-0 z-30 pointer-events-none flex justify-center">
-          <div className="w-[90%] h-[64px] rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between px-6">
-            <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20" />
-               <span className="text-white font-black tracking-tight text-sm">#001</span>
+        {/* ── BOTTOM 50%: Pager Zone (Read-only mockup) ── */}
+        <div className="flex-1 bg-[#0a0a0f] border-t border-white/8 flex flex-col items-center justify-between px-4 py-3 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #6366f1, transparent 70%)' }} />
+
+          {/* Branding */}
+          <div className="flex flex-col items-center gap-1 relative z-10">
+            <div className="w-10 h-10 rounded-full bg-indigo-600/20 border-2 border-indigo-500 flex items-center justify-center shadow-lg">
+              <span className="text-white font-black text-xs">LOGO</span>
             </div>
-            <div className="flex items-center gap-3">
-               <span className="text-[#10b981] font-mono font-bold text-sm">05:00</span>
-               <div className="w-8 h-1 bg-white/30 rounded-full" />
+            <p className="font-black text-white text-[11px] tracking-tight uppercase">Nama Kedai Anda</p>
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Menyedia Pesanan</span>
+            </div>
+          </div>
+
+          {/* Order Info */}
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="text-center">
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">No. Pesanan</p>
+              <p className="text-2xl font-black text-white tracking-tighter leading-none">#001</p>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="text-center">
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Masa Tunggu</p>
+              <p className="text-xl font-black font-mono text-indigo-400 tracking-tight leading-none">05:00</p>
+            </div>
+          </div>
+
+          {/* Test Sound Button mock */}
+          <div className="w-full flex gap-2 relative z-10">
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wide">
+              <Volume2 size={10} /> Uji Bunyi
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+              <span className="text-[10px]">⚠️</span>
             </div>
           </div>
         </div>
-        
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-6 max-w-md">
-        Klik pada gambar untuk muat naik dan memotong (crop) poster promosi. Edit teks dan link pautan terus pada paparan mockup. Iklan anda akan kelihatan tepat seperti ini di telefon pelanggan.
+        Klik pada bahagian atas untuk muat naik gambar iklan 1:1 dan edit teks terus pada mockup. Bahagian bawah menunjukkan panel Pager seperti yang dilihat oleh pelanggan semasa menunggu pesanan.
       </p>
     </div>
   )

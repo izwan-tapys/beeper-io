@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { motion, AnimatePresence, useAnimation, PanInfo } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
@@ -34,14 +34,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [merchantCategory, setMerchantCategory] = useState<string>('')
   const [merchantState, setMerchantState] = useState<string>('')
 
-  const [isExpanded, setIsExpanded] = useState(false)
-  const controls = useAnimation()
   const [clientUuid, setClientUuid] = useState<string | null>(null)
   const [adsList, setAdsList] = useState<any[]>([])
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const ad = adsList[currentAdIndex] || null
 
-  const [isAdExpanded, setIsAdExpanded] = useState(false)
   const { lang, setLang } = useLanguage()
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
 
@@ -63,14 +60,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
   }, [status, adsList.length, resetSlideTimer])
 
-  
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    if (info.offset.y < -30) {
-      setIsExpanded(true)
-    } else if (info.offset.y > 30) {
-      setIsExpanded(false)
-    }
-  }
+
 const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartY(e.touches[0].clientY)
   }
@@ -722,12 +712,13 @@ const handleTouchStart = (e: React.TouchEvent) => {
       <div className={`w-full max-w-md h-full flex flex-col relative z-10 border-x border-white/5 ${status === 'waiting' ? 'bg-black' : 'justify-between p-6 bg-[#020203]/40 backdrop-blur-3xl'} shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden`}>
         
         {/* ========================================= */}
-        {/* TIKTOK UX WAITING SCREEN                 */}
+        {/* 50-50 WAITING SCREEN                     */}
         {/* ========================================= */}
         {status === 'waiting' && (
-          <div className="w-full h-full relative flex flex-col justify-between" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            {/* 1. Fullscreen Background Ad */}
-            <div className="absolute inset-0 z-0 animate-fade-in" key={currentAdIndex}>
+          <div className="w-full h-full flex flex-col" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+
+            {/* ── TOP 50%: Ad Zone ── */}
+            <div className="h-[50dvh] relative overflow-hidden flex-shrink-0 animate-fade-in" key={currentAdIndex}>
               {ad ? (
                 <>
                   {ad.media_url ? (
@@ -738,12 +729,12 @@ const handleTouchStart = (e: React.TouchEvent) => {
                         return (
                           <iframe
                             src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                            className="w-full h-full object-cover pointer-events-none scale-[1.15]"
+                            className="w-full h-full object-cover pointer-events-none"
                             allow="autoplay; encrypted-media"
                           />
                         )
                       }
-                      
+
                       const tiktokMatch = ad.media_url.match(/tiktok\.com\/@.*\/video\/(\d+)/);
                       const tiktokId = tiktokMatch ? tiktokMatch[1] : null;
                       if (tiktokId) {
@@ -768,26 +759,58 @@ const handleTouchStart = (e: React.TouchEvent) => {
                       )
                     })()
                   ) : ad.fallback_image_url ? (
-                    <img
-                      src={ad.fallback_image_url}
-                      alt={ad.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={ad.fallback_image_url} alt={ad.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#0c0d12] via-[#020203] to-[#1e1b4b] p-6 flex flex-col justify-center text-center relative overflow-hidden">
+                    <div className="w-full h-full bg-gradient-to-br from-[#0c0d12] via-[#020203] to-[#1e1b4b] flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
                       <div className="absolute inset-0 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
-                      <div className="relative z-10 flex flex-col items-center justify-center">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 mb-4">
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 mb-3">
                           <span className="text-white font-black text-xl">B</span>
                         </div>
-                        <h4 className="text-xl font-black text-white leading-tight uppercase tracking-tight mb-2">Beepme.pro</h4>
+                        <h4 className="text-lg font-black text-white uppercase tracking-tight mb-1">Beepme.pro</h4>
                         <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-[200px]">Gantikan Pager Perkakasan Mahal. Daftar Percuma.</p>
                       </div>
                     </div>
                   )}
-                  {/* Vertical Top/Bottom Gradients for readability */}
-                  <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
-                  <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
+
+                  {/* Ad overlay — title + CTA at bottom of ad zone */}
+                  <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
+                  {(ad.title || ad.cta_text) && (
+                    <div className="absolute bottom-3 left-3 right-3 z-20 flex items-end justify-between">
+                      <div className="flex-1 mr-2">
+                        {ad.title && (
+                          <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}
+                            className="text-[11px] font-black text-white uppercase tracking-tight leading-tight line-clamp-1 drop-shadow-lg block">
+                            @{ad.title}
+                          </a>
+                        )}
+                        {ad.description && (
+                          <p className="text-[10px] text-slate-200 font-medium leading-snug line-clamp-2 drop-shadow-md mt-0.5">{ad.description}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {ad.cta_text && (
+                          <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}
+                            className="px-2.5 py-1 bg-white/25 backdrop-blur-md rounded-md text-[9px] font-black text-white uppercase tracking-widest shadow-lg active:scale-95 transition-all whitespace-nowrap">
+                            {ad.cta_text}
+                          </a>
+                        )}
+                        {gmbUrl && (
+                          <a href={gmbUrl} target="_blank" rel="noopener noreferrer"
+                            className="w-9 h-9 rounded-full bg-white flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-transform relative">
+                            <span className="text-sm leading-none">⭐</span>
+                            <span className="text-[6px] font-black uppercase text-black">Rate</span>
+                            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping opacity-75" />
+                            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Sponsored label */}
+                  <div className="absolute top-2 right-2 z-20">
+                    <span className="text-[8px] text-white/50 font-bold uppercase tracking-widest bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">Sponsored</span>
+                  </div>
                 </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-[#020203]">
@@ -796,200 +819,76 @@ const handleTouchStart = (e: React.TouchEvent) => {
               )}
             </div>
 
-            {/* 2. Middle Overlay (Invisible Spacer) */}
-            <div className="flex-1" />
+            {/* ── BOTTOM 50%: Pager Zone ── */}
+            <div className="h-[50dvh] flex-shrink-0 bg-[#0a0a0f] border-t border-white/8 flex flex-col items-center justify-between px-5 py-4 relative overflow-hidden">
+              {/* Ambient glow behind pager using merchant theme */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${themeColor}, transparent 70%)` }} />
 
-            {/* 3. Bottom Section Wrapper (Dynamic Island) */}
-            <div className="relative z-50 w-full flex flex-col justify-end items-center pointer-events-none">
-              
-              {/* Overlays (Hidden when expanded so it doesn't clutter) */}
-              <AnimatePresence>
-                {!isExpanded && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="w-full relative pointer-events-auto"
-                  >
-                    {/* Right Sidebar */}
-                    <div className="absolute right-4 bottom-[10px] flex flex-col items-center gap-4">
-                      {gmbUrl && (
-                        <a 
-                          href={gmbUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="w-12 h-12 rounded-full bg-white flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 transition-transform relative"
-                        >
-                          <span className="text-lg leading-none">⭐</span>
-                          <span className="text-[7px] font-black uppercase text-black">Review</span>
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75" />
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
-                        </a>
-                      )}
-                      <button 
-                        onClick={() => setShowInstructions(true)}
-                        className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95 transition-transform"
-                      >
-                        <AlertTriangle size={20} className="text-amber-400 drop-shadow-md" />
-                        <span className="text-[8px] font-black uppercase text-amber-100">Amaran</span>
-                      </button>
-                    </div>
-
-                    {/* Left Ad Details */}
-                    {ad && (
-                      <div className={`absolute left-2 bottom-[10px] w-[85%] max-w-[320px] text-left z-50 pt-3 px-3 ${isAdExpanded ? 'pb-3 bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl translate-y-[-10px] rounded-3xl' : 'pb-0 bg-transparent rounded-none'} transition-all duration-500 ease-in-out`}>
-                        <div className="space-y-1.5 drop-shadow-lg">
-                          <h4 className="text-sm font-black text-white tracking-tight uppercase leading-tight">
-                            <a href={ad.link_url} target="_blank" rel="noopener noreferrer" onClick={handleAdClick}>@{ad.title}</a>
-                          </h4>
-                          
-                          {ad.description && (
-                            <div 
-                              className="cursor-pointer" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsAdExpanded(!isAdExpanded);
-                              }}
-                            >
-                              <p className={`text-[11px] text-slate-100 font-medium leading-snug transition-all duration-500 ${isAdExpanded ? 'line-clamp-none' : 'line-clamp-2'}`}>
-                                {ad.description}
-                              </p>
-                              {!isAdExpanded && ad.description.length > 80 && (
-                                <span className="text-[10px] font-bold text-white/80 hover:text-white inline-block mt-0.5">... Baca lagi</span>
-                              )}
-                            </div>
-                          )}
-                          
-                          {ad.cta_text && (
-                            <a
-                              href={ad.link_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={handleAdClick}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest mt-2 shadow-lg active:scale-95 transition-all"
-                            >
-                              {ad.cta_text}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
+              {/* Top: Merchant Branding */}
+              <div className="flex flex-col items-center gap-2 relative z-10 pt-1">
+                {merchantLogo ? (
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full blur-md opacity-60" style={{ backgroundColor: themeColor }} />
+                    <img
+                      src={merchantLogo}
+                      alt={merchantName}
+                      className="w-16 h-16 rounded-full object-cover border-2 relative z-10 shadow-xl"
+                      style={{ borderColor: themeColor }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 shadow-xl relative" style={{ borderColor: themeColor, backgroundColor: `${themeColor}20` }}>
+                    <Logo size={32} showText={false} />
+                  </div>
                 )}
-              </AnimatePresence>
-
-              {/* The Dynamic Island / Pager Drawer */}
-              <motion.div 
-                drag="y"
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={0.2}
-                onDragEnd={handleDragEnd}
-                animate={{
-                  height: isExpanded ? 'auto' : '64px',
-                  borderRadius: isExpanded ? '32px 32px 0 0' : '9999px',
-                  width: isExpanded ? '100%' : '90%',
-                  marginBottom: isExpanded ? '0px' : '12px',
-                  backgroundColor: isExpanded ? '#ffffff' : 'rgba(0,0,0,0.65)',
-                  backdropFilter: isExpanded ? 'none' : 'blur(16px)',
-                }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="pointer-events-auto overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-white/10 dark:border-white/5 relative z-50"
-                onClick={() => !isExpanded && setIsExpanded(true)}
-              >
-                {/* Ensure dark mode support for expanded state via class injection if needed, but hardcoded #fff is fine if we inject standard classes inside */}
-                <div className={isExpanded ? 'dark:bg-[#0c0d12] w-full h-full' : 'w-full h-full'}>
-                  <AnimatePresence mode="wait">
-                    {!isExpanded ? (
-                      /* COLLAPSED STATE (PILL) */
-                      <motion.div 
-                        key="collapsed"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="w-full h-full flex items-center justify-between px-6 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          {merchantLogo ? (
-                            <img src={merchantLogo} alt={merchantName} className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-sm" />
-                          ) : (
-                            <Logo size={24} showText={false} />
-                          )}
-                          <span className="text-white font-black tracking-tight text-sm">#{receiptNumber}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[#10b981] font-mono font-bold text-sm">{formatWaitTime()}</span>
-                          <div className="w-8 h-1 bg-white/30 rounded-full" />
-                        </div>
-                      </motion.div>
-                    ) : (
-                      /* EXPANDED STATE (FULL CARD) */
-                      <motion.div 
-                        key="expanded"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="w-full p-6 pt-5 bg-white dark:bg-[#0c0d12]"
-                      >
-                        {/* Pull indicator / handle */}
-                        <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-5 cursor-pointer" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} />
-
-                        {/* Baris 1: Logo, Nama Kedai & Status */}
-                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/50">
-                          <div className="flex items-center gap-2.5">
-                            {merchantLogo ? (
-                              <img src={merchantLogo} alt={merchantName} className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
-                            ) : (
-                              <Logo size={28} showText={false} />
-                            )}
-                            <h2 className="font-black text-slate-800 dark:text-white text-base tracking-tight uppercase">{merchantName}</h2>
-                          </div>
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981]/10 rounded-full border border-[#10b981]/20">
-                            <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">{lang === 'bm' ? 'Sibuk' : 'Busy'}</span>
-                          </div>
-                        </div>
-
-                        {/* Baris 2: Nombor Pesanan & Masa */}
-                        <div className="flex items-end justify-between mb-6">
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{lang === 'bm' ? 'No. Pesanan' : 'Order No.'}</p>
-                            <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
-                              #{receiptNumber}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            {isGhostActive() ? (
-                              <>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
-                                <p className="text-sm font-bold text-slate-500 italic animate-pulse leading-tight">{lang === 'bm' ? 'Sibuk' : 'Busy'}</p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{lang === 'bm' ? 'Masa Menunggu' : 'Wait Time'}</p>
-                                <p className="text-3xl font-black font-mono tracking-tight text-[#10b981] leading-none">{formatWaitTime()}</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Baris 3: Butang Uji Bunyi */}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); initAudio(); }}
-                          className="w-full flex flex-col items-center justify-center gap-1 py-3.5 rounded-2xl transition-all active:scale-95 border border-slate-200 dark:border-white/5 relative overflow-hidden group"
-                          style={{ backgroundColor: themeColor, boxShadow: `0 8px 24px ${themeColor}40` }}
-                        >
-                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                          <div className="relative z-10 flex items-center gap-2 text-white font-black text-sm uppercase tracking-wider">
-                            <Volume2 size={16} />
-                            {lang === 'bm' ? 'Uji Bunyi Pager' : 'Test Sound'}
-                          </div>
-                          <span className="relative z-10 text-[9px] text-white/80 font-medium">{lang === 'bm' ? 'Pastikan \'Silent Mode\' dimatikan' : 'Disable \'Silent Mode\''}</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <h2 className="font-black text-white text-base tracking-tight uppercase text-center leading-tight" style={{ textShadow: `0 0 20px ${themeColor}80` }}>
+                  {merchantName}
+                </h2>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-[#10b981]/10 rounded-full border border-[#10b981]/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-[#10b981]">
+                    {lang === 'bm' ? 'Sedang Menyedia Pesanan' : 'Preparing Your Order'}
+                  </span>
                 </div>
-              </motion.div>
+              </div>
+
+              {/* Middle: Order Info */}
+              <div className="flex items-center gap-6 relative z-10">
+                <div className="text-center">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">{lang === 'bm' ? 'No. Pesanan' : 'Order No.'}</p>
+                  <p className="text-4xl font-black text-white tracking-tighter leading-none">#{receiptNumber}</p>
+                </div>
+                <div className="w-px h-10 bg-white/10" />
+                <div className="text-center">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">
+                    {isGhostActive() ? 'Status' : (lang === 'bm' ? 'Masa Tunggu' : 'Wait Time')}
+                  </p>
+                  {isGhostActive() ? (
+                    <p className="text-sm font-bold text-slate-500 italic animate-pulse">{lang === 'bm' ? 'Sibuk' : 'Busy'}</p>
+                  ) : (
+                    <p className="text-3xl font-black font-mono tracking-tight leading-none" style={{ color: themeColor }}>{formatWaitTime()}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom: Test Sound + Warning */}
+              <div className="w-full flex gap-2 relative z-10">
+                <button
+                  onClick={initAudio}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl font-black text-xs uppercase tracking-wide text-white transition-all active:scale-95 relative overflow-hidden"
+                  style={{ backgroundColor: themeColor, boxShadow: `0 4px 16px ${themeColor}40` }}
+                >
+                  <Volume2 size={14} />
+                  {lang === 'bm' ? 'Uji Bunyi' : 'Test Sound'}
+                </button>
+                <button
+                  onClick={() => setShowInstructions(true)}
+                  className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform"
+                >
+                  <AlertTriangle size={16} className="text-amber-400" />
+                  <span className="text-[7px] font-black uppercase text-amber-400">Info</span>
+                </button>
+              </div>
             </div>
 
             {/* Modal Popup for Sound Warning */}
