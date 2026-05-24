@@ -113,8 +113,17 @@ export function RetroPagerZone({
           {/* Divider */}
           <div className="my-1.5 border-t border-[#39ff14]/20" />
 
-          {/* Line 3: Footer */}
-          <div className="text-sm tracking-[0.3em] opacity-40 text-right leading-tight">BEEPME.PRO</div>
+          {/* Line 3: Footer with Wait Time */}
+          <div className="text-sm opacity-50 flex justify-between items-baseline leading-none">
+            <span className="tracking-[0.1em]">
+              {isGhostActive ? (
+                'WAIT: BUSY'
+              ) : (
+                `WAIT: ${formattedWaitTime}`
+              )}
+            </span>
+            <span className="opacity-75 tracking-[0.3em]">BEEPME.PRO</span>
+          </div>
         </div>
 
         {/* LCD corner reflection */}
