@@ -41,20 +41,20 @@ export function RetroPagerZone({
       />
 
       {/* Merchant logo + name — label above LCD */}
-      <div className="flex items-center gap-2.5 mb-3.5 relative z-10">
+      <div className="flex items-center gap-3 mb-4 relative z-10">
         {merchantLogo ? (
           <img
             src={merchantLogo}
             alt={merchantName}
-            className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-md"
+            className="w-12 h-12 rounded-full object-cover border border-white/10 shadow-md"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 shadow-md">
-            <span className="text-white text-sm font-black leading-none">B</span>
+          <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 shadow-md">
+            <span className="text-white text-base font-black leading-none">B</span>
           </div>
         )}
         <span
-          className="text-slate-200 text-sm font-black tracking-widest uppercase"
+          className="text-slate-200 text-lg font-black tracking-widest uppercase"
         >
           {merchantName}
         </span>
