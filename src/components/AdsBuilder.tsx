@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Image as ImageIcon, Save, Link as LinkIcon, Check, X, Volume2 } from 'lucide-react'
 import Cropper from 'react-easy-crop'
@@ -107,6 +107,31 @@ export function AdsBuilder({
   editorTitle = 'Visual Ads Editor'
 }: AdsBuilderProps) {
   const supabase = createClient()
+
+  // Internally resolve merchant name & logo if not passed as prop (for ads manager create/edit pages)
+  const [localMerchant, setLocalMerchant] = useState<any>(null)
+
+  useEffect(() => {
+    if (merchant) {
+      setLocalMerchant(merchant)
+      return
+    }
+
+    const fetchMerchantData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('merchants')
+        .select('name, logo_url')
+        .eq('user_id', user.id)
+        .single()
+      if (data) {
+        setLocalMerchant(data)
+      }
+    }
+
+    fetchMerchantData()
+  }, [merchant])
 
   // Parse YouTube or TikTok video URLs for direct mockup previewing
   const ytMatch = videoUrl ? videoUrl.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/) : null
@@ -489,7 +514,8 @@ export function AdsBuilder({
 
         {/* ── BOTTOM 50%: Retro LCD Pager Zone (Read-only mockup) ── */}
         <RetroPagerZone
-          merchantName="NAMA KEDAI ANDA"
+          merchantName={localMerchant?.name || "NAMA KEDAI ANDA"}
+          merchantLogo={localMerchant?.logo_url || null}
           receiptNumber="001"
           lang="bm"
           formattedWaitTime="05:00"
