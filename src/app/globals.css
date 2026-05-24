@@ -8,6 +8,16 @@
 }
 .animate-lcd-blink { animation: lcd-blink 1s step-end infinite; }
 
+/* LCD sequential dot blink */
+@keyframes lcd-dot {
+  0% { opacity: 0.2; }
+  30% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+.animate-lcd-dot {
+  animation: lcd-dot 1.4s infinite both;
+}
+
 /* LCD text flicker */
 @keyframes lcd-flicker {
   0%, 95%, 100% { opacity: 1; }

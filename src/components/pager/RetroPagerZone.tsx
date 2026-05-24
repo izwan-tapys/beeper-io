@@ -91,9 +91,13 @@ export function RetroPagerZone({
           {/* Line 1: Status */}
           <div className="text-lg tracking-widest leading-tight opacity-80 flex items-center gap-1">
             <span>{'> '}</span>
-            <span>
-              {lang === 'bm' ? 'MENYEDIA PESANAN' : 'PREPARING ORDER'}
-              <span className="animate-lcd-blink">...</span>
+            <span className="flex items-center">
+              <span>{lang === 'bm' ? 'MENYEDIA PESANAN' : 'PREPARING ORDER'}</span>
+              <span className="inline-flex ml-1">
+                <span className="animate-lcd-dot" style={{ animationDelay: '0s' }}>.</span>
+                <span className="animate-lcd-dot" style={{ animationDelay: '0.2s' }}>.</span>
+                <span className="animate-lcd-dot" style={{ animationDelay: '0.4s' }}>.</span>
+              </span>
             </span>
           </div>
 
