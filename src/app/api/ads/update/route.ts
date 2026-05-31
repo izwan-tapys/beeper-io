@@ -43,6 +43,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing campaign ID' }, { status: 400 })
     }
 
+    // VULN-013 Fix: Validate URLs to prevent XSS (javascript: links)
+    const validateUrl = (url: string | null | undefined) => {
+      if (!url) return true
+      const trimmed = url.trim()
+      return trimmed === '' || trimmed.startsWith('http://') || trimmed.startsWith('https://')
+    }
+
+    if (!validateUrl(video_url) || !validateUrl(fallback_image_url) || !validateUrl(link_url)) {
+      return NextResponse.json({ error: 'Invalid URL format. URLs must start with http:// or https://' }, { status: 400 })
+    }
+
     // 2. Fetch the ad to check ownership
     const { data: ad, error: fetchError } = await supabaseAdmin
       .from('ads')

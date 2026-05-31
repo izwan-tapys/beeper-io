@@ -1,71 +1,113 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
-    // ToyyibPay sends data as form-urlencoded
     const formData = await request.formData()
-    const status_id = formData.get('status_id')
-    const order_id = formData.get('order_id') as string // This is our transaction.id
-    const transaction_id = formData.get('transaction_id')
-    const billcode = formData.get('billcode')
+    const status_id = formData.get('status_id') as string
+    const order_id = formData.get('order_id') as string   // our transaction.id
+    const billcode = formData.get('billcode') as string
+    const transaction_id = formData.get('transaction_id') as string
 
-    if (!order_id) {
-      return NextResponse.json({ error: 'Missing order_id' }, { status: 400 })
+    // Always return 200 to stop ToyyibPay retries, but only process valid payloads
+    if (!order_id || !billcode) {
+      return new Response('OK', { status: 200 })
     }
 
-    const supabase = await createClient()
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
-    // Retrieve the pending transaction
-    const { data: tx, error: txError } = await supabase
+    // ─── VULN-003 Fix: Server-side verification with ToyyibPay API ────────────
+    // Never trust the callback status_id alone — always verify with ToyyibPay.
+    const userSecretKey = process.env.TOYYIBPAY_SECRET_KEY
+    if (!userSecretKey) {
+      console.error('[ToyyibPay Callback] TOYYIBPAY_SECRET_KEY not configured')
+      return new Response('Server Error', { status: 500 })
+    }
+
+    const verifyForm = new URLSearchParams()
+    verifyForm.append('userSecretKey', userSecretKey)
+    verifyForm.append('billCode', billcode)
+    verifyForm.append('billpaymentStatus', '1') // Only confirmed-successful payments
+
+    const verifyRes = await fetch('https://toyyibpay.com/index.php/api/getBillTransactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: verifyForm.toString(),
+    })
+
+    if (!verifyRes.ok) {
+      console.error('[ToyyibPay Callback] Verification API error:', verifyRes.status)
+      return new Response('Verification Failed', { status: 500 })
+    }
+
+    const transactions: any[] = await verifyRes.json()
+    const isVerified =
+      Array.isArray(transactions) &&
+      transactions.some(
+        (tx) =>
+          tx.billpaymentStatus === '1' &&
+          tx.billExternalReferenceNo === order_id
+      )
+
+    // ─── Idempotency check ────────────────────────────────────────────────────
+    const { data: tx, error: txError } = await supabaseAdmin
       .from('ad_wallet_transactions')
       .select('*')
       .eq('id', order_id)
       .single()
 
     if (txError || !tx) {
-      console.error('Transaction not found:', order_id)
-      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
+      console.error('[ToyyibPay Callback] Transaction not found:', order_id)
+      return new Response('OK', { status: 200 }) // Don't leak 404 to ToyyibPay
     }
 
     if (tx.status !== 'pending') {
-      // Already processed
-      return NextResponse.json({ success: true, message: 'Already processed' })
+      // Already processed — idempotency guard
+      return new Response('OK', { status: 200 })
     }
 
-    if (status_id === '1') { // 1 = Success
-      // Update transaction status to completed
-      await supabase
+    if (isVerified) {
+      // ─── Credit wallet ───────────────────────────────────────────────────────
+      await supabaseAdmin
         .from('ad_wallet_transactions')
-        .update({ 
+        .update({
           status: 'completed',
-          reference_id: transaction_id ? `${billcode}-${transaction_id}` : billcode
+          reference_id: transaction_id ? `${billcode}-${transaction_id}` : billcode,
         })
         .eq('id', order_id)
 
-      // Increment wallet balance
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabaseAdmin
         .from('advertiser_profiles')
         .select('wallet_balance')
-        .eq('user_id', tx.advertiser_id)
+        .eq('id', tx.advertiser_id)
         .single()
 
-      if (!profileError && profile) {
-        await supabase
+      if (profile) {
+        await supabaseAdmin
           .from('advertiser_profiles')
           .update({ wallet_balance: (profile.wallet_balance || 0) + tx.amount })
-          .eq('user_id', tx.advertiser_id)
+          .eq('id', tx.advertiser_id)
       }
-    } else { // Failed or pending
-      await supabase
+
+      console.log(`[ToyyibPay Callback] ✅ Wallet credited RM${tx.amount} for advertiser ${tx.advertiser_id}`)
+    } else {
+      // Payment not verified or failed — mark as failed
+      await supabaseAdmin
         .from('ad_wallet_transactions')
         .update({ status: 'failed' })
         .eq('id', order_id)
+
+      console.warn('[ToyyibPay Callback] ❌ Payment not verified for order:', order_id)
     }
 
-    return NextResponse.json({ success: true })
+    return new Response('OK', { status: 200 })
   } catch (err: any) {
-    console.error('ToyyibPay Callback Error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error('[ToyyibPay Callback] Unhandled error:', err)
+    return new Response('Error', { status: 500 })
   }
 }

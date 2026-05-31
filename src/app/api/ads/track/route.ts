@@ -5,11 +5,26 @@ export async function POST(request: Request) {
   try {
     const { ad_id, session_id, event_type } = await request.json()
 
-    if (!ad_id || !event_type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // VULN-010 Fix: Validate event_type against explicit allowlist
+    const ALLOWED_EVENT_TYPES = ['impression', 'click', 'complete']
+    if (!ad_id || !event_type || !ALLOWED_EVENT_TYPES.includes(event_type)) {
+      return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
     }
 
     const supabase = await createClient()
+
+    // VULN-002 Fix: If session_id is provided, verify it exists in the database
+    if (session_id) {
+      const { data: sessionExists, error: sessionError } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('id', session_id)
+        .single()
+
+      if (sessionError || !sessionExists) {
+        return NextResponse.json({ error: 'Invalid session_id' }, { status: 400 })
+      }
+    }
 
     const { data, error } = await supabase.rpc('track_ad_event', {
       p_ad_id: ad_id,

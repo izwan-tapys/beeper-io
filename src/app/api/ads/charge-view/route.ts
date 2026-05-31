@@ -18,6 +18,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing ad_id or session_id' }, { status: 400 })
     }
 
+    // VULN-001 Fix: Verify that the session_id is a valid, existing session in the database
+    const { data: sessionExists, error: sessionError } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('id', session_id)
+      .single()
+
+    if (sessionError || !sessionExists) {
+      return NextResponse.json({ error: 'Invalid or expired session_id' }, { status: 400 })
+    }
+
     // 1. Fetch the ad to get cpv_bid and advertiser_id
     const { data: ad, error: adError } = await supabase
       .from('ads')

@@ -3,13 +3,32 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { advertiser_id, amount, email, name, phone } = await request.json()
+    const { amount, email, name, phone } = await request.json()
 
-    if (!advertiser_id || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // VULN-009 Fix: Validate amount bounds — must be a positive number between RM1 and RM10,000
+    if (!amount || typeof amount !== 'number' || !isFinite(amount) || amount < 1 || amount > 10000) {
+      return NextResponse.json({ error: 'Invalid amount. Must be between RM1 and RM10,000.' }, { status: 400 })
     }
 
+    // VULN-004 Fix: Derive advertiser_id from the authenticated session — never trust client
     const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Look up the advertiser profile from the authenticated user
+    const { data: profile, error: profileError } = await supabase
+      .from('advertiser_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Advertiser profile not found' }, { status: 404 })
+    }
+    const advertiser_id = profile.id
+
+    // supabase client already created above
 
     // Create a pending transaction
     const { data: transaction, error: txError } = await supabase
@@ -33,22 +52,25 @@ export async function POST(request: Request) {
     const secretKey = process.env.TOYYIBPAY_SECRET_KEY
     const categoryCode = process.env.TOYYIBPAY_CATEGORY_CODE
 
+    // VULN-012 Fix: Never simulate payment success in production
     if (!secretKey || !categoryCode) {
-      console.warn('ToyyibPay credentials not found. Simulating success for testing.')
-      // Simulate success for local testing
-      return NextResponse.json({ 
-        url: `/admin?payment=success&billcode=simulated_${transaction.id}`,
-        billCode: `simulated_${transaction.id}`
-      })
+      const isDev = process.env.NODE_ENV === 'development'
+      if (isDev) {
+        console.warn('[DEV ONLY] ToyyibPay credentials not found. Simulating success.')
+        return NextResponse.json({ 
+          url: `/ads-manager?success=3&billcode=simulated_${transaction.id}`,
+          billCode: `simulated_${transaction.id}`
+        })
+      }
+      console.error('[ToyyibPay] TOYYIBPAY_SECRET_KEY or TOYYIBPAY_CATEGORY_CODE not configured')
+      return NextResponse.json({ error: 'Payment service not configured' }, { status: 503 })
     }
 
     // Convert RM to cents
     const amountInCents = Math.round(amount * 100)
     
-    // Get base URL for return/callback
-    const protocol = request.headers.get('x-forwarded-proto') || 'http'
-    const host = request.headers.get('host') || 'localhost:3000'
-    const baseUrl = `${protocol}://${host}`
+    // VULN-006 Fix: Use server-configured SITE_URL — never trust Host header
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://beepme.pro'
 
     const formData = new URLSearchParams()
     formData.append('userSecretKey', secretKey)

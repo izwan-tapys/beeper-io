@@ -1,11 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  // Create client inside handler — avoids module-level eval at build time
-  const supabase = createClient(
+  // Auth: verify the caller is a logged-in merchant
+  const supabaseAuth = await createClient()
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Service client for privileged DB reads
+  const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -16,6 +24,17 @@ export async function GET(request: Request) {
 
     if (!merchantId) {
       return NextResponse.json({ error: 'Missing merchant_id' }, { status: 400 })
+    }
+
+    // VULN-005 Fix: Verify this merchant belongs to the authenticated user
+    const { data: ownerCheck, error: ownerError } = await supabase
+      .from('merchants')
+      .select('user_id')
+      .eq('id', merchantId)
+      .single()
+
+    if (ownerError || !ownerCheck || ownerCheck.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // 1. Ambil token Loyverse dan status subscription dari database
