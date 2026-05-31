@@ -9,98 +9,98 @@ import { use } from 'react'
 import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { RetroPagerZone } from '@/components/pager/RetroPagerZone'
+import { RetroPagerZone, type ActiveSession } from '@/components/pager/RetroPagerZone'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
+
+// A single session record as returned by Supabase
+interface SessionRecord {
+  id: string
+  status: string
+  is_confirmed: boolean
+  updated_at: string
+  created_at: string
+  receipt_number: string
+  merchant_id: string
+  client_uuid: string | null
+  merchants: {
+    name: string
+    logo_url: string | null
+    gmb_url: string | null
+    theme_color: string | null
+    plan_type: string | null
+    subscription_status: string | null
+    expiry_date: string | null
+    upsell_title: string | null
+    upsell_description: string | null
+    upsell_link_url: string | null
+    upsell_video_url: string | null
+    upsell_image_url: string | null
+    upsell_cta_text: string | null
+    latitude: number | null
+    longitude: number | null
+    category: string | null
+    state: string | null
+  } | null
+}
 
 const supabase = createClient()
 
 export default function PagerPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params)
 
+  // ── Primary session state (the one scanned first) ──────────────────────────
   const [status, setStatus] = useState<PagerStatus>('loading')
-  const [merchantId, setMerchantId] = useState<string | null>(null)
   const [merchantName, setMerchantName] = useState('')
   const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
+  const [merchantId, setMerchantId] = useState<string | null>(null)
   const [gmbUrl, setGmbUrl] = useState<string | null>(null)
   const [receiptNumber, setReceiptNumber] = useState('')
   const [createdAt, setCreatedAt] = useState<string | null>(null)
+  const [themeColor, setThemeColor] = useState('#6366f1')
+
+  // ── Multi-session state ────────────────────────────────────────────────────
+  // Map of sessionId → SessionRecord for all active sessions on this device
+  const [allSessions, setAllSessions] = useState<Map<string, SessionRecord>>(new Map())
+  // Set of sessionId that have already been dismissed (alarm silenced)
+  const dismissedRef = useRef<Set<string>>(new Set())
+  // Currently ringing session id (if any)
+  const [calledSessionId, setCalledSessionId] = useState<string | null>(null)
+
+  // ── UI state ───────────────────────────────────────────────────────────────
   const [now, setNow] = useState(Date.now())
   const [volume, setVolume] = useState(1.0)
   const [isFlashing, setIsFlashing] = useState(false)
   const [isAudioReady, setIsAudioReady] = useState(false)
-  const [themeColor, setThemeColor] = useState('#6366f1')
   const [showInstructions, setShowInstructions] = useState(true)
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
-  const [merchantCategory, setMerchantCategory] = useState<string>('')
-  const [merchantState, setMerchantState] = useState<string>('')
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
 
+  // ── Ad state ───────────────────────────────────────────────────────────────
   const [clientUuid, setClientUuid] = useState<string | null>(null)
   const [adsList, setAdsList] = useState<any[]>([])
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const ad = adsList[currentAdIndex] || null
   const [isDescExpanded, setIsDescExpanded] = useState(false)
 
-  useEffect(() => {
-    setIsDescExpanded(false)
-  }, [currentAdIndex])
-
   const { lang, setLang } = useLanguage()
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
 
-  const resetSlideTimer = useCallback(() => {
-    if (slideTimerRef.current) clearInterval(slideTimerRef.current)
-    if (adsList.length > 1) {
-      slideTimerRef.current = setInterval(() => {
-        setCurrentAdIndex((prev) => (prev + 1) % adsList.length)
-      }, 15000)
-    }
-  }, [adsList.length])
-
-  useEffect(() => {
-    if (status === 'waiting' && adsList.length > 1) {
-      resetSlideTimer()
-    }
-    return () => {
-      if (slideTimerRef.current) clearInterval(slideTimerRef.current)
-    }
-  }, [status, adsList.length, resetSlideTimer])
-
-
-const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartY(e.touches[0].clientY)
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartY === null || adsList.length <= 1) return
-    const touchEndY = e.changedTouches[0].clientY
-    const deltaY = touchStartY - touchEndY
-    
-    if (deltaY > 50) {
-      setCurrentAdIndex((prev) => (prev + 1) % adsList.length)
-      resetSlideTimer()
-    } else if (deltaY < -50) {
-      setCurrentAdIndex((prev) => (prev - 1 + adsList.length) % adsList.length)
-      resetSlideTimer()
-    }
-    setTouchStartY(null)
-  }
-
+  // ── Refs ───────────────────────────────────────────────────────────────────
   const audioCtxRef = useRef<AudioContext | null>(null)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const waitTimerRef = useRef<NodeJS.Timeout | null>(null)
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const slideTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const impressionLoggedRef = useRef<boolean>(false)
-
-  // Use a ref for status to avoid closure issues in polling
   const statusRef = useRef<PagerStatus>('loading')
   const lastUpdatedRef = useRef<string | null>(null)
   const isInitialFetchRef = useRef<boolean>(true)
-  useEffect(() => { statusRef.current = status }, [status])
+  const seenAdsRef = useRef<Set<string>>(new Set())
 
-  // Get or create client_uuid from localStorage on mount
+  useEffect(() => { statusRef.current = status }, [status])
+  useEffect(() => { setIsDescExpanded(false) }, [currentAdIndex])
+
+  // ── Get/create client_uuid ─────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window !== 'undefined') {
       let uuid = localStorage.getItem('beepme_client_uuid')
@@ -112,96 +112,36 @@ const handleTouchStart = (e: React.TouchEvent) => {
     }
   }, [])
 
-  const fetchAd = useCallback(async (mId: string, isPremium: boolean, upsellData: any, location: {lat: number, lng: number} | null, mState: string, mCategory: string) => {
-    try {
-      if (isPremium) {
-        if (upsellData.upsell_video_url || upsellData.upsell_image_url) {
-          setAdsList([{
-            id: 'merchant-upsell',
-            title: upsellData.upsell_title || 'Promosi Kedai',
-            media_url: upsellData.upsell_video_url,
-            fallback_image_url: upsellData.upsell_image_url,
-            link_url: upsellData.upsell_link_url || '#',
-            description: upsellData.upsell_description || '',
-            cta_text: upsellData.upsell_cta_text ?? 'Ketahui Lebih Lanjut'
-          }])
-        } else {
-          setAdsList([{
-            id: 'default-beepme',
-            title: 'Beepme.pro - Pager F&B',
-            media_url: null,
-            fallback_image_url: null,
-            link_url: 'https://beepme.pro',
-            description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
-          }])
-        }
-        return
-      }
-
-      const fallbackToAllAds = async () => {
-        const { data: adsData, error } = await supabase
-          .from('ads')
-          .select('*')
-          .eq('is_active', true)
-
-        if (error || !adsData || adsData.length === 0) {
-          setAdsList([{
-            id: 'default-beepme',
-            title: 'Beepme.pro - Pager F&B',
-            media_url: null,
-            fallback_image_url: null,
-            link_url: 'https://beepme.pro',
-            description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!'
-          }])
-          return
-        }
-
-        const shuffledAds = adsData.map(adItem => ({
-          id: adItem.id,
-          title: adItem.title,
-          media_url: adItem.video_url,
-          fallback_image_url: adItem.image_url,
-          link_url: adItem.link_url,
-          description: adItem.description || ''
-        })).sort(() => 0.5 - Math.random())
-
-        setAdsList(shuffledAds)
-      }
-
-      // Try targeted ads RPC (location-aware + state & category matched)
-      const { data: adsData, error } = await supabase.rpc('get_targeted_ads', {
-        p_lat: location?.lat ?? null,
-        p_lng: location?.lng ?? null,
-        m_state: mState || null,
-        m_category: mCategory || ''
-      })
-
-      if (!error && adsData && adsData.length > 0) {
-        const shuffledAds = adsData.map((adItem: any) => ({
-          id: adItem.id,
-          title: adItem.title,
-          media_url: adItem.video_url,
-          fallback_image_url: adItem.image_url,
-          link_url: adItem.link_url,
-          description: adItem.description || ''
-        })).sort(() => 0.5 - Math.random())
-
-        setAdsList(shuffledAds)
-        return
-      }
-
-      // Fallback: fetch all active ads
-      await fallbackToAllAds()
-    } catch (err) {
-      console.error('Error fetching ads:', err)
+  // ── Ad rotation timer ──────────────────────────────────────────────────────
+  const resetSlideTimer = useCallback(() => {
+    if (slideTimerRef.current) clearInterval(slideTimerRef.current)
+    if (adsList.length > 1) {
+      slideTimerRef.current = setInterval(() => {
+        setCurrentAdIndex((prev) => (prev + 1) % adsList.length)
+      }, 15000)
     }
-  }, [])
+  }, [adsList.length])
 
+  useEffect(() => {
+    if (status === 'waiting' && adsList.length > 1) resetSlideTimer()
+    return () => { if (slideTimerRef.current) clearInterval(slideTimerRef.current) }
+  }, [status, adsList.length, resetSlideTimer])
+
+  // ── Touch swipe for ads ────────────────────────────────────────────────────
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStartY(e.touches[0].clientY)
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY === null || adsList.length <= 1) return
+    const delta = touchStartY - e.changedTouches[0].clientY
+    if (delta > 50) { setCurrentAdIndex((p) => (p + 1) % adsList.length); resetSlideTimer() }
+    else if (delta < -50) { setCurrentAdIndex((p) => (p - 1 + adsList.length) % adsList.length); resetSlideTimer() }
+    setTouchStartY(null)
+  }
+
+  // ── Audio ──────────────────────────────────────────────────────────────────
   const playChime = useCallback(async () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
     if (ctx.state === 'suspended') await ctx.resume()
-
     const tones = [1046.50, 1318.51, 1567.98, 2093.00]
     tones.forEach((freq, i) => {
       const osc = ctx.createOscillator()
@@ -218,13 +158,13 @@ const handleTouchStart = (e: React.TouchEvent) => {
     })
   }, [volume])
 
-  const triggerAlert = useCallback(() => {
+  const triggerAlert = useCallback((triggeredSessionId: string) => {
     if (alertIntervalRef.current) return
     setIsFlashing(true)
+    setCalledSessionId(triggeredSessionId)
     const runAlert = () => {
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator)
         navigator.vibrate([800, 200, 800, 200, 800])
-      }
       playChime()
     }
     runAlert()
@@ -233,17 +173,18 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
   const stopAlert = useCallback(() => {
     setIsFlashing(false)
-    if (alertIntervalRef.current) {
-      clearInterval(alertIntervalRef.current)
-      alertIntervalRef.current = null
-    }
+    setCalledSessionId(null)
+    if (alertIntervalRef.current) { clearInterval(alertIntervalRef.current); alertIntervalRef.current = null }
   }, [])
 
+  // ── Process state of the primary session ───────────────────────────────────
   const processSessionStatus = useCallback((data: any) => {
     if (data.status === 'called') {
       if (statusRef.current !== 'called' || (lastUpdatedRef.current && data.updated_at !== lastUpdatedRef.current)) {
         setStatus('called')
-        triggerAlert()
+        if (!dismissedRef.current.has(data.id ?? sessionId)) {
+          triggerAlert(data.id ?? sessionId)
+        }
       }
       lastUpdatedRef.current = data.updated_at
     } else if (data.status === 'completed' || data.status === 'archived') {
@@ -254,40 +195,142 @@ const handleTouchStart = (e: React.TouchEvent) => {
     } else {
       setStatus('confirm')
     }
-  }, [triggerAlert, stopAlert])
+  }, [triggerAlert, stopAlert, sessionId])
 
+  // ── Build the allSessions map entry and check for cross-session alarms ─────
+  const processAllSessions = useCallback((sessions: SessionRecord[]) => {
+    const newMap = new Map<string, SessionRecord>()
+    for (const s of sessions) newMap.set(s.id, s)
+    setAllSessions(newMap)
+
+    // Check if any non-dismissed session has been called
+    for (const s of sessions) {
+      if (s.status === 'called' && !dismissedRef.current.has(s.id)) {
+        if (!alertIntervalRef.current) {
+          setIsFlashing(true)
+          setCalledSessionId(s.id)
+          const runAlert = () => {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator)
+              navigator.vibrate([800, 200, 800, 200, 800])
+          }
+          runAlert()
+          alertIntervalRef.current = setInterval(runAlert, 2500)
+        }
+        break
+      }
+    }
+  }, [])
+
+  // ── Build ads list from all active sessions (Pro priority) ─────────────────
+  const compileAds = useCallback(async (sessions: SessionRecord[], location: { lat: number; lng: number } | null) => {
+    const compiled: any[] = []
+
+    for (const session of sessions) {
+      const merchant = session.merchants
+      if (!merchant) continue
+
+      const isPro = merchant.plan_type === 'pro' &&
+        merchant.subscription_status === 'active' &&
+        (!!merchant.expiry_date && new Date(merchant.expiry_date) > new Date())
+
+      if (isPro && (merchant.upsell_video_url || merchant.upsell_image_url)) {
+        // Add Pro upsell ads — added TWICE for priority weighting
+        const proAd = {
+          id: `merchant-upsell-${session.merchant_id}`,
+          title: merchant.upsell_title || 'Promosi Kedai',
+          media_url: merchant.upsell_video_url,
+          fallback_image_url: merchant.upsell_image_url,
+          link_url: merchant.upsell_link_url || '#',
+          description: merchant.upsell_description || '',
+          cta_text: merchant.upsell_cta_text ?? 'Ketahui Lebih Lanjut',
+        }
+        compiled.push(proAd, proAd) // duplicated for 2x weighting
+      }
+    }
+
+    // If no Pro ads, or to fill the rest, fetch targeted ads
+    if (compiled.length === 0) {
+      // Use the first session's location/state/category as context
+      const firstSession = sessions[0]
+      const merchant = firstSession?.merchants
+      const mState = merchant?.state || null
+      const mCategory = merchant?.category || ''
+
+      const { data: adsData } = await supabase.rpc('get_targeted_ads', {
+        p_lat: location?.lat ?? null,
+        p_lng: location?.lng ?? null,
+        m_state: mState,
+        m_category: mCategory,
+      })
+
+      if (adsData && adsData.length > 0) {
+        const mapped = adsData.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          media_url: a.video_url,
+          fallback_image_url: a.image_url,
+          link_url: a.link_url,
+          description: a.description || '',
+          cta_text: a.cta_text,
+        }))
+        compiled.push(...mapped)
+      } else {
+        // Fallback to Beepme self-promo
+        compiled.push({
+          id: 'default-beepme',
+          title: 'Beepme.pro - Pager F&B',
+          media_url: null,
+          fallback_image_url: null,
+          link_url: 'https://beepme.pro',
+          description: 'Gantikan pager perkakasan lama dengan telefon pintar pelanggan anda secara PERCUMA!',
+        })
+      }
+    }
+
+    // Shuffle and deduplicate by id (but keep pro ads appearing twice naturally)
+    const shuffled = compiled.sort(() => 0.5 - Math.random())
+    setAdsList(shuffled)
+  }, [])
+
+  // ── Fetch all sessions for this device (by client_uuid) ───────────────────
+  const fetchAllDeviceSessions = useCallback(async (uuid: string, location: { lat: number; lng: number } | null) => {
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, upsell_cta_text, latitude, longitude, category, state)')
+      .eq('client_uuid', uuid)
+      .in('status', ['waiting', 'called', 'confirm'])
+
+    if (error || !data) return
+
+    processAllSessions(data)
+    if (data.length > 0) await compileAds(data, location)
+  }, [processAllSessions, compileAds])
+
+  // ── Fetch the primary session (initial load) ───────────────────────────────
   const fetchSession = useCallback(async () => {
     if (isInitialFetchRef.current) {
-      // Heavy fetch on initial load
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, latitude, longitude, category, state)')
+        .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, upsell_cta_text, latitude, longitude, category, state)')
         .eq('id', sessionId)
         .single()
 
-      if (error || !data) { 
+      if (error || !data) {
         if (statusRef.current === 'loading') setStatus('error')
-        return 
+        return
       }
-      
+
       const rawMerchant = data.merchants
       const merchantData = Array.isArray(rawMerchant) ? rawMerchant[0] : rawMerchant
-      
-      let isPremium = false
+
       if (merchantData) {
         setMerchantId(data.merchant_id)
         setMerchantName(merchantData.name || 'Store')
         setMerchantLogo(merchantData.logo_url)
         setGmbUrl(merchantData.gmb_url)
         setThemeColor(merchantData.theme_color || '#6366f1')
-        setMerchantCategory(merchantData.category || '')
-        setMerchantState(merchantData.state || '')
-
-        isPremium = merchantData.plan_type === 'pro' &&
-          merchantData.subscription_status === 'active' &&
-          (!!merchantData.expiry_date && new Date(merchantData.expiry_date) > new Date())
       }
-      
+
       setReceiptNumber(data.receipt_number)
       setCreatedAt(data.created_at)
 
@@ -295,122 +338,112 @@ const handleTouchStart = (e: React.TouchEvent) => {
         await supabase.from('sessions').update({ client_uuid: clientUuid }).eq('id', sessionId)
       }
 
-      if (!ad && merchantData) {
-        // Try to get user GPS. If denied or unavailable, fallback to merchant location.
-        const tryGetLocation = (): Promise<{lat: number, lng: number} | null> => {
-          return new Promise((resolve) => {
-            if (!navigator.geolocation) { resolve(null); return }
-            navigator.geolocation.getCurrentPosition(
-              (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-              () => resolve(null), // User denied - fallback to merchant
-              { timeout: 5000, maximumAge: 60000 }
-            )
-          })
-        }
+      // Resolve location
+      const tryGetLocation = (): Promise<{ lat: number; lng: number } | null> =>
+        new Promise((resolve) => {
+          if (!navigator.geolocation) { resolve(null); return }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { timeout: 5000, maximumAge: 60000 }
+          )
+        })
 
-        let resolvedLocation: {lat: number, lng: number} | null = await tryGetLocation()
-
-        if (!resolvedLocation && merchantData.latitude != null && merchantData.longitude != null) {
-          resolvedLocation = { lat: merchantData.latitude, lng: merchantData.longitude }
-        }
-
-        if (resolvedLocation) setUserLocation(resolvedLocation)
-
-        fetchAd(data.merchant_id, isPremium, merchantData, resolvedLocation, merchantData.state || '', merchantData.category || '')
+      let resolvedLocation: { lat: number; lng: number } | null = await tryGetLocation()
+      if (!resolvedLocation && merchantData?.latitude != null && merchantData?.longitude != null) {
+        resolvedLocation = { lat: merchantData.latitude, lng: merchantData.longitude }
       }
+      if (resolvedLocation) setUserLocation(resolvedLocation)
 
-      processSessionStatus(data)
+      processSessionStatus({ ...data, id: sessionId })
       isInitialFetchRef.current = false
+
+      // After primary session confirmed, load all device sessions
+      if (clientUuid) await fetchAllDeviceSessions(clientUuid, resolvedLocation)
     } else {
-      // Light fetch for polling
       const { data, error } = await supabase
         .from('sessions')
         .select('status, is_confirmed, updated_at')
         .eq('id', sessionId)
         .single()
-        
       if (error || !data) return
-      processSessionStatus(data)
+      processSessionStatus({ ...data, id: sessionId })
     }
-  }, [sessionId, clientUuid, ad, fetchAd, processSessionStatus])
+  }, [sessionId, clientUuid, processSessionStatus, fetchAllDeviceSessions])
 
-  useEffect(() => {
-    fetchSession()
-  }, [fetchSession])
+  useEffect(() => { fetchSession() }, [fetchSession])
 
+  // ── Wait timer + polling + realtime subscription ───────────────────────────
   useEffect(() => {
-    // 1. Setup Wait Timer
     if (status === 'waiting' || status === 'called') {
-      if (!waitTimerRef.current) {
-        waitTimerRef.current = setInterval(() => setNow(Date.now()), 1000)
-      }
+      if (!waitTimerRef.current) waitTimerRef.current = setInterval(() => setNow(Date.now()), 1000)
     } else {
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
     }
 
-    if (status === 'completed' || status === 'error') {
-      return
-    }
+    if (status === 'completed' || status === 'error') return
 
-    // 2. Setup 15-second Light Polling Fallback
     if (!pollingRef.current) {
-      pollingRef.current = setInterval(() => {
-        fetchSession()
-      }, 15000) // Changed from 3s to 15s
+      pollingRef.current = setInterval(() => fetchSession(), 15000)
     }
 
-    // 3. Setup Supabase Realtime for instant updates (0.1s)
-    const channel = supabase
+    // Realtime: primary session channel
+    const primaryChannel = supabase
       .channel(`session-${sessionId}`)
-      .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, 
-        (payload: any) => {
-          processSessionStatus(payload.new)
-        }
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
+        (payload: any) => processSessionStatus({ ...payload.new, id: sessionId })
       )
       .subscribe()
 
-    // 4. Setup Visibility API for instant resume
+    // Realtime: all sessions for this device (by client_uuid)
+    let deviceChannel: ReturnType<typeof supabase.channel> | null = null
+    if (clientUuid) {
+      deviceChannel = supabase
+        .channel(`device-sessions-${clientUuid}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `client_uuid=eq.${clientUuid}` },
+          async () => {
+            if (clientUuid) await fetchAllDeviceSessions(clientUuid, userLocation)
+          }
+        )
+        .subscribe()
+    }
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchSession() // Immediately fetch latest state when screen wakes up
-      }
+      if (document.visibilityState === 'visible') fetchSession()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    return () => { 
+    return () => {
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      supabase.removeChannel(channel)
+      supabase.removeChannel(primaryChannel)
+      if (deviceChannel) supabase.removeChannel(deviceChannel)
     }
-  }, [status, sessionId, fetchSession, processSessionStatus])
+  }, [status, sessionId, clientUuid, fetchSession, processSessionStatus, fetchAllDeviceSessions, userLocation])
 
-  // Track ad impressions per ad
-  const seenAdsRef = useRef<Set<string>>(new Set())
-
+  // ── Ad impression tracking ─────────────────────────────────────────────────
   useEffect(() => {
     if (ad && status === 'waiting') {
-      // Don't track default/upsell ads for billing, but log analytics if needed.
-      // For real ads, track via API route which handles DB deduplication and billing.
-      if (ad.id !== 'default-beepme' && ad.id !== 'merchant-upsell') {
+      if (ad.id !== 'default-beepme' && !ad.id.startsWith('merchant-upsell')) {
         if (!seenAdsRef.current.has(ad.id)) {
           seenAdsRef.current.add(ad.id)
           fetch('/api/ads/track', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'impression' })
+            body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'impression' }),
           }).catch((err) => console.error('Failed to track impression:', err))
         }
       } else {
-        // Track free ads directly to analytics
         if (!seenAdsRef.current.has(ad.id)) {
           seenAdsRef.current.add(ad.id)
           supabase.from('ad_analytics').insert({
             ad_id: null,
-            merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
+            merchant_id: ad.id.startsWith('merchant-upsell') ? merchantId : null,
             session_id: sessionId,
-            event_type: 'impression'
+            event_type: 'impression',
           }).then(({ error }) => { if (error) console.error('Failed to log impression:', error) })
         }
       }
@@ -419,105 +452,125 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
   const handleAdClick = async () => {
     if (!ad) return
-    if (ad.id !== 'default-beepme' && ad.id !== 'merchant-upsell') {
+    if (ad.id !== 'default-beepme' && !ad.id.startsWith('merchant-upsell')) {
       fetch('/api/ads/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'click' })
+        body: JSON.stringify({ ad_id: ad.id, session_id: sessionId, event_type: 'click' }),
       }).catch(console.error)
     } else {
       supabase.from('ad_analytics').insert({
         ad_id: null,
-        merchant_id: ad.id === 'merchant-upsell' ? merchantId : null,
+        merchant_id: ad.id.startsWith('merchant-upsell') ? merchantId : null,
         session_id: sessionId,
-        event_type: 'click'
+        event_type: 'click',
       }).then(({ error }) => { if (error) console.error('Failed to log click:', error) })
     }
   }
 
+  // ── Wake Lock ──────────────────────────────────────────────────────────────
   const acquireWakeLock = async () => {
     try {
-      if ('wakeLock' in navigator) {
-        wakeLockRef.current = await navigator.wakeLock.request('screen')
-      }
+      if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen')
     } catch { /* silently fail */ }
   }
-
-  const releaseWakeLock = () => {
-    wakeLockRef.current?.release()
-    wakeLockRef.current = null
-  }
+  const releaseWakeLock = () => { wakeLockRef.current?.release(); wakeLockRef.current = null }
 
   useEffect(() => {
     acquireWakeLock()
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') acquireWakeLock()
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      releaseWakeLock()
-    }
+    const handleVC = () => { if (document.visibilityState === 'visible') acquireWakeLock() }
+    document.addEventListener('visibilitychange', handleVC)
+    return () => { document.removeEventListener('visibilitychange', handleVC); releaseWakeLock() }
   }, [])
 
-
+  // ── Audio init ─────────────────────────────────────────────────────────────
   const initAudio = async () => {
     try {
-      if (audioCtxRef.current) {
-        await audioCtxRef.current.resume()
-        setIsAudioReady(true)
-        playChime()
-        return
-      }
+      if (audioCtxRef.current) { await audioCtxRef.current.resume(); setIsAudioReady(true); playChime(); return }
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       await ctx.resume()
       audioCtxRef.current = ctx
-      
       const buffer = ctx.createBuffer(1, 1, 22050)
       const source = ctx.createBufferSource()
       source.buffer = buffer
       source.connect(ctx.destination)
       source.start()
-      
       setIsAudioReady(true)
       playChime()
       await acquireWakeLock()
-    } catch (e) {
-      console.error('Audio init error:', e)
-    }
+    } catch (e) { console.error('Audio init error:', e) }
   }
 
+  // ── Confirm / Activate Pager ───────────────────────────────────────────────
   const handleConfirm = async () => {
     await initAudio()
-    const { error } = await supabase.from('sessions').update({ 
+    const { error } = await supabase.from('sessions').update({
       is_confirmed: true,
-      client_uuid: clientUuid
+      client_uuid: clientUuid,
     }).eq('id', sessionId)
-    if (error) {
-      alert('Gagal sambung: ' + error.message)
-    } else {
+    if (error) { alert('Gagal sambung: ' + error.message) }
+    else {
       setStatus('waiting')
       fetchSession()
     }
   }
 
-  const formatWaitTime = () => {
-    if (!createdAt) return '0:00'
-    const start = new Date(createdAt).getTime()
-    const seconds = Math.floor((now - start) / 1000)
-    const totalSeconds = seconds > 0 ? seconds : 0
-    const m = Math.floor(totalSeconds / 60)
-    const s = (totalSeconds % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const formatWaitTime = (startAt?: string | null) => {
+    const start = new Date(startAt ?? createdAt ?? Date.now()).getTime()
+    const seconds = Math.max(0, Math.floor((now - start) / 1000))
+    return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`
   }
 
-  const isGhostActive = () => {
-    if (!createdAt) return false
-    const start = new Date(createdAt).getTime()
-    const seconds = Math.floor((now - start) / 1000)
-    return seconds > 1800 // 30 minutes
+  const isGhostActive = (startAt?: string | null) => {
+    const start = new Date(startAt ?? createdAt ?? Date.now()).getTime()
+    return Math.floor((now - start) / 1000) > 1800
   }
 
+  // ── Build ActiveSession list for multi-LCD ────────────────────────────────
+  const buildActiveSessions = (): ActiveSession[] => {
+    const list: ActiveSession[] = []
+    allSessions.forEach((session, id) => {
+      const m = Array.isArray(session.merchants) ? session.merchants[0] : session.merchants
+      list.push({
+        sessionId: id,
+        merchantName: m?.name || 'Gerai',
+        merchantLogo: m?.logo_url || null,
+        receiptNumber: session.receipt_number,
+        status: session.status === 'called' ? 'called' : session.status === 'completed' ? 'completed' : 'waiting',
+        formattedWaitTime: formatWaitTime(session.created_at),
+        isGhostActive: isGhostActive(session.created_at),
+      })
+    })
+    return list
+  }
+
+  // ── Called screen: identify which stall called ────────────────────────────
+  const getCalledSession = () => {
+    if (!calledSessionId) return null
+    const s = allSessions.get(calledSessionId)
+    if (!s) return { receiptNumber, merchantName, themeColor }
+    const m = Array.isArray(s.merchants) ? s.merchants[0] : s.merchants
+    return {
+      receiptNumber: s.receipt_number,
+      merchantName: m?.name || merchantName,
+      themeColor: m?.theme_color || themeColor,
+    }
+  }
+
+  // ── Dismiss alarm: mark all currently-called sessions as dismissed ─────────
+  const handleDismissAlarm = () => {
+    allSessions.forEach((session, id) => {
+      if (session.status === 'called') dismissedRef.current.add(id)
+    })
+    // Also dismiss primary if no allSessions yet
+    dismissedRef.current.add(sessionId)
+    stopAlert()
+    // Revert primary status back to waiting so UI returns to waiting screen
+    if (statusRef.current === 'called') setStatus('waiting')
+  }
+
+  // ── Render: Loading ────────────────────────────────────────────────────────
   if (status === 'loading') {
     return <div className="min-h-screen flex items-center justify-center bg-[#020203]"><Loader2 className="animate-spin text-indigo-500" /></div>
   }
@@ -526,97 +579,54 @@ const handleTouchStart = (e: React.TouchEvent) => {
     return <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#020203]"><h1 className="text-white font-bold text-xl uppercase tracking-widest">Session Expired / Not Found</h1></div>
   }
 
+  // ── Render: Completed ──────────────────────────────────────────────────────
   if (status === 'completed') {
     return (
       <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-6 text-center relative overflow-hidden bg-[#050505]">
-
-      {/* Language Toggle Button */}
-      <button 
-        onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
-        className="fixed top-4 right-4 z-[999] bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full text-white text-[10px] font-black tracking-widest uppercase transition-transform active:scale-95 flex items-center gap-2"
-      >
-        <span className={lang === 'bm' ? 'text-white' : 'text-white/40'}>BM</span>
-        <span className="w-[1px] h-3 bg-white/20"></span>
-        <span className={lang === 'en' ? 'text-white' : 'text-white/40'}>EN</span>
-      </button>
-
-        {/* Deep ambient glow */}
-        <div 
-          className="absolute inset-0 opacity-40 blur-[100px] mix-blend-screen"
-          style={{ backgroundImage: `radial-gradient(circle at 50% 30%, ${themeColor}80, transparent 60%)` }}
-        />
-        
-        {/* Animated Grid / Mesh for texture */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
-
-        <motion.div 
+        <button
+          onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
+          className="fixed top-4 right-4 z-[999] bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full text-white text-[10px] font-black tracking-widest uppercase transition-transform active:scale-95 flex items-center gap-2"
+        >
+          <span className={lang === 'bm' ? 'text-white' : 'text-white/40'}>BM</span>
+          <span className="w-[1px] h-3 bg-white/20" />
+          <span className={lang === 'en' ? 'text-white' : 'text-white/40'}>EN</span>
+        </button>
+        <div className="absolute inset-0 opacity-40 blur-[100px] mix-blend-screen" style={{ backgroundImage: `radial-gradient(circle at 50% 30%, ${themeColor}80, transparent 60%)` }} />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
+        <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
           className="relative z-10 w-full max-w-sm flex flex-col items-center"
         >
-          {/* Glowing Checkmark */}
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring', damping: 15 }}
-            className="relative mb-8"
-          >
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring', damping: 15 }} className="relative mb-8">
             <div className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ backgroundColor: themeColor }} />
             <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-2xl relative z-10 border-4 border-white/10 backdrop-blur-md" style={{ background: `linear-gradient(135deg, ${themeColor} 0%, #000000 150%)` }}>
               <CheckCircle2 size={56} className="text-white drop-shadow-md" />
             </div>
-            {/* Tiny floating merchant logo on the checkmark */}
             {merchantLogo && (
-              <motion.img 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                src={merchantLogo} 
-                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-[3px] border-[#050505] shadow-xl z-20 object-cover"
-              />
+              <motion.img initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}
+                src={merchantLogo} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-[3px] border-[#050505] shadow-xl z-20 object-cover" />
             )}
           </motion.div>
-
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-white/50 mb-3 tracking-tighter">
             {lang === 'bm' ? 'Pesanan Selesai' : 'Order Completed'}
           </h1>
           <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10 max-w-[260px]">
             Terima kasih kerana memilih <span className="text-white font-bold">{merchantName}</span>. Selamat menjamu selera!
           </p>
-
-          {/* Glassmorphism Action Card */}
           {gmbUrl ? (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-2 shadow-2xl"
-            >
-              <a 
-                href={gmbUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden"
-              >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-2 shadow-2xl">
+              <a href={gmbUrl} target="_blank" rel="noopener noreferrer" className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-100 to-yellow-50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex gap-1 relative z-10">
-                  <span className="text-2xl animate-bounce" style={{animationDelay: '0ms'}}>⭐</span>
-                  <span className="text-2xl animate-bounce" style={{animationDelay: '100ms'}}>⭐</span>
-                  <span className="text-2xl animate-bounce" style={{animationDelay: '200ms'}}>⭐</span>
-                  <span className="text-2xl animate-bounce" style={{animationDelay: '300ms'}}>⭐</span>
-                  <span className="text-2xl animate-bounce" style={{animationDelay: '400ms'}}>⭐</span>
+                  {[0, 100, 200, 300, 400].map((d) => <span key={d} className="text-2xl animate-bounce" style={{ animationDelay: `${d}ms` }}>⭐</span>)}
                 </div>
                 <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">{lang === 'bm' ? 'Nilai Kami di Google' : 'Rate Us on Google'}</span>
               </a>
             </motion.div>
           ) : (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center shadow-2xl"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center shadow-2xl">
               <p className="text-xs text-slate-500 uppercase tracking-widest font-black">{lang === 'bm' ? 'Jumpa Lagi!' : 'See You Again!'}</p>
             </motion.div>
           )}
@@ -625,98 +635,71 @@ const handleTouchStart = (e: React.TouchEvent) => {
     )
   }
 
+  // ── Render: Called / Alarm ─────────────────────────────────────────────────
   if (status === 'called' || isFlashing) {
+    const calledInfo = getCalledSession()
+    const calledTheme = calledInfo?.themeColor || themeColor
+    const calledReceipt = calledInfo?.receiptNumber || receiptNumber
+    const calledName = calledInfo?.merchantName || merchantName
+
     return (
-      <div 
-        className="h-[100dvh] w-screen fixed inset-0 flex flex-col items-center justify-center p-6 text-center cursor-pointer overflow-hidden bg-black select-none z-[999]" 
-        onClick={stopAlert}
+      <div
+        className="h-[100dvh] w-screen fixed inset-0 flex flex-col items-center justify-center p-6 text-center cursor-pointer overflow-hidden bg-black select-none z-[999]"
+        onClick={handleDismissAlarm}
       >
-        {/* Dynamic Background */}
         <motion.div
-          animate={{ backgroundColor: ['#000000', themeColor || '#10b981', '#000000'] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ backgroundColor: ['#000000', calledTheme || '#10b981', '#000000'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute inset-0 opacity-40"
         />
-
-        {/* Hypnotic Ripples */}
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
             className="absolute rounded-full"
-            style={{ 
-              width: '40vw', 
-              height: '40vw', 
-              minWidth: '300px', 
-              minHeight: '300px', 
-              border: `4px solid ${themeColor || '#10b981'}`,
-              backgroundColor: `${themeColor || '#10b981'}10`
-            }}
-            animate={{ 
-              scale: [0.5, 3], 
-              opacity: [0.8, 0] 
-            }}
-            transition={{ 
-              duration: 2.5, 
-              repeat: Infinity, 
-              delay: i * 0.8, 
-              ease: "easeOut" 
-            }}
+            style={{ width: '40vw', height: '40vw', minWidth: '300px', minHeight: '300px', border: `4px solid ${calledTheme || '#10b981'}`, backgroundColor: `${calledTheme || '#10b981'}10` }}
+            animate={{ scale: [0.5, 3], opacity: [0.8, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.8, ease: 'easeOut' }}
           />
         ))}
-
-        {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md">
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-            className="mb-8"
-          >
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 15, stiffness: 200 }} className="mb-4">
             <span className="text-7xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">🔔</span>
           </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-4xl md:text-5xl font-black text-white mb-2 tracking-widest uppercase"
+          {/* Show which stall is calling */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-white/70 text-sm font-bold tracking-widest uppercase mb-1"
           >
+            {calledName}
+          </motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-4xl md:text-5xl font-black text-white mb-2 tracking-widest uppercase">
             {lang === 'bm' ? 'Pesanan Sedia' : 'Order Ready'}
           </motion.h1>
-
-          <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="mb-16"
-          >
-            <p 
-              className="text-white font-black leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]"
-              style={{ fontSize: 'clamp(5rem, 25vw, 10rem)' }}
-            >
-              #{receiptNumber}
+          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity }} className="mb-12">
+            <p className="text-white font-black leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]" style={{ fontSize: 'clamp(5rem, 25vw, 10rem)' }}>
+              #{calledReceipt}
             </p>
           </motion.div>
-
-          <motion.div 
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="mt-8 px-8 py-4 rounded-full border border-white/20 bg-black/40 backdrop-blur-md"
-          >
-            <span className="text-white font-bold text-sm tracking-widest uppercase">
-              Ketik Di Mana-mana Untuk Berhenti
-            </span>
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} className="px-8 py-4 rounded-full border border-white/20 bg-black/40 backdrop-blur-md">
+            <span className="text-white font-bold text-sm tracking-widest uppercase">Ketik Di Mana-mana Untuk Berhenti</span>
           </motion.div>
         </div>
       </div>
     )
   }
 
+  // ── Render: Confirm + Waiting ──────────────────────────────────────────────
+  const activeSessions = buildActiveSessions()
+  const isMultiSession = activeSessions.length > 1
+
   return (
-    <div className="h-[100dvh] w-screen fixed inset-0 flex justify-center items-center bg-[#020203] overflow-hidden select-none" style={{ backgroundImage: `radial-gradient(circle at top, ${themeColor}1a, #020203)` }}>
-      
-      {/* Centered Device Wrapper for Tablet/Desktop */}
+    <div
+      className="h-[100dvh] w-screen fixed inset-0 flex justify-center items-center bg-[#020203] overflow-hidden select-none"
+      style={{ backgroundImage: `radial-gradient(circle at top, ${themeColor}1a, #020203)` }}
+    >
       <div className={`w-full max-w-md h-full flex flex-col relative z-10 border-x border-white/5 ${status === 'waiting' ? 'bg-black' : 'justify-between p-6 bg-[#020203]/40 backdrop-blur-3xl'} shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden`}>
-        
+
         {/* ========================================= */}
         {/* 50-50 WAITING SCREEN                     */}
         {/* ========================================= */}
@@ -754,14 +737,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                       }
 
                       return (
-                        <video
-                          src={ad.media_url}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover"
-                        />
+                        <video src={ad.media_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                       )
                     })()
                   ) : ad.fallback_image_url ? (
@@ -779,7 +755,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
                     </div>
                   )}
 
-                  {/* Ad overlay — title + CTA at bottom of ad zone */}
+                  {/* Ad overlay */}
                   <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
                   {(ad.title || ad.cta_text) && (
                     <div className="absolute bottom-3 left-3 right-3 z-20 flex items-end justify-between">
@@ -791,14 +767,9 @@ const handleTouchStart = (e: React.TouchEvent) => {
                           </a>
                         )}
                         {ad.description && (
-                          <p 
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setIsDescExpanded(!isDescExpanded)
-                            }}
-                            className={`text-xs text-slate-200 hover:text-white font-medium leading-snug drop-shadow-md mt-0.5 cursor-pointer select-none transition-all ${
-                              isDescExpanded ? 'line-clamp-none max-h-24 overflow-y-auto' : 'line-clamp-2'
-                            }`}
+                          <p
+                            onClick={(e) => { e.stopPropagation(); setIsDescExpanded(!isDescExpanded) }}
+                            className={`text-xs text-slate-200 hover:text-white font-medium leading-snug drop-shadow-md mt-0.5 cursor-pointer select-none transition-all ${isDescExpanded ? 'line-clamp-none max-h-24 overflow-y-auto' : 'line-clamp-2'}`}
                           >
                             {ad.description}
                           </p>
@@ -827,6 +798,15 @@ const handleTouchStart = (e: React.TouchEvent) => {
                   <div className="absolute top-2 right-2 z-20">
                     <span className="text-[8px] text-white/50 font-bold uppercase tracking-widest bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">Sponsored</span>
                   </div>
+
+                  {/* Multi-session indicator badge (top-left) */}
+                  {isMultiSession && (
+                    <div className="absolute top-2 left-2 z-20">
+                      <span className="text-[8px] text-white font-black uppercase tracking-widest bg-indigo-600/80 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        {activeSessions.length} {lang === 'bm' ? 'Gerai' : 'Stalls'}
+                      </span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-[#020203]">
@@ -837,6 +817,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
 
             {/* ── BOTTOM 50%: Retro LCD Pager Zone ── */}
             <RetroPagerZone
+              // Legacy single-session props (used when only 1 session)
               merchantName={merchantName}
               merchantLogo={merchantLogo}
               receiptNumber={receiptNumber}
@@ -845,6 +826,8 @@ const handleTouchStart = (e: React.TouchEvent) => {
               isGhostActive={isGhostActive()}
               onTestBeep={initAudio}
               onShowWarning={() => setShowInstructions(true)}
+              // Multi-session: pass all active sessions
+              sessions={activeSessions.length > 0 ? activeSessions : undefined}
             />
 
             {/* Modal Popup for Sound Warning */}
@@ -852,30 +835,22 @@ const handleTouchStart = (e: React.TouchEvent) => {
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
                 <div className="w-full max-w-[280px] bg-[#111] border border-white/10 rounded-[32px] p-6 shadow-2xl animate-scale-in flex flex-col items-center text-center relative overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-600 to-amber-400" />
-                  
                   <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
                     <AlertTriangle size={32} className="text-amber-500" />
                   </div>
-                  
                   <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Penting: Amaran Bunyi</h3>
                   <p className="text-xs font-medium text-slate-400 leading-relaxed mb-6">{lang === 'bm' ? 'Sila pastikan anda mengikut arahan di bawah supaya pager ini berfungsi dengan sempurna.' : 'Please follow the instructions below so this pager works perfectly.'}</p>
-                  
                   <ul className="w-full space-y-3 mb-6 text-left">
                     <li className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <Volume2 size={12} className="text-white" />
-                      </div>
+                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0"><Volume2 size={12} className="text-white" /></div>
                       <span className="text-[10px] font-bold text-white uppercase tracking-wide">Kuatkan Volume Audio</span>
                     </li>
                     <li className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <AlertTriangle size={12} className="text-white" />
-                      </div>
+                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0"><AlertTriangle size={12} className="text-white" /></div>
                       <span className="text-[10px] font-bold text-white uppercase tracking-wide">Matikan "Silent Mode"</span>
                     </li>
                   </ul>
-
-                  <button 
+                  <button
                     onClick={() => setShowInstructions(false)}
                     className="w-full py-4 rounded-xl font-black text-[#111] text-xs uppercase tracking-widest bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-transform"
                   >
@@ -892,10 +867,7 @@ const handleTouchStart = (e: React.TouchEvent) => {
         {/* ========================================= */}
         {status !== 'waiting' && (
           <>
-            {/* Background Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50%] blur-[120px] rounded-full pointer-events-none" style={{ backgroundColor: `${themeColor}26` }} />
-
-            {/* Header */}
             <header className="p-2 text-center relative z-20 shrink-0 mb-4 pointer-events-none">
               <div className="flex flex-col items-center gap-2">
                 {merchantLogo ? (
@@ -906,24 +878,20 @@ const handleTouchStart = (e: React.TouchEvent) => {
                 <h2 className="font-black text-white text-base tracking-tight uppercase">{merchantName}</h2>
               </div>
             </header>
-
-            {/* Main content */}
             <main className="flex-1 flex flex-col items-center justify-center px-2 relative z-10 min-h-0 w-full">
               {status === 'confirm' && (
                 <div className="w-full max-w-sm text-center animate-slide-up">
                   <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8">
                     <h1 className="text-4xl font-black text-white mb-2 tracking-tighter italic">#{receiptNumber}</h1>
                     <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Connect Your Pager</p>
-                    
                     <div className="space-y-4 text-left mb-8">
                       <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
                         <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
                         <p className="text-[11px] text-indigo-200 leading-snug">Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.</p>
                       </div>
                     </div>
-
-                    <button 
-                      onClick={handleConfirm} 
+                    <button
+                      onClick={handleConfirm}
                       className="w-full py-5 rounded-2xl font-black text-white text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
                       style={{ backgroundColor: themeColor, boxShadow: `0 20px 40px ${themeColor}33` }}
                     >
@@ -933,15 +901,11 @@ const handleTouchStart = (e: React.TouchEvent) => {
                 </div>
               )}
             </main>
-
             <footer className="p-2 relative z-20 shrink-0 mt-4 text-center">
-              <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em]">
-                Beepme.pro — Virtual Paging System
-              </p>
+              <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em]">Beepme.pro — Virtual Paging System</p>
             </footer>
           </>
         )}
-
       </div>
 
       <style jsx global>{`
@@ -949,31 +913,39 @@ const handleTouchStart = (e: React.TouchEvent) => {
           0%, 100% { background-color: #000000; }
           50% { background-color: #10b981; }
         }
-        .animate-flash-green {
-          animation: flash-green 0.5s step-end infinite;
-        }
+        .animate-flash-green { animation: flash-green 0.5s step-end infinite; }
         @keyframes ping-slow {
           0% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.1); opacity: 0.8; }
           100% { transform: scale(1); opacity: 1; }
         }
-        .animate-ping-slow {
-          animation: ping-slow 1s ease-in-out infinite;
-        }
+        .animate-ping-slow { animation: ping-slow 1s ease-in-out infinite; }
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out forwards;
-        }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
         @keyframes scale-in {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
         }
-        .animate-scale-in {
-          animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
+        .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
+        @keyframes lcd-flicker {
+          0%, 97%, 100% { opacity: 1; }
+          98% { opacity: 0.92; }
+          99% { opacity: 1; }
+        }
+        .animate-lcd-flicker { animation: lcd-flicker 8s ease-in-out infinite; }
+        @keyframes lcd-dot {
+          0%, 60%, 100% { opacity: 0; }
+          30% { opacity: 1; }
+        }
+        .animate-lcd-dot { animation: lcd-dot 1.4s ease-in-out infinite; }
       `}</style>
     </div>
   )
