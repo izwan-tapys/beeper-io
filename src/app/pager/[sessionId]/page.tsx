@@ -541,7 +541,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     // Link to this device
     const { error: updateError } = await supabase
       .from('sessions')
-      .update({ client_uuid: clientUuid })
+      .update({ client_uuid: clientUuid, is_confirmed: true })
       .eq('id', newSessionId)
       .in('status', ['waiting', 'confirm'])
 
