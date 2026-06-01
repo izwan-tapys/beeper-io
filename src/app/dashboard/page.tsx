@@ -8,7 +8,8 @@ import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
-  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon, Languages
+  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon, Languages,
+  Megaphone
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
@@ -1610,7 +1611,37 @@ export default function DashboardPage() {
                 )}
               </section>
 
-              {/* 5. Account */}
+              {/* 5. Ad Network */}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  type="button"
+                  onClick={() => toggleSection('advertiser')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Ad Network / Ads Manager</span>
+                  </div>
+                  <Megaphone size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'advertiser' ? 'rotate-90' : ''}`} />
+                </button>
+
+                {openSection === 'advertiser' && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                    <p className="text-xs text-slate-400 leading-relaxed text-left">
+                      Reach diners at the point of hunger. Switch to the Advertiser Portal to create, top-up, and monitor your ad campaigns across Beepme pager devices.
+                    </p>
+                    <button 
+                      type="button"
+                      onClick={() => router.push('/ads-manager')}
+                      className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+                    >
+                      <Megaphone size={16} />
+                      Go to Ads Manager
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {/* 6. Account */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
                   type="button"
