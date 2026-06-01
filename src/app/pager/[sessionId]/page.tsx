@@ -364,19 +364,34 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Fetch all sessions for this device (by client_uuid) ───────────────────
   const fetchAllDeviceSessions = useCallback(async (uuid: string, location: { lat: number; lng: number } | null) => {
-    // Fetch active sessions AND recently completed sessions (within last 10 min)
-    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    // Fetch sessions created within the last 24 hours to avoid PostgREST nested OR/AND syntax limitations
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const tenMinAgo = Date.now() - 10 * 60 * 1000
+
     const { data, error } = await supabase
       .from('sessions')
       .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, upsell_cta_text, latitude, longitude, category, state)')
       .eq('client_uuid', uuid)
-      .or(`status.in.(waiting,called,confirm),and(status.in.(completed,archived),updated_at.gte.${tenMinAgo})`)
+      .gte('created_at', twentyFourHoursAgo)
 
-    if (error || !data) return
+    if (error || !data) {
+      console.error('Error fetching device sessions:', error)
+      return
+    }
 
-    processAllSessions(data)
+    // Filter in-memory: active sessions OR recently completed (within last 10 min)
+    const filteredSessions = data.filter((s) => {
+      if (['waiting', 'called', 'confirm'].includes(s.status)) return true
+      if (['completed', 'archived'].includes(s.status)) {
+        const updatedAtTime = new Date(s.updated_at).getTime()
+        return updatedAtTime >= tenMinAgo
+      }
+      return false
+    })
+
+    processAllSessions(filteredSessions)
     // Only compile ads for active (non-completed) sessions
-    const nonCompletedSessions = data.filter((s) => !['completed', 'archived'].includes(s.status))
+    const nonCompletedSessions = filteredSessions.filter((s) => !['completed', 'archived'].includes(s.status))
     if (nonCompletedSessions.length > 0) await compileAds(nonCompletedSessions, location)
   }, [processAllSessions, compileAds])
 
@@ -458,7 +473,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     if (status === 'completed' || status === 'error') return
 
     if (!pollingRef.current) {
-      pollingRef.current = setInterval(() => fetchSession(), 15000)
+      pollingRef.current = setInterval(() => {
+        fetchSession()
+        if (clientUuid) fetchAllDeviceSessions(clientUuid, userLocation)
+      }, 15000)
     }
 
     // Realtime: primary session channel
@@ -485,7 +503,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchSession()
+      if (document.visibilityState === 'visible') {
+        fetchSession()
+        if (clientUuid) fetchAllDeviceSessions(clientUuid, userLocation)
+      }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
