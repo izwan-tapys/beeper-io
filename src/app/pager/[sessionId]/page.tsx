@@ -101,6 +101,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const slideTimerRef = useRef<NodeJS.Timeout | null>(null)
   const lastUpdatedRef = useRef<string | null>(null)
+  const lastUpdatedMapRef = useRef<Map<string, string>>(new Map())
   const isInitialFetchRef = useRef<boolean>(true)
   const seenAdsRef = useRef<Set<string>>(new Set())
 
@@ -248,6 +249,26 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
 
     const list = getSessionsList()
+
+    // Detect re-calls (if updated_at changed while in 'called' state, un-dismiss it)
+    let dismissedChanged = false
+    const nextDismissed = new Set(dismissedSessions)
+    list.forEach((s) => {
+      const lastSeen = lastUpdatedMapRef.current.get(s.id)
+      if (s.status === 'called' && lastSeen && s.updated_at !== lastSeen) {
+        if (nextDismissed.has(s.id)) {
+          nextDismissed.delete(s.id)
+          dismissedChanged = true
+        }
+      }
+      lastUpdatedMapRef.current.set(s.id, s.updated_at)
+    })
+
+    if (dismissedChanged) {
+      setDismissedSessions(nextDismissed)
+      return
+    }
+
     // Find active sessions
     const activeSessions = list.filter((s) => !['completed', 'archived'].includes(s.status))
 
@@ -380,7 +401,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
 
     // Filter in-memory: active sessions OR recently completed (within last 10 min)
+    // To prevent abandoned sessions from sticking on next visits, we ignore any session created > 2 hours ago.
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
     const filteredSessions = data.filter((s) => {
+      const createdAtTime = new Date(s.created_at).getTime()
+      if (createdAtTime < twoHoursAgo) return false
+
       if (['waiting', 'called', 'confirm'].includes(s.status)) return true
       if (['completed', 'archived'].includes(s.status)) {
         const updatedAtTime = new Date(s.updated_at).getTime()
@@ -717,7 +743,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       allSessions.forEach((session, id) => {
         if (session.status === 'called') next.add(id)
       })
-      next.add(sessionId)
+      // Only dismiss primary if it is actually called or if allSessions is empty (fallback)
+      if (primaryStatus === 'called' || allSessions.size === 0) {
+        next.add(sessionId)
+      }
       return next
     })
     stopAlert()
