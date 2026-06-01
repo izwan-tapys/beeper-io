@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [togglingStore, setTogglingStore] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
   const [settingsName, setSettingsName] = useState('')
   const [settingsLogo, setSettingsLogo] = useState('')
   const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
@@ -676,27 +677,7 @@ export default function DashboardPage() {
   }
 
   const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
-    try {
-      setSavingSettings(true)
-      const response = await fetch('/api/payment/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan: plan
-        })
-      })
-      const data = await response.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        alert('Failed to initiate payment: ' + (data.error || 'Unknown error'))
-      }
-    } catch (error) {
-      console.error('Upgrade error:', error)
-      alert('Something went wrong. Please try again.')
-    } finally {
-      setSavingSettings(false)
-    }
+    setIsComingSoonOpen(true)
   }
 
   const handleLogout = async () => {
@@ -728,7 +709,35 @@ export default function DashboardPage() {
   const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
 
   return (
-    <div className={`min-h-screen ${showOnboarding || isMfaChallenge ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+    <div className={`min-h-screen ${showOnboarding || isMfaChallenge || isComingSoonOpen ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
+      {/* Coming Soon Modal */}
+      {isComingSoonOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
+          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center relative overflow-hidden animate-bounce-in">
+            <button 
+              onClick={() => setIsComingSoonOpen(false)}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
+              <Megaphone size={40} className="text-white animate-pulse" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-3">Akan Datang!</h2>
+            <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-6">Sistem Pembayaran Premium</h3>
+            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
+              Pendaftaran Payment Gateway (Stripe & ToyyibPay) sedang diproses. Beepme akan boleh dilanggan sepenuhnya tidak lama lagi! Terima kasih atas kesabaran anda.
+            </p>
+            <button 
+              onClick={() => setIsComingSoonOpen(false)}
+              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
+            >
+              Baik, Terima Kasih
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* MFA Challenge Modal */}
       {isMfaChallenge && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80 animate-fade-in">

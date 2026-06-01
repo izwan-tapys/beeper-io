@@ -10,7 +10,7 @@ import {
   Megaphone, Wallet, BarChart3, Eye, Plus, LogOut, Store,
   TrendingUp, Clock, CheckCircle, PauseCircle, XCircle,
   AlertCircle, Loader2, ChevronRight, MessageCircle, Sparkles,
-  ArrowUpRight, ArrowDownRight
+  ArrowUpRight, ArrowDownRight, X
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -92,6 +92,7 @@ export default function AdsManagerPage() {
   const [totalImpressions, setTotalImpressions] = useState(0)
   const [loading, setLoading] = useState(true)
   const [successMsg, setSuccessMsg] = useState('')
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
 
   useEffect(() => {
     // Check for success query param
@@ -213,7 +214,35 @@ export default function AdsManagerPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#020203' }}>
+    <div className={`min-h-screen ${isComingSoonOpen ? 'overflow-hidden' : ''}`} style={{ background: '#020203' }}>
+      {/* Coming Soon Modal */}
+      {isComingSoonOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
+          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center relative overflow-hidden animate-bounce-in">
+            <button 
+              onClick={() => setIsComingSoonOpen(false)}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
+              <Megaphone size={40} className="text-white animate-pulse" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-3">Akan Datang!</h2>
+            <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-6">Sistem Pembayaran Premium</h3>
+            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
+              Pendaftaran Payment Gateway (Stripe & ToyyibPay) sedang diproses. Pembelian kredit/ad top-up akan diaktifkan sepenuhnya tidak lama lagi! Terima kasih atas kesabaran anda.
+            </p>
+            <button 
+              onClick={() => setIsComingSoonOpen(false)}
+              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
+            >
+              Baik, Terima Kasih
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
@@ -349,35 +378,9 @@ export default function AdsManagerPage() {
                 </p>
               </div>
               <form
-                onSubmit={async (e) => {
+                onSubmit={(e) => {
                   e.preventDefault()
-                  const form = e.target as HTMLFormElement
-                  const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value)
-                  if (!amount || amount < 10) return alert('Minimum top-up is RM 10')
-                  
-                  const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement
-                  btn.disabled = true
-                  btn.innerHTML = 'Processing...'
-                  
-                  try {
-                    const res = await fetch('/api/payment/stripe/topup', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ 
-                        amount 
-                      })
-                    })
-                    const data = await res.json()
-                    if (data.url) {
-                      window.location.href = data.url
-                    } else {
-                      throw new Error(data.error || 'Failed to initiate payment')
-                    }
-                  } catch (err: any) {
-                    alert('Error: ' + err.message)
-                    btn.disabled = false
-                    btn.innerHTML = 'Top Up Now'
-                  }
+                  setIsComingSoonOpen(true)
                 }}
                 className="flex items-center gap-3"
               >
