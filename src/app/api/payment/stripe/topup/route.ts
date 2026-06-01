@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 
 export async function POST(request: Request) {
@@ -31,8 +32,14 @@ export async function POST(request: Request) {
 
     const advertiser_id = profile.id
 
-    // Create a pending transaction in ad_wallet_transactions
-    const { data: transaction, error: txError } = await supabase
+    // Create Supabase Admin client to bypass RLS for transaction write operations
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Create a pending transaction in ad_wallet_transactions using admin client
+    const { data: transaction, error: txError } = await supabaseAdmin
       .from('ad_wallet_transactions')
       .insert({
         advertiser_id,
@@ -86,8 +93,8 @@ export async function POST(request: Request) {
     })
 
     if (session.url) {
-      // Update transaction with session ID as reference
-      await supabase
+      // Update transaction with session ID as reference using admin client
+      await supabaseAdmin
         .from('ad_wallet_transactions')
         .update({ reference_id: session.id })
         .eq('id', transaction.id)

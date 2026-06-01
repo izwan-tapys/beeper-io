@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Megaphone, Wallet, BarChart3, Eye, Plus, LogOut, Store,
   TrendingUp, Clock, CheckCircle, PauseCircle, XCircle,
-  AlertCircle, Loader2, ChevronRight, MessageCircle, Sparkles
+  AlertCircle, Loader2, ChevronRight, MessageCircle, Sparkles,
+  ArrowUpRight, ArrowDownRight
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -29,6 +30,19 @@ type Ad = {
   advertiser_id: string
   created_at: string
   total_views?: number
+}
+
+type Transaction = {
+  id: string
+  advertiser_id: string
+  ad_id?: string
+  session_id?: string
+  amount: number
+  type: 'topup' | 'debit'
+  status: 'pending' | 'completed' | 'failed'
+  created_at: string
+  reference_id?: string
+  ad_title?: string
 }
 
 const STATUS_CONFIG = {
@@ -54,11 +68,27 @@ const STATUS_CONFIG = {
   },
 }
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
+  
+  const day = date.getDate()
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+  const month = monthNames[date.getMonth()]
+  const year = date.getFullYear()
+  
+  return `${day} ${month} ${year}`
+}
+
 export default function AdsManagerPage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<AdvertiserProfile | null>(null)
   const [ads, setAds] = useState<Ad[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totalImpressions, setTotalImpressions] = useState(0)
   const [loading, setLoading] = useState(true)
   const [successMsg, setSuccessMsg] = useState('')
@@ -127,6 +157,26 @@ export default function AdsManagerPage() {
         // Total impressions across all ads
         const total = adsWithViews.reduce((sum, a) => sum + (a.total_views || 0), 0)
         setTotalImpressions(total)
+      }
+
+      // Fetch transaction history
+      if (prof) {
+        const { data: txsData } = await supabase
+          .from('ad_wallet_transactions')
+          .select('*')
+          .eq('advertiser_id', prof.id)
+          .order('created_at', { ascending: false })
+
+        if (txsData) {
+          const enrichedTxs = txsData.map((tx: any) => {
+            const relatedAd = adsData?.find((a: any) => a.id === tx.ad_id)
+            return {
+              ...tx,
+              ad_title: relatedAd ? relatedAd.title : undefined
+            }
+          })
+          setTransactions(enrichedTxs)
+        }
       }
 
       setLoading(false)
@@ -477,6 +527,113 @@ export default function AdsManagerPage() {
                   )
                 })}
               </AnimatePresence>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Transaction History */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-black text-white">Transaction History</h2>
+            {transactions.length > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400">
+                {transactions.length}
+              </span>
+            )}
+          </div>
+
+          {transactions.length === 0 ? (
+            <div
+              className="rounded-2xl border border-white/5 p-8 text-center text-slate-500 text-sm"
+              style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
+            >
+              No transactions recorded yet.
+            </div>
+          ) : (
+            <div 
+              className="rounded-2xl border border-white/5 overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
+            >
+              <div className="max-h-[350px] overflow-y-auto divide-y divide-white/5">
+                {transactions.map((tx) => {
+                  const isTopup = tx.type === 'topup'
+                  const isCompleted = tx.status === 'completed'
+                  const isFailed = tx.status === 'failed'
+
+                  return (
+                    <div 
+                      key={tx.id} 
+                      className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Icon */}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          isTopup 
+                            ? isCompleted 
+                              ? 'bg-emerald-500/10 text-emerald-400' 
+                              : isFailed
+                                ? 'bg-red-500/10 text-red-400'
+                                : 'bg-amber-500/10 text-amber-400'
+                            : 'bg-indigo-500/10 text-indigo-400'
+                        }`}>
+                          {isTopup ? (
+                            <ArrowUpRight size={16} />
+                          ) : (
+                            <ArrowDownRight size={16} />
+                          )}
+                        </div>
+
+                        {/* Title & Subtitle */}
+                        <div className="min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">
+                            {isTopup ? 'Ad Wallet Top-up' : `Charge for view`}
+                          </p>
+                          <p className="text-slate-500 text-xs truncate">
+                            {isTopup 
+                              ? `Via Stripe ${tx.reference_id ? `(${tx.reference_id.substring(0, 8)}...)` : ''}` 
+                              : `Campaign: ${tx.ad_title || 'Ad View'}`
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right side: Amount & Date */}
+                      <div className="text-right flex-shrink-0 space-y-1">
+                        <p className={`font-bold text-sm ${
+                          isTopup 
+                            ? isCompleted 
+                              ? 'text-emerald-400' 
+                              : isFailed
+                                ? 'text-red-400'
+                                : 'text-amber-400'
+                            : 'text-slate-300'
+                        }`}>
+                          {isTopup ? '+' : '-'} RM {Number(tx.amount).toFixed(2)}
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 text-[10px] text-slate-500">
+                          {isTopup && (
+                            <span className={`px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[8px] ${
+                              isCompleted 
+                                ? 'bg-emerald-500/10 text-emerald-400' 
+                                : isFailed
+                                  ? 'bg-red-500/10 text-red-400'
+                                  : 'bg-amber-500/10 text-amber-400'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          )}
+                          <span>{formatDate(tx.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </motion.div>
