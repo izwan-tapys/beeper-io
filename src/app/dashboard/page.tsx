@@ -677,12 +677,11 @@ export default function DashboardPage() {
   const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
     try {
       setSavingSettings(true)
-      const response = await fetch('/api/payment/toyyibpay/create', {
+      const response = await fetch('/api/payment/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: price,
-          planName: `Beepme ${plan.charAt(0).toUpperCase() + plan.slice(1)}`
+          plan: plan
         })
       })
       const data = await response.json()
@@ -1547,7 +1546,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     
-                    <p className="text-[9px] text-slate-600 italic px-1 text-center">*Secure payment via ToyyibPay. RM1.00 fee applies.</p>
+                    <p className="text-[9px] text-slate-600 italic px-1 text-center">*Secure checkout via Stripe. Card & FPX supported.</p>
                   </div>
                 )}
               </section>
