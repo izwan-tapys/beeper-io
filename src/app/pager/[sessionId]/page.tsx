@@ -52,6 +52,8 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Primary session state (the one scanned first) ──────────────────────────
   const [status, setStatus] = useState<PagerStatus>('loading')
+  const [primaryStatus, setPrimaryStatus] = useState<'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'archived' | 'error'>('loading')
+  const [isConfirmed, setIsConfirmed] = useState(false)
   const [merchantName, setMerchantName] = useState('')
   const [merchantLogo, setMerchantLogo] = useState<string | null>(null)
   const [merchantId, setMerchantId] = useState<string | null>(null)
@@ -64,7 +66,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // Map of sessionId → SessionRecord for all active sessions on this device
   const [allSessions, setAllSessions] = useState<Map<string, SessionRecord>>(new Map())
   // Set of sessionId that have already been dismissed (alarm silenced)
-  const dismissedRef = useRef<Set<string>>(new Set())
+  const [dismissedSessions, setDismissedSessions] = useState<Set<string>>(new Set())
   // Currently ringing session id (if any)
   const [calledSessionId, setCalledSessionId] = useState<string | null>(null)
 
@@ -98,12 +100,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const slideTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const statusRef = useRef<PagerStatus>('loading')
   const lastUpdatedRef = useRef<string | null>(null)
   const isInitialFetchRef = useRef<boolean>(true)
   const seenAdsRef = useRef<Set<string>>(new Set())
 
-  useEffect(() => { statusRef.current = status }, [status])
   useEffect(() => { setIsDescExpanded(false) }, [currentAdIndex])
 
   // ── Get/create client_uuid ─────────────────────────────────────────────────
@@ -185,40 +185,111 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Process state of the primary session ───────────────────────────────────
   const processSessionStatus = useCallback((data: any) => {
-    if (data.status === 'called') {
-      if (statusRef.current !== 'called' || (lastUpdatedRef.current && data.updated_at !== lastUpdatedRef.current)) {
-        setStatus('called')
-        if (!dismissedRef.current.has(data.id ?? sessionId)) {
-          triggerAlert(data.id ?? sessionId)
-        }
-      }
+    setIsConfirmed(!!data.is_confirmed)
+    setPrimaryStatus(data.status)
+    if (data.updated_at) {
       lastUpdatedRef.current = data.updated_at
-    } else if (data.status === 'completed' || data.status === 'archived') {
-      setStatus('completed')
-      stopAlert()
-    } else if (data.is_confirmed) {
-      setStatus('waiting')
-    } else {
-      setStatus('confirm')
     }
-  }, [triggerAlert, stopAlert, sessionId])
+  }, [])
 
-  // ── Build the allSessions map entry and check for cross-session alarms ─────
+  // ── Build the allSessions map entry ────────────────────────────────────────
   const processAllSessions = useCallback((sessions: SessionRecord[]) => {
     const newMap = new Map<string, SessionRecord>()
     for (const s of sessions) newMap.set(s.id, s)
     setAllSessions(newMap)
+  }, [])
 
-    // Check if any non-dismissed session has been called
-    for (const s of sessions) {
-      if (s.status === 'called' && !dismissedRef.current.has(s.id)) {
-        if (!alertIntervalRef.current) {
-          triggerAlert(s.id)
+  // Helper to compile a merged list of all sessions (primary + allSessions device sessions)
+  const getSessionsList = useCallback((): SessionRecord[] => {
+    const list = Array.from(allSessions.values())
+    if (!allSessions.has(sessionId) && primaryStatus !== 'loading' && primaryStatus !== 'error') {
+      list.push({
+        id: sessionId,
+        status: (primaryStatus === 'completed' || primaryStatus === 'archived') ? 'completed' : primaryStatus === 'called' ? 'called' : primaryStatus === 'waiting' ? 'waiting' : 'confirm',
+        is_confirmed: isConfirmed,
+        receipt_number: receiptNumber,
+        created_at: createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        merchant_id: merchantId || '',
+        client_uuid: clientUuid,
+        merchants: {
+          name: merchantName,
+          logo_url: merchantLogo,
+          gmb_url: gmbUrl,
+          theme_color: themeColor,
+          plan_type: 'free',
+          subscription_status: null,
+          expiry_date: null,
+          upsell_title: null,
+          upsell_description: null,
+          upsell_link_url: null,
+          upsell_video_url: null,
+          upsell_image_url: null,
+          upsell_cta_text: null,
+          latitude: null,
+          longitude: null,
+          category: null,
+          state: null
         }
-        break
-      }
+      })
     }
-  }, [triggerAlert])
+    return list
+  }, [allSessions, sessionId, primaryStatus, isConfirmed, receiptNumber, createdAt, merchantId, clientUuid, merchantName, merchantLogo, gmbUrl, themeColor])
+
+  // ── Reactive effect to compute screen status and handle alarms ─────────────
+  useEffect(() => {
+    if (primaryStatus === 'loading') {
+      setStatus('loading')
+      return
+    }
+    if (primaryStatus === 'error') {
+      setStatus('error')
+      return
+    }
+
+    const list = getSessionsList()
+    // Find active sessions
+    const activeSessions = list.filter((s) => !['completed', 'archived'].includes(s.status))
+
+    if (activeSessions.length > 0) {
+      // Find if any active session is called and not dismissed
+      const callingSession = activeSessions.find((s) => s.status === 'called' && !dismissedSessions.has(s.id))
+
+      if (callingSession) {
+        setStatus('called')
+        if (calledSessionId !== callingSession.id) {
+          if (alertIntervalRef.current) {
+            clearInterval(alertIntervalRef.current)
+            alertIntervalRef.current = null
+          }
+          triggerAlert(callingSession.id)
+        }
+      } else {
+        stopAlert()
+        const primarySessionObj = list.find(s => s.id === sessionId)
+        const isPrimaryConfirmed = primarySessionObj?.is_confirmed ?? isConfirmed
+        const primarySessionIsActive = primarySessionObj ? !['completed', 'archived'].includes(primarySessionObj.status) : false
+
+        if (!isPrimaryConfirmed && primarySessionIsActive) {
+          setStatus('confirm')
+        } else {
+          setStatus('waiting')
+        }
+      }
+    } else {
+      setStatus('completed')
+      stopAlert()
+    }
+  }, [
+    primaryStatus,
+    isConfirmed,
+    getSessionsList,
+    sessionId,
+    calledSessionId,
+    dismissedSessions,
+    triggerAlert,
+    stopAlert
+  ])
 
   // ── Build ads list from all active sessions (Pro priority) ─────────────────
   const compileAds = useCallback(async (sessions: SessionRecord[], location: { lat: number; lng: number } | null) => {
@@ -293,16 +364,20 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Fetch all sessions for this device (by client_uuid) ───────────────────
   const fetchAllDeviceSessions = useCallback(async (uuid: string, location: { lat: number; lng: number } | null) => {
+    // Fetch active sessions AND recently completed sessions (within last 10 min)
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
     const { data, error } = await supabase
       .from('sessions')
       .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, upsell_cta_text, latitude, longitude, category, state)')
       .eq('client_uuid', uuid)
-      .in('status', ['waiting', 'called', 'confirm'])
+      .or(`status.in.(waiting,called,confirm),and(status.in.(completed,archived),updated_at.gte.${tenMinAgo})`)
 
     if (error || !data) return
 
     processAllSessions(data)
-    if (data.length > 0) await compileAds(data, location)
+    // Only compile ads for active (non-completed) sessions
+    const nonCompletedSessions = data.filter((s) => !['completed', 'archived'].includes(s.status))
+    if (nonCompletedSessions.length > 0) await compileAds(nonCompletedSessions, location)
   }, [processAllSessions, compileAds])
 
   // ── Fetch the primary session (initial load) ───────────────────────────────
@@ -315,7 +390,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         .single()
 
       if (error || !data) {
-        if (statusRef.current === 'loading') setStatus('error')
+        if (primaryStatus === 'loading') setPrimaryStatus('error')
         return
       }
 
@@ -585,16 +660,17 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // ── Build ActiveSession list for multi-LCD ────────────────────────────────
   const buildActiveSessions = (): ActiveSession[] => {
     const list: ActiveSession[] = []
-    allSessions.forEach((session, id) => {
+    getSessionsList().forEach((session) => {
       const m = Array.isArray(session.merchants) ? session.merchants[0] : session.merchants
       list.push({
-        sessionId: id,
+        sessionId: session.id,
         merchantName: m?.name || 'Gerai',
         merchantLogo: m?.logo_url || null,
         receiptNumber: session.receipt_number,
-        status: session.status === 'called' ? 'called' : session.status === 'completed' ? 'completed' : 'waiting',
+        status: session.status === 'called' ? 'called' : (session.status === 'completed' || session.status === 'archived') ? 'completed' : 'waiting',
         formattedWaitTime: formatWaitTime(session.created_at),
         isGhostActive: isGhostActive(session.created_at),
+        gmbUrl: m?.gmb_url || null,
       })
     })
     return list
@@ -615,14 +691,15 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Dismiss alarm: mark all currently-called sessions as dismissed ─────────
   const handleDismissAlarm = () => {
-    allSessions.forEach((session, id) => {
-      if (session.status === 'called') dismissedRef.current.add(id)
+    setDismissedSessions((prev) => {
+      const next = new Set(prev)
+      allSessions.forEach((session, id) => {
+        if (session.status === 'called') next.add(id)
+      })
+      next.add(sessionId)
+      return next
     })
-    // Also dismiss primary if no allSessions yet
-    dismissedRef.current.add(sessionId)
     stopAlert()
-    // Revert primary status back to waiting so UI returns to waiting screen
-    if (statusRef.current === 'called') setStatus('waiting')
   }
 
   // ── Render: Loading ────────────────────────────────────────────────────────
@@ -636,6 +713,18 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Render: Completed ──────────────────────────────────────────────────────
   if (status === 'completed') {
+    const completedSessionsWithGmb = getSessionsList()
+      .filter((s) => ['completed', 'archived'].includes(s.status))
+      .map((s) => {
+        const m = Array.isArray(s.merchants) ? s.merchants[0] : s.merchants
+        return {
+          merchantName: m?.name || 'Gerai',
+          merchantLogo: m?.logo_url || null,
+          gmbUrl: m?.gmb_url || null,
+        }
+      })
+      .filter((s) => !!s.gmbUrl)
+
     return (
       <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-6 text-center relative overflow-hidden bg-[#050505]">
         <button
@@ -659,25 +748,104 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-2xl relative z-10 border-4 border-white/10 backdrop-blur-md" style={{ background: `linear-gradient(135deg, ${themeColor} 0%, #000000 150%)` }}>
               <CheckCircle2 size={56} className="text-white drop-shadow-md" />
             </div>
-            {merchantLogo && (
-              <motion.img initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}
-                src={merchantLogo} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-[3px] border-[#050505] shadow-xl z-20 object-cover" />
+            {completedSessionsWithGmb.length > 1 ? (
+              <div className="absolute -bottom-2 -right-4 flex -space-x-3">
+                {completedSessionsWithGmb.slice(0, 3).map((item, idx) => (
+                  item.merchantLogo ? (
+                    <motion.img
+                      key={idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.1 }}
+                      src={item.merchantLogo}
+                      className="w-10 h-10 rounded-full border-[3px] border-[#050505] shadow-xl z-20 object-cover"
+                    />
+                  ) : (
+                    <div
+                      key={idx}
+                      className="w-10 h-10 rounded-full bg-indigo-600 border-[3px] border-[#050505] flex items-center justify-center font-black text-xs text-white shadow-xl z-20"
+                    >
+                      {item.merchantName.charAt(0).toUpperCase()}
+                    </div>
+                  )
+                ))}
+              </div>
+            ) : (
+              merchantLogo && (
+                <motion.img initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}
+                  src={merchantLogo} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-[3px] border-[#050505] shadow-xl z-20 object-cover" />
+              )
             )}
           </motion.div>
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-white/50 mb-3 tracking-tighter">
             {lang === 'bm' ? 'Pesanan Selesai' : 'Order Completed'}
           </h1>
           <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10 max-w-[260px]">
-            Terima kasih kerana memilih <span className="text-white font-bold">{merchantName}</span>. Selamat menjamu selera!
+            Terima kasih kerana memilih{' '}
+            <span className="text-white font-bold">
+              {completedSessionsWithGmb.length > 1
+                ? (lang === 'bm' ? 'gerai-gerai kami' : 'our stalls')
+                : merchantName}
+            </span>
+            . {lang === 'bm' ? 'Selamat menjamu selera!' : 'Enjoy your meal!'}
           </p>
-          {gmbUrl ? (
+          {completedSessionsWithGmb.length > 1 ? (
+            <div className="w-full space-y-3 mt-6">
+              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">
+                {lang === 'bm' ? 'Nilai Gerai Kami' : 'Rate Our Stalls'}
+              </p>
+              {completedSessionsWithGmb.map((session, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + idx * 0.1 }}
+                  className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xl hover:border-white/20 transition-all"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {session.merchantLogo ? (
+                      <img
+                        src={session.merchantLogo}
+                        alt={session.merchantName}
+                        className="w-10 h-10 rounded-full object-cover border border-white/10 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-black text-sm text-indigo-400 shrink-0">
+                        {session.merchantName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="text-left min-w-0">
+                      <p className="text-white font-bold text-sm truncate leading-tight">{session.merchantName}</p>
+                      <div className="flex gap-0.5 mt-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <span key={s} className="text-xs">⭐</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href={session.gmbUrl!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide shrink-0 transition-transform active:scale-95 hover:bg-slate-100 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                  >
+                    {lang === 'bm' ? 'Nilai' : 'Rate'}
+                  </a>
+                </motion.div>
+              ))}
+            </div>
+          ) : completedSessionsWithGmb.length === 1 ? (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-2 shadow-2xl">
-              <a href={gmbUrl} target="_blank" rel="noopener noreferrer" className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden">
+              <a href={completedSessionsWithGmb[0].gmbUrl!} target="_blank" rel="noopener noreferrer" className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-100 to-yellow-50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex gap-1 relative z-10">
                   {[0, 100, 200, 300, 400].map((d) => <span key={d} className="text-2xl animate-bounce" style={{ animationDelay: `${d}ms` }}>⭐</span>)}
                 </div>
-                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">{lang === 'bm' ? 'Nilai Kami di Google' : 'Rate Us on Google'}</span>
+                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">
+                  {lang === 'bm' 
+                    ? `Nilai ${completedSessionsWithGmb[0].merchantName} di Google` 
+                    : `Rate ${completedSessionsWithGmb[0].merchantName} on Google`}
+                </span>
               </a>
             </motion.div>
           ) : (

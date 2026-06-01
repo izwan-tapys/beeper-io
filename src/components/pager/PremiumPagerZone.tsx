@@ -11,6 +11,7 @@ export interface ActiveSession {
   status: 'waiting' | 'called' | 'completed'
   formattedWaitTime?: string
   isGhostActive?: boolean
+  gmbUrl?: string | null
 }
 
 interface PremiumPagerZoneProps {
@@ -315,6 +316,7 @@ function MultiPagerCard({
       <div className="flex-1 min-h-0 overflow-y-auto relative z-10 space-y-2 pr-0.5">
         {sessions.map((session) => {
           const isCalled = session.status === 'called'
+          const isCompleted = session.status === 'completed'
           return (
             <div
               key={session.sessionId}
@@ -322,9 +324,13 @@ function MultiPagerCard({
               style={{
                 background: isCalled
                   ? 'linear-gradient(135deg, rgba(99,102,241,0.14), rgba(99,102,241,0.06))'
+                  : isCompleted
+                  ? 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03))'
                   : 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
                 border: isCalled
                   ? '1px solid rgba(99,102,241,0.38)'
+                  : isCompleted
+                  ? '1px solid rgba(16,185,129,0.25)'
                   : '1px solid rgba(255,255,255,0.07)',
                 boxShadow: isCalled ? '0 0 14px rgba(99,102,241,0.1)' : 'none',
                 animation: isCalled ? 'premium-row-pulse 1.2s ease-in-out infinite' : undefined,
@@ -335,25 +341,25 @@ function MultiPagerCard({
                 <img
                   src={session.merchantLogo}
                   alt={session.merchantName}
-                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  className={`w-8 h-8 rounded-full object-cover flex-shrink-0 ${isCompleted ? 'opacity-50' : ''}`}
                   style={{ border: '1.5px solid rgba(99,102,241,0.22)' }}
                 />
               ) : (
                 <div
                   className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-black text-sm"
                   style={{
-                    background: 'rgba(99,102,241,0.1)',
-                    border: '1.5px solid rgba(99,102,241,0.22)',
-                    color: '#818cf8',
+                    background: isCompleted ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
+                    border: `1.5px solid ${isCompleted ? 'rgba(16,185,129,0.22)' : 'rgba(99,102,241,0.22)'}`,
+                    color: isCompleted ? '#34d399' : '#818cf8',
                   }}
                 >
-                  {session.merchantName.charAt(0).toUpperCase()}
+                  {isCompleted ? '✓' : session.merchantName.charAt(0).toUpperCase()}
                 </div>
               )}
 
-              {/* Name */}
+              {/* Name + status */}
               <div className="flex-1 min-w-0">
-                <p className="text-white/80 text-xs font-bold truncate leading-none">
+                <p className={`text-xs font-bold truncate leading-none ${isCompleted ? 'text-white/40 line-through' : 'text-white/80'}`}>
                   {session.merchantName}
                 </p>
                 {isCalled ? (
@@ -363,6 +369,10 @@ function MultiPagerCard({
                   >
                     🔔 {lang === 'bm' ? 'Sedia!' : 'Ready!'}
                   </p>
+                ) : isCompleted ? (
+                  <p className="text-[10px] font-black uppercase tracking-wider mt-0.5" style={{ color: '#34d399' }}>
+                    ✅ {lang === 'bm' ? 'Selesai' : 'Completed'}
+                  </p>
                 ) : (
                   <p className="text-white/30 text-[10px] font-bold mt-0.5">
                     {session.isGhostActive ? (lang === 'bm' ? 'Sibuk' : 'Busy') : session.formattedWaitTime ?? '...'}
@@ -370,18 +380,37 @@ function MultiPagerCard({
                 )}
               </div>
 
-              {/* Receipt number */}
+              {/* Right side: receipt or rate button */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                <span
-                  className="font-black text-lg leading-none"
-                  style={{
-                    color: isCalled ? '#818cf8' : 'rgba(255,255,255,0.6)',
-                    textShadow: isCalled ? '0 0 12px rgba(99,102,241,0.5)' : 'none',
-                  }}
-                >
-                  #{session.receiptNumber}
-                </span>
-                <ChevronRight size={12} className="text-white/20" />
+                {isCompleted && session.gmbUrl ? (
+                  <a
+                    href={session.gmbUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+                    style={{
+                      background: 'rgba(16,185,129,0.12)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      color: '#34d399',
+                    }}
+                  >
+                    ⭐ {lang === 'bm' ? 'Nilai' : 'Rate'}
+                  </a>
+                ) : (
+                  <>
+                    <span
+                      className="font-black text-lg leading-none"
+                      style={{
+                        color: isCalled ? '#818cf8' : isCompleted ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
+                        textShadow: isCalled ? '0 0 12px rgba(99,102,241,0.5)' : 'none',
+                      }}
+                    >
+                      #{session.receiptNumber}
+                    </span>
+                    <ChevronRight size={12} className="text-white/20" />
+                  </>
+                )}
               </div>
             </div>
           )
