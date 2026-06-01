@@ -707,7 +707,23 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   // ── Build ActiveSession list for multi-LCD ────────────────────────────────
   const buildActiveSessions = (): ActiveSession[] => {
     const list: ActiveSession[] = []
-    getSessionsList().forEach((session) => {
+    const rawSessions = getSessionsList()
+
+    // Sort: 1. 'called' (priority 1), 2. active/waiting (priority 2), 3. completed/archived (priority 3)
+    // Within groups, sort by created_at newest first
+    const sortedRaw = [...rawSessions].sort((a, b) => {
+      const getPriority = (statusStr: string) => {
+        if (statusStr === 'called') return 1
+        if (['completed', 'archived'].includes(statusStr)) return 3
+        return 2
+      }
+      const pA = getPriority(a.status)
+      const pB = getPriority(b.status)
+      if (pA !== pB) return pA - pB
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+
+    sortedRaw.forEach((session) => {
       const m = Array.isArray(session.merchants) ? session.merchants[0] : session.merchants
       list.push({
         sessionId: session.id,
