@@ -57,7 +57,15 @@ export async function POST(request: Request) {
 
         // Retrieve subscription details to get actual expiry (current_period_end)
         const subscription: any = await stripe.subscriptions.retrieve(subscriptionId)
-        const expiryDate = new Date(subscription.current_period_end * 1000)
+        
+        let expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() + 30) // Default fallback: 30 days from now
+        
+        if (subscription && subscription.current_period_end) {
+          expiryDate = new Date(subscription.current_period_end * 1000)
+        } else {
+          console.warn('[Stripe Webhook] current_period_end not found on subscription object, using fallback:', JSON.stringify(subscription))
+        }
 
         const { error } = await supabaseAdmin
           .from('merchants')
@@ -81,7 +89,15 @@ export async function POST(request: Request) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as any
         const subscriptionId = subscription.id
-        const expiryDate = new Date(subscription.current_period_end * 1000)
+        
+        let expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() + 30) // Default fallback: 30 days from now
+        
+        if (subscription && subscription.current_period_end) {
+          expiryDate = new Date(subscription.current_period_end * 1000)
+        } else {
+          console.warn('[Stripe Webhook] current_period_end not found on subscription object, using fallback:', JSON.stringify(subscription))
+        }
         
         // Map status from Stripe to our subscription status
         let status = 'inactive'
