@@ -1458,10 +1458,10 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         {merchant?.expiry_date && isPremiumActive && (
-                          <span className="text-[10px] text-slate-500 mt-1">Active until {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                          <span className="text-[10px] text-slate-500 mt-1">Active until {new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                         )}
                         {merchant?.expiry_date && !isPremiumActive && (
-                          <span className="text-[10px] text-rose-500 mt-1">Expired on {new Date(merchant.expiry_date).toLocaleDateString()}</span>
+                          <span className="text-[10px] text-rose-500 mt-1">Expired on {new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                         )}
                       </div>
                       {isPremiumActive && (
