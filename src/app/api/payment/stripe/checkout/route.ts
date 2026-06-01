@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     // Create a Checkout Session for a monthly subscription
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'fpx'], // FPX is widely used in Malaysia, card is standard
+      payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [
         {
