@@ -542,9 +542,11 @@ export default function AdminPage() {
                                   const expiry = new Date()
                                   expiry.setDate(expiry.getDate() + 30)
                                   updates.expiry_date = expiry.toISOString()
+                                  updates.last_bill_code = 'admin_override'
                                 } else {
                                   updates.subscription_status = null
                                   updates.expiry_date = null
+                                  updates.last_bill_code = null
                                 }
                                 updateMerchant(m.id, updates)
                               }}

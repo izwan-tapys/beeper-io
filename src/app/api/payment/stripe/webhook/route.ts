@@ -42,6 +42,70 @@ export async function POST(request: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+        const sessionType = session.metadata?.type
+
+        if (sessionType === 'topup') {
+          const transactionId = session.client_reference_id || session.metadata?.transactionId
+          const advertiserId = session.metadata?.advertiserId
+          const amountStr = session.metadata?.amount
+          const amount = amountStr ? parseFloat(amountStr) : 0
+
+          if (!transactionId) {
+            console.warn('[Stripe Webhook] No transactionId found in top-up checkout session.')
+            break
+          }
+
+          // Idempotency: fetch transaction
+          const { data: tx, error: txFetchError } = await supabaseAdmin
+            .from('ad_wallet_transactions')
+            .select('*')
+            .eq('id', transactionId)
+            .single()
+
+          if (txFetchError || !tx) {
+            console.error('[Stripe Webhook] Wallet Topup: Transaction not found:', transactionId)
+            break
+          }
+
+          if (tx.status !== 'pending') {
+            console.log('[Stripe Webhook] Wallet Topup: Transaction already processed:', transactionId)
+            break
+          }
+
+          // Update transaction
+          const { error: txUpdateError } = await supabaseAdmin
+            .from('ad_wallet_transactions')
+            .update({
+              status: 'completed',
+              reference_id: session.id,
+            })
+            .eq('id', transactionId)
+
+          if (txUpdateError) {
+            console.error('[Stripe Webhook] Wallet Topup: DB transaction update error:', txUpdateError)
+            return new Response('Database Error', { status: 500 })
+          }
+
+          // Fetch profile and credit wallet
+          const { data: profile } = await supabaseAdmin
+            .from('advertiser_profiles')
+            .select('wallet_balance')
+            .eq('id', tx.advertiser_id)
+            .single()
+
+          if (profile) {
+            const newBalance = (profile.wallet_balance || 0) + tx.amount
+            await supabaseAdmin
+              .from('advertiser_profiles')
+              .update({ wallet_balance: newBalance })
+              .eq('id', tx.advertiser_id)
+          }
+
+          console.log(`[Stripe Webhook] ✅ Wallet credited RM${tx.amount} for advertiser profile ${tx.advertiser_id}`)
+          break
+        }
+
+        // --- Subscription Plan Upgrade (Original Case) ---
         const userId = session.client_reference_id || session.metadata?.userId
         const subscriptionId = session.subscription as string
 

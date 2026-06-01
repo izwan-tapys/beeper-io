@@ -310,11 +310,10 @@ export default function AdsManagerPage() {
                   btn.innerHTML = 'Processing...'
                   
                   try {
-                    const res = await fetch('/api/toyyibpay/create-bill', {
+                    const res = await fetch('/api/payment/stripe/topup', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
-                        advertiser_id: profile?.user_id,
                         amount 
                       })
                     })
@@ -322,7 +321,7 @@ export default function AdsManagerPage() {
                     if (data.url) {
                       window.location.href = data.url
                     } else {
-                      throw new Error(data.error || 'Failed to create bill')
+                      throw new Error(data.error || 'Failed to initiate payment')
                     }
                   } catch (err: any) {
                     alert('Error: ' + err.message)
