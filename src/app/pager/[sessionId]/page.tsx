@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 import { use } from 'react'
 import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
-import { useLanguage } from '@/contexts/LanguageContext'
 import { PremiumPagerZone, type ActiveSession } from '@/components/pager/PremiumPagerZone'
 import { QrScannerModal } from '@/components/pager/QrScannerModal'
 
@@ -90,7 +89,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const { lang, setLang } = useLanguage()
+  const lang: 'bm' | 'en' = 'en' as 'bm' | 'en'
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
 
   // ── Refs ───────────────────────────────────────────────────────────────────
@@ -793,14 +792,6 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
     return (
       <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-6 text-center relative overflow-hidden bg-[#050505]">
-        <button
-          onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
-          className="fixed top-4 right-4 z-[999] bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full text-white text-[10px] font-black tracking-widest uppercase transition-transform active:scale-95 flex items-center gap-2"
-        >
-          <span className={lang === 'bm' ? 'text-white' : 'text-white/40'}>BM</span>
-          <span className="w-[1px] h-3 bg-white/20" />
-          <span className={lang === 'en' ? 'text-white' : 'text-white/40'}>EN</span>
-        </button>
         <div className="absolute inset-0 opacity-40 blur-[100px] mix-blend-screen" style={{ backgroundImage: `radial-gradient(circle at 50% 30%, ${themeColor}80, transparent 60%)` }} />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
         <motion.div
