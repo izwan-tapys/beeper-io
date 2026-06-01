@@ -213,19 +213,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     for (const s of sessions) {
       if (s.status === 'called' && !dismissedRef.current.has(s.id)) {
         if (!alertIntervalRef.current) {
-          setIsFlashing(true)
-          setCalledSessionId(s.id)
-          const runAlert = () => {
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator)
-              navigator.vibrate([800, 200, 800, 200, 800])
-          }
-          runAlert()
-          alertIntervalRef.current = setInterval(runAlert, 2500)
+          triggerAlert(s.id)
         }
         break
       }
     }
-  }, [])
+  }, [triggerAlert])
 
   // ── Build ads list from all active sessions (Pro priority) ─────────────────
   const compileAds = useCallback(async (sessions: SessionRecord[], location: { lat: number; lng: number } | null) => {
@@ -914,7 +907,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                     </li>
                   </ul>
                   <button
-                    onClick={() => setShowInstructions(false)}
+                    onClick={() => {
+                      setShowInstructions(false)
+                      initAudio()
+                    }}
                     className="w-full py-4 rounded-xl font-black text-[#111] text-xs uppercase tracking-widest bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-transform"
                   >
                     Saya Faham
