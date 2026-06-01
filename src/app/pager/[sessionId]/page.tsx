@@ -10,6 +10,7 @@ import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucid
 import { Logo } from '@/components/Logo'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { PremiumPagerZone, type ActiveSession } from '@/components/pager/PremiumPagerZone'
+import { QrScannerModal } from '@/components/pager/QrScannerModal'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -81,6 +82,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const ad = adsList[currentAdIndex] || null
   const [isDescExpanded, setIsDescExpanded] = useState(false)
+
+  // ── QR Scanner & Toast state ────────────────────────────────────────────────
+  const [showQrScanner, setShowQrScanner] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const { lang, setLang } = useLanguage()
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
@@ -515,6 +521,62 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }
   }
 
+  // ── QR scan handler ────────────────────────────────────────────────────────
+  const showToast = (msg: string) => {
+    setToast(msg)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleQrScan = async (newSessionId: string) => {
+    setShowQrScanner(false)
+    if (!clientUuid) return
+
+    // Check if already tracked
+    if (allSessions.has(newSessionId)) {
+      showToast('⚠️ Gerai ni dah ada dalam senarai')
+      return
+    }
+
+    // Link to this device
+    const { error: updateError } = await supabase
+      .from('sessions')
+      .update({ client_uuid: clientUuid })
+      .eq('id', newSessionId)
+      .in('status', ['waiting', 'confirm'])
+
+    if (updateError) {
+      showToast('❌ QR tidak sah atau pesanan tamat')
+      return
+    }
+
+    // Fetch new session data
+    const { data, error: fetchError } = await supabase
+      .from('sessions')
+      .select('*, merchants(name, logo_url, gmb_url, theme_color, plan_type, subscription_status, expiry_date, upsell_title, upsell_description, upsell_link_url, upsell_video_url, upsell_image_url, upsell_cta_text, latitude, longitude, category, state)')
+      .eq('id', newSessionId)
+      .single()
+
+    if (fetchError || !data) {
+      showToast('❌ QR tidak sah atau pesanan tamat')
+      return
+    }
+
+    // Add to allSessions map
+    setAllSessions((prev) => {
+      const next = new Map(prev)
+      next.set(newSessionId, data)
+      return next
+    })
+
+    const m = Array.isArray(data.merchants) ? data.merchants[0] : data.merchants
+    const vendorName = m?.name || 'Gerai'
+    showToast(`✅ ${vendorName} ditambah!`)
+
+    // Re-compile ads with all updated sessions
+    if (clientUuid) await fetchAllDeviceSessions(clientUuid, userLocation)
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
   const formatWaitTime = (startAt?: string | null) => {
     const start = new Date(startAt ?? createdAt ?? Date.now()).getTime()
@@ -826,6 +888,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               isGhostActive={isGhostActive()}
               onTestBeep={initAudio}
               onShowWarning={() => setShowInstructions(true)}
+              onScanQr={() => setShowQrScanner(true)}
               // Multi-session: pass all active sessions
               sessions={activeSessions.length > 0 ? activeSessions : undefined}
             />
@@ -859,6 +922,29 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── QR Scanner Modal ── */}
+        {showQrScanner && (
+          <QrScannerModal
+            onScan={handleQrScan}
+            onClose={() => setShowQrScanner(false)}
+          />
+        )}
+
+        {/* ── Toast notification ── */}
+        {toast && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl font-bold text-sm text-white whitespace-nowrap shadow-2xl"
+            style={{
+              background: 'rgba(15,17,35,0.92)',
+              border: '1px solid rgba(99,102,241,0.35)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.1)',
+            }}
+          >
+            {toast}
           </div>
         )}
 

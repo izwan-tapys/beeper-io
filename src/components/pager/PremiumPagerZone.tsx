@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Volume2, AlertTriangle, Clock, ChevronRight } from 'lucide-react'
+import { Volume2, AlertTriangle, Clock, ChevronRight, QrCode } from 'lucide-react'
 
 export interface ActiveSession {
   sessionId: string
@@ -23,6 +23,7 @@ interface PremiumPagerZoneProps {
   isGhostActive?: boolean
   onTestBeep?: () => void
   onShowWarning?: () => void
+  onScanQr?: () => void
   previewMode?: boolean
 
   // Multi-session mode
@@ -30,7 +31,7 @@ interface PremiumPagerZoneProps {
 }
 
 // ── Pulsing status dot ────────────────────────────────────────────────────────
-function StatusDot({ color = '#f59e0b' }: { color?: string }) {
+function StatusDot({ color = '#6366f1' }: { color?: string }) {
   return (
     <span className="relative inline-flex items-center justify-center w-2.5 h-2.5">
       <span
@@ -45,6 +46,79 @@ function StatusDot({ color = '#f59e0b' }: { color?: string }) {
   )
 }
 
+// ── Shared action button row ───────────────────────────────────────────────────
+function ActionButtons({
+  lang,
+  previewMode,
+  onTestBeep,
+  onShowWarning,
+  onScanQr,
+  testBeepId,
+  warningId,
+  scanId,
+}: {
+  lang: 'bm' | 'en'
+  previewMode?: boolean
+  onTestBeep?: () => void
+  onShowWarning?: () => void
+  onScanQr?: () => void
+  testBeepId: string
+  warningId: string
+  scanId: string
+}) {
+  return (
+    <div className="flex gap-2 w-full">
+      {/* Test Beep */}
+      <button
+        id={testBeepId}
+        onClick={!previewMode ? onTestBeep : undefined}
+        disabled={previewMode}
+        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs tracking-widest uppercase transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+        style={{
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.06))',
+          border: '1px solid rgba(99,102,241,0.3)',
+          color: '#818cf8',
+          boxShadow: '0 0 12px rgba(99,102,241,0.06)',
+        }}
+      >
+        <Volume2 size={13} />
+        {lang === 'bm' ? 'Uji Bunyi' : 'Test Beep'}
+      </button>
+
+      {/* QR Scan */}
+      <button
+        id={scanId}
+        onClick={!previewMode ? onScanQr : undefined}
+        disabled={previewMode}
+        className="w-11 flex items-center justify-center rounded-xl transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+        style={{
+          background: 'rgba(99,102,241,0.12)',
+          border: '1px solid rgba(99,102,241,0.28)',
+          color: '#818cf8',
+        }}
+        title={lang === 'bm' ? 'Imbas QR Gerai Lain' : 'Scan Another Stall QR'}
+      >
+        <QrCode size={15} />
+      </button>
+
+      {/* Warning */}
+      <button
+        id={warningId}
+        onClick={!previewMode ? onShowWarning : undefined}
+        disabled={previewMode}
+        className="w-11 flex items-center justify-center rounded-xl transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+        style={{
+          background: 'rgba(99,102,241,0.06)',
+          border: '1px solid rgba(99,102,241,0.2)',
+          color: '#818cf8',
+        }}
+      >
+        <AlertTriangle size={15} />
+      </button>
+    </div>
+  )
+}
+
 // ── Single-session Premium Card ───────────────────────────────────────────────
 function SinglePagerCard({
   merchantName,
@@ -55,19 +129,20 @@ function SinglePagerCard({
   isGhostActive = false,
   onTestBeep,
   onShowWarning,
+  onScanQr,
   previewMode = false,
 }: Required<Pick<PremiumPagerZoneProps, 'merchantName' | 'receiptNumber' | 'lang'>> &
-  Pick<PremiumPagerZoneProps, 'merchantLogo' | 'formattedWaitTime' | 'isGhostActive' | 'onTestBeep' | 'onShowWarning' | 'previewMode'>) {
+  Pick<PremiumPagerZoneProps, 'merchantLogo' | 'formattedWaitTime' | 'isGhostActive' | 'onTestBeep' | 'onShowWarning' | 'onScanQr' | 'previewMode'>) {
   return (
     <div
       className="h-1/2 w-full flex-shrink-0 flex flex-col items-center justify-center px-4 py-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(170deg, #0f0c0a 0%, #1a1108 45%, #0a0a0a 100%)' }}
+      style={{ background: 'linear-gradient(170deg, #0a0c18 0%, #0c101f 45%, #08090f 100%)' }}
     >
-      {/* Subtle radial glow from bottom */}
+      {/* Subtle radial glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 110%, rgba(245,158,11,0.08) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 110%, rgba(99,102,241,0.08) 0%, transparent 65%)',
         }}
       />
 
@@ -78,14 +153,15 @@ function SinglePagerCard({
             src={merchantLogo}
             alt={merchantName}
             className="w-9 h-9 rounded-full object-cover shadow-md"
-            style={{ border: '1.5px solid rgba(245,158,11,0.3)' }}
+            style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}
           />
         ) : (
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-amber-400 font-black text-base shadow-md"
+            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-base shadow-md"
             style={{
-              background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))',
-              border: '1.5px solid rgba(245,158,11,0.25)',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.07))',
+              border: '1.5px solid rgba(99,102,241,0.28)',
+              color: '#818cf8',
             }}
           >
             {merchantName.charAt(0).toUpperCase()}
@@ -95,7 +171,10 @@ function SinglePagerCard({
           <span className="text-white/90 text-sm font-bold tracking-wide truncate">
             {merchantName}
           </span>
-          <span className="text-amber-400/50 text-[9px] font-bold uppercase tracking-widest">
+          <span
+            className="text-[9px] font-bold uppercase tracking-widest"
+            style={{ color: 'rgba(99,102,241,0.55)' }}
+          >
             beepme.pro
           </span>
         </div>
@@ -105,35 +184,38 @@ function SinglePagerCard({
       <div
         className="relative w-full max-w-xs rounded-2xl overflow-hidden z-10"
         style={{
-          background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-          border: '1px solid rgba(245,158,11,0.18)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+          background: 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+          border: '1px solid rgba(99,102,241,0.18)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
           backdropFilter: 'blur(12px)',
         }}
       >
         {/* Top accent line */}
         <div
           className="h-[2px] w-full"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent)' }}
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.7), transparent)' }}
         />
 
         <div className="px-5 pt-4 pb-4">
           {/* Status row */}
           <div className="flex items-center gap-2 mb-3">
             <StatusDot />
-            <span className="text-amber-400/80 text-[10px] font-bold uppercase tracking-[0.2em]">
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.2em]"
+              style={{ color: 'rgba(129,140,248,0.8)' }}
+            >
               {lang === 'bm' ? 'Menyedia Pesanan' : 'Preparing Order'}
             </span>
           </div>
 
-          {/* Order number — the hero */}
+          {/* Order number — hero */}
           <div className="flex items-baseline gap-1 mb-4">
             <span className="text-white/30 text-xl font-black tracking-tight">#</span>
             <span
               className="font-black leading-none text-transparent bg-clip-text"
               style={{
                 fontSize: 'clamp(3rem, 16vw, 5rem)',
-                backgroundImage: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%)',
+                backgroundImage: 'linear-gradient(135deg, #c7d2fe 0%, #818cf8 50%, #6366f1 100%)',
                 letterSpacing: '-0.02em',
               }}
             >
@@ -161,35 +243,17 @@ function SinglePagerCard({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2 mt-3 w-full max-w-xs relative z-10">
-        <button
-          id="pager-test-beep-btn"
-          onClick={!previewMode ? onTestBeep : undefined}
-          disabled={previewMode}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs tracking-widest uppercase transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))',
-            border: '1px solid rgba(245,158,11,0.3)',
-            color: '#f59e0b',
-            boxShadow: '0 0 12px rgba(245,158,11,0.06)',
-          }}
-        >
-          <Volume2 size={13} />
-          {lang === 'bm' ? 'Uji Bunyi' : 'Test Beep'}
-        </button>
-        <button
-          id="pager-warning-btn"
-          onClick={!previewMode ? onShowWarning : undefined}
-          disabled={previewMode}
-          className="w-11 flex items-center justify-center rounded-xl transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          style={{
-            background: 'rgba(245,158,11,0.06)',
-            border: '1px solid rgba(245,158,11,0.2)',
-            color: '#f59e0b',
-          }}
-        >
-          <AlertTriangle size={15} />
-        </button>
+      <div className="mt-3 w-full max-w-xs relative z-10">
+        <ActionButtons
+          lang={lang}
+          previewMode={previewMode}
+          onTestBeep={onTestBeep}
+          onShowWarning={onShowWarning}
+          onScanQr={onScanQr}
+          testBeepId="pager-test-beep-btn"
+          warningId="pager-warning-btn"
+          scanId="pager-scan-qr-btn"
+        />
       </div>
     </div>
   )
@@ -201,24 +265,26 @@ function MultiPagerCard({
   lang,
   onTestBeep,
   onShowWarning,
+  onScanQr,
   previewMode = false,
 }: {
   sessions: ActiveSession[]
   lang: 'bm' | 'en'
   onTestBeep?: () => void
   onShowWarning?: () => void
+  onScanQr?: () => void
   previewMode?: boolean
 }) {
   return (
     <div
       className="h-1/2 w-full flex-shrink-0 flex flex-col px-4 py-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(170deg, #0f0c0a 0%, #1a1108 45%, #0a0a0a 100%)' }}
+      style={{ background: 'linear-gradient(170deg, #0a0c18 0%, #0c101f 45%, #08090f 100%)' }}
     >
       {/* Glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 110%, rgba(245,158,11,0.08) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 110%, rgba(99,102,241,0.08) 0%, transparent 65%)',
         }}
       />
 
@@ -226,16 +292,19 @@ function MultiPagerCard({
       <div className="flex items-center justify-between mb-3 relative z-10">
         <div className="flex items-center gap-2">
           <StatusDot />
-          <span className="text-amber-400/80 text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span
+            className="text-[10px] font-bold uppercase tracking-[0.2em]"
+            style={{ color: 'rgba(129,140,248,0.8)' }}
+          >
             {lang === 'bm' ? 'Pesanan Aktif' : 'Active Orders'}
           </span>
         </div>
         <span
           className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
           style={{
-            background: 'rgba(245,158,11,0.12)',
-            border: '1px solid rgba(245,158,11,0.25)',
-            color: '#f59e0b',
+            background: 'rgba(99,102,241,0.12)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            color: '#818cf8',
           }}
         >
           {sessions.length} {lang === 'bm' ? 'Gerai' : 'Stalls'}
@@ -252,12 +321,12 @@ function MultiPagerCard({
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
               style={{
                 background: isCalled
-                  ? 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.06))'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+                  ? 'linear-gradient(135deg, rgba(99,102,241,0.14), rgba(99,102,241,0.06))'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
                 border: isCalled
-                  ? '1px solid rgba(245,158,11,0.35)'
+                  ? '1px solid rgba(99,102,241,0.38)'
                   : '1px solid rgba(255,255,255,0.07)',
-                boxShadow: isCalled ? '0 0 12px rgba(245,158,11,0.08)' : 'none',
+                boxShadow: isCalled ? '0 0 14px rgba(99,102,241,0.1)' : 'none',
                 animation: isCalled ? 'premium-row-pulse 1.2s ease-in-out infinite' : undefined,
               }}
             >
@@ -267,14 +336,15 @@ function MultiPagerCard({
                   src={session.merchantLogo}
                   alt={session.merchantName}
                   className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                  style={{ border: '1.5px solid rgba(245,158,11,0.2)' }}
+                  style={{ border: '1.5px solid rgba(99,102,241,0.22)' }}
                 />
               ) : (
                 <div
-                  className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-amber-400 font-black text-sm"
+                  className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-black text-sm"
                   style={{
-                    background: 'rgba(245,158,11,0.1)',
-                    border: '1.5px solid rgba(245,158,11,0.2)',
+                    background: 'rgba(99,102,241,0.1)',
+                    border: '1.5px solid rgba(99,102,241,0.22)',
+                    color: '#818cf8',
                   }}
                 >
                   {session.merchantName.charAt(0).toUpperCase()}
@@ -287,7 +357,10 @@ function MultiPagerCard({
                   {session.merchantName}
                 </p>
                 {isCalled ? (
-                  <p className="text-amber-400 text-[10px] font-black uppercase tracking-wider mt-0.5">
+                  <p
+                    className="text-[10px] font-black uppercase tracking-wider mt-0.5"
+                    style={{ color: '#818cf8' }}
+                  >
                     🔔 {lang === 'bm' ? 'Sedia!' : 'Ready!'}
                   </p>
                 ) : (
@@ -302,8 +375,8 @@ function MultiPagerCard({
                 <span
                   className="font-black text-lg leading-none"
                   style={{
-                    color: isCalled ? '#f59e0b' : 'rgba(255,255,255,0.6)',
-                    textShadow: isCalled ? '0 0 12px rgba(245,158,11,0.5)' : 'none',
+                    color: isCalled ? '#818cf8' : 'rgba(255,255,255,0.6)',
+                    textShadow: isCalled ? '0 0 12px rgba(99,102,241,0.5)' : 'none',
                   }}
                 >
                   #{session.receiptNumber}
@@ -316,34 +389,17 @@ function MultiPagerCard({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2 mt-3 relative z-10">
-        <button
-          id="pager-multi-test-beep-btn"
-          onClick={!previewMode ? onTestBeep : undefined}
-          disabled={previewMode}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs tracking-widest uppercase transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))',
-            border: '1px solid rgba(245,158,11,0.3)',
-            color: '#f59e0b',
-          }}
-        >
-          <Volume2 size={13} />
-          {lang === 'bm' ? 'Uji Bunyi' : 'Test Beep'}
-        </button>
-        <button
-          id="pager-multi-warning-btn"
-          onClick={!previewMode ? onShowWarning : undefined}
-          disabled={previewMode}
-          className="w-11 flex items-center justify-center rounded-xl transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          style={{
-            background: 'rgba(245,158,11,0.06)',
-            border: '1px solid rgba(245,158,11,0.2)',
-            color: '#f59e0b',
-          }}
-        >
-          <AlertTriangle size={15} />
-        </button>
+      <div className="mt-3 relative z-10">
+        <ActionButtons
+          lang={lang}
+          previewMode={previewMode}
+          onTestBeep={onTestBeep}
+          onShowWarning={onShowWarning}
+          onScanQr={onScanQr}
+          testBeepId="pager-multi-test-beep-btn"
+          warningId="pager-multi-warning-btn"
+          scanId="pager-multi-scan-qr-btn"
+        />
       </div>
 
       <style>{`
@@ -366,6 +422,7 @@ export function PremiumPagerZone({
   isGhostActive,
   onTestBeep,
   onShowWarning,
+  onScanQr,
   previewMode = false,
   sessions,
 }: PremiumPagerZoneProps) {
@@ -377,6 +434,7 @@ export function PremiumPagerZone({
         lang={lang}
         onTestBeep={onTestBeep}
         onShowWarning={onShowWarning}
+        onScanQr={onScanQr}
         previewMode={previewMode}
       />
     )
@@ -394,6 +452,7 @@ export function PremiumPagerZone({
       isGhostActive={singleSession?.isGhostActive ?? isGhostActive}
       onTestBeep={onTestBeep}
       onShowWarning={onShowWarning}
+      onScanQr={onScanQr}
       previewMode={previewMode}
     />
   )
