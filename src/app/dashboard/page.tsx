@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
-import { useLanguage } from '@/contexts/LanguageContext'
 
 type Session = {
   id: string
@@ -60,7 +59,7 @@ const supabase = createClient()
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { lang, setLang } = useLanguage()
+  const lang: 'bm' | 'en' = 'en' as 'bm' | 'en'
 
   const [merchant, setMerchant] = useState<Merchant | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
@@ -907,16 +906,6 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Language Toggle Button */}
-            <button 
-              onClick={() => setLang(lang === 'bm' ? 'en' : 'bm')}
-              className="px-2 py-1.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1.5"
-              title="Toggle Language"
-            >
-              <span className={lang === 'bm' ? 'text-white' : 'opacity-40'}>BM</span>
-              <span className="w-[1px] h-3 bg-white/20"></span>
-              <span className={lang === 'en' ? 'text-white' : 'opacity-40'}>EN</span>
-            </button>
             <button
               id="store-toggle-btn"
               onClick={toggleStore}
