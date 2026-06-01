@@ -9,7 +9,7 @@ import { use } from 'react'
 import { Loader2, Volume2, Smartphone, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { RetroPagerZone, type ActiveSession } from '@/components/pager/RetroPagerZone'
+import { PremiumPagerZone, type ActiveSession } from '@/components/pager/PremiumPagerZone'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -816,7 +816,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
             </div>
 
             {/* ── BOTTOM 50%: Retro LCD Pager Zone ── */}
-            <RetroPagerZone
+            <PremiumPagerZone
               // Legacy single-session props (used when only 1 session)
               merchantName={merchantName}
               merchantLogo={merchantLogo}

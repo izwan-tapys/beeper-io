@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Image as ImageIcon, Save, Link as LinkIcon, Check, X, Volume2 } from 'lucide-react'
 import Cropper from 'react-easy-crop'
-import { RetroPagerZone } from '@/components/pager/RetroPagerZone'
+import { PremiumPagerZone } from '@/components/pager/PremiumPagerZone'
 
 // Helper function to create an Image from a URL
 const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -512,8 +512,8 @@ export function AdsBuilder({
           </div>
         </div>
 
-        {/* ── BOTTOM 50%: Retro LCD Pager Zone (Read-only mockup) ── */}
-        <RetroPagerZone
+        {/* ── BOTTOM 50%: Premium Pager Zone (Read-only mockup) ── */}
+        <PremiumPagerZone
           merchantName={localMerchant?.name || "NAMA KEDAI ANDA"}
           merchantLogo={localMerchant?.logo_url || null}
           receiptNumber="001"
