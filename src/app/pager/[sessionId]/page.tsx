@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 
 export const dynamic = 'force-dynamic'
 
@@ -71,7 +72,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [calledSessionId, setCalledSessionId] = useState<string | null>(null)
 
   // ── UI state ───────────────────────────────────────────────────────────────
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const [volume, setVolume] = useState(1.0)
   const [isFlashing, setIsFlashing] = useState(false)
   const [isAudioReady, setIsAudioReady] = useState(false)
@@ -104,6 +105,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const lastUpdatedMapRef = useRef<Map<string, string>>(new Map())
   const isInitialFetchRef = useRef<boolean>(true)
   const seenAdsRef = useRef<Set<string>>(new Set())
+  const lastCompiledMerchantIdsRef = useRef<string | null>(null)
 
   useEffect(() => { setIsDescExpanded(false) }, [currentAdIndex])
 
@@ -314,6 +316,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Build ads list from all active sessions (Pro priority) ─────────────────
   const compileAds = useCallback(async (sessions: SessionRecord[], location: { lat: number; lng: number } | null) => {
+    const activeMerchantIdsKey = sessions.map((s) => s.merchant_id).sort().join(',')
+    if (lastCompiledMerchantIdsRef.current === activeMerchantIdsKey) {
+      return
+    }
+    lastCompiledMerchantIdsRef.current = activeMerchantIdsKey
+
     const compiled: any[] = []
 
     for (const session of sessions) {
@@ -484,7 +492,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       if (error || !data) return
       processSessionStatus({ ...data, id: sessionId })
     }
-  }, [sessionId, clientUuid, processSessionStatus, fetchAllDeviceSessions])
+  }, [sessionId, clientUuid, primaryStatus, processSessionStatus, fetchAllDeviceSessions])
 
   useEffect(() => { fetchSession() }, [fetchSession])
 
@@ -502,7 +510,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       pollingRef.current = setInterval(() => {
         fetchSession()
         if (clientUuid) fetchAllDeviceSessions(clientUuid, userLocation)
-      }, 15000)
+      }, 90000)
     }
 
     // Realtime: primary session channel
@@ -694,13 +702,13 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const formatWaitTime = (startAt?: string | null) => {
-    const start = new Date(startAt ?? createdAt ?? Date.now()).getTime()
+    const start = new Date(startAt ?? createdAt ?? now).getTime()
     const seconds = Math.max(0, Math.floor((now - start) / 1000))
     return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`
   }
 
   const isGhostActive = (startAt?: string | null) => {
-    const start = new Date(startAt ?? createdAt ?? Date.now()).getTime()
+    const start = new Date(startAt ?? createdAt ?? now).getTime()
     return Math.floor((now - start) / 1000) > 1800
   }
 
@@ -1137,7 +1145,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                     </li>
                     <li className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
                       <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0"><AlertTriangle size={12} className="text-white" /></div>
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wide">Matikan "Silent Mode"</span>
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wide">Matikan &quot;Silent Mode&quot;</span>
                     </li>
                   </ul>
                   <button
