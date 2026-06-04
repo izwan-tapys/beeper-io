@@ -640,238 +640,269 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {loading && activeTab === 'merchants' ? (
-          <div className="flex flex-col items-center justify-center py-40 gap-8">
-            <div className="relative w-20 h-20">
-              <div className="absolute inset-0 rounded-full border-b-2 border-indigo-500 animate-spin"></div>
-              <div className="absolute inset-2 rounded-full border-t-2 border-violet-500/30 animate-spin-slow"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <ShieldCheck size={24} className="text-indigo-500 animate-pulse" />
-              </div>
-            </div>
-            <p className="text-slate-600 font-bold uppercase tracking-[0.5em] text-[10px] animate-pulse">Syncing Encrypted Data...</p>
-          </div>
-        ) : activeTab === 'merchants' ? (
-          <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
-                    <th className="py-5 px-6 font-black">Merchant</th>
-                    <th className="py-5 px-6 font-black">Contact</th>
-                    <th className="py-5 px-6 font-black">Email</th>
-                    <th className="py-5 px-6 font-black">Usage</th>
-                    <th className="py-5 px-6 font-black">Subscription Plan</th>
-                    <th className="py-5 px-6 font-black text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredMerchants.map((m) => {
-                    const isEditingLocation = locationFormId === m.id
-                    return (
-                      <>
-                        <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
+        {activeTab === 'merchants' && (
+          <div className={`transition-opacity duration-300 ${loading && merchants.length > 0 ? 'opacity-60 pointer-events-none' : ''}`}>
+            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                      <th className="py-5 px-6 font-black">Merchant</th>
+                      <th className="py-5 px-6 font-black">Contact</th>
+                      <th className="py-5 px-6 font-black">Email</th>
+                      <th className="py-5 px-6 font-black">Usage</th>
+                      <th className="py-5 px-6 font-black">Subscription Plan</th>
+                      <th className="py-5 px-6 font-black text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {loading && merchants.length === 0 ? (
+                      Array.from({ length: 5 }).map((_, idx) => (
+                        <tr key={idx} className="animate-pulse">
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-                                <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
-                                  {m.name?.[0] || 'M'}
+                              <Skeleton className="w-12 h-12 rounded-xl" />
+                              <div className="space-y-2">
+                                <Skeleton className="w-32 h-4" />
+                                <div className="flex items-center gap-2">
+                                  <Skeleton className="w-12 h-3" />
+                                  <Skeleton className="w-16 h-3" />
                                 </div>
-                              </div>
-                              <div>
-                                <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
-                                    {m.is_verified ? 'Verified' : 'Pending'}
-                                  </span>
-                                  {m.category && (
-                                    <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{m.category}</span>
-                                  )}
-                                  <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
-                                </div>
-                                {(m.latitude || m.longitude) && (
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <MapPin size={9} className="text-indigo-400" />
-                                    <span className="text-[9px] text-slate-500 font-mono">{m.latitude?.toFixed(4)}, {m.longitude?.toFixed(4)}</span>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
-                              <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
-                              <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="w-4 h-4 rounded-full" />
+                              <Skeleton className="w-20 h-3" />
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
-                              <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
-                            </div>
+                            <Skeleton className="w-32 h-3" />
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex flex-col gap-1.5 max-w-[120px]">
-                              <div className="flex items-end justify-between">
-                                <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-indigo-500 transition-all duration-1000"
-                                  style={{ width: '100%' }}
-                                />
-                              </div>
+                              <Skeleton className="w-8 h-4" />
+                              <Skeleton className="w-full h-1.5 rounded-full" />
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <select 
-                              value={m.plan_type}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                const updates: any = { plan_type: val }
-                                if (val === 'pro') {
-                                  updates.subscription_status = 'active'
-                                  const expiry = new Date()
-                                  expiry.setDate(expiry.getDate() + 30)
-                                  updates.expiry_date = expiry.toISOString()
-                                  updates.last_bill_code = 'admin_override'
-                                } else {
-                                  updates.subscription_status = null
-                                  updates.expiry_date = null
-                                  updates.last_bill_code = null
-                                }
-                                updateMerchant(m.id, updates)
-                              }}
-                              disabled={verifyingId === m.id}
-                              className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
-                            >
-                              <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
-                              <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
-                            </select>
+                            <Skeleton className="w-28 h-8 rounded-xl" />
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => {
-                                  if (isEditingLocation) {
-                                    setLocationFormId(null)
-                                  } else {
-                                    setLocationFormId(m.id)
-                                    setLocationForm({
-                                      latitude: m.latitude?.toString() || '',
-                                      longitude: m.longitude?.toString() || '',
-                                      category: m.category || '',
-                                      state: m.state || ''
-                                    })
-                                  }
-                                }}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${isEditingLocation ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 border border-white/10'}`}
-                              >
-                                <MapPin size={11} />
-                                {isEditingLocation ? 'Cancel' : 'Set Location'}
-                              </button>
-                              <button 
-                                onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
-                                disabled={verifyingId === m.id}
-                                className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
-                              >
-                                {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
-                              </button>
-                              {m.phone && (
-                                <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
-                                  <Smartphone size={14} />
-                                </a>
-                              )}
+                              <Skeleton className="w-24 h-8 rounded-xl" />
+                              <Skeleton className="w-20 h-8 rounded-xl" />
                             </div>
                           </td>
                         </tr>
-                        {/* Inline Location Form */}
-                        {isEditingLocation && (
-                          <tr key={`${m.id}-location`} className="bg-indigo-500/5 border-b border-indigo-500/20">
-                            <td colSpan={6} className="px-6 py-5">
-                              <div className="flex flex-col gap-4">
-                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                                  <MapPin size={12} /> Set Location & Category for {m.name || 'this merchant'}
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                  <div className="space-y-1.5">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Latitude</label>
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={locationForm.latitude}
-                                      onChange={e => setLocationForm(f => ({ ...f, latitude: e.target.value }))}
-                                      placeholder="e.g. 3.1390"
-                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Longitude</label>
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={locationForm.longitude}
-                                      onChange={e => setLocationForm(f => ({ ...f, longitude: e.target.value }))}
-                                      placeholder="e.g. 101.6869"
-                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">State (Negeri)</label>
-                                    <select
-                                      value={locationForm.state}
-                                      onChange={e => setLocationForm(f => ({ ...f, state: e.target.value }))}
-                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                    >
-                                      <option value="" className="bg-[#0a0b0f]">Select state...</option>
-                                      {['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan', 'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'].map(st => (
-                                        <option key={st} value={st} className="bg-[#0a0b0f]">{st}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="space-y-1.5 md:col-span-2">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
-                                    <select
-                                      value={locationForm.category}
-                                      onChange={e => setLocationForm(f => ({ ...f, category: e.target.value }))}
-                                      className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                    >
-                                      <option value="" className="bg-[#0a0b0f]">Select category...</option>
-                                      {MERCHANT_CATEGORIES.map(cat => (
-                                        <option key={cat} value={cat} className="bg-[#0a0b0f]">{cat}</option>
-                                      ))}
-                                    </select>
+                      ))
+                    ) : filteredMerchants.map((m) => {
+                      const isEditingLocation = locationFormId === m.id
+                      return (
+                        <>
+                          <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
+                                  <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
+                                    {m.name?.[0] || 'M'}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <button
-                                    onClick={() => handleSaveLocation(m.id)}
-                                    disabled={savingLocation}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
-                                  >
-                                    {savingLocation ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                                    Save Location
-                                  </button>
-                                  <button
-                                    onClick={() => setLocationFormId(null)}
-                                    className="px-5 py-2.5 rounded-xl bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest transition-all hover:bg-white/10"
-                                  >
-                                    Cancel
-                                  </button>
+                                <div>
+                                  <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+                                      {m.is_verified ? 'Verified' : 'Pending'}
+                                    </span>
+                                    {m.category && (
+                                      <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{m.category}</span>
+                                    )}
+                                    <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
+                                  </div>
+                                  {(m.latitude || m.longitude) && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <MapPin size={9} className="text-indigo-400" />
+                                      <span className="text-[9px] text-slate-500 font-mono">{m.latitude?.toFixed(4)}, {m.longitude?.toFixed(4)}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </td>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
+                                <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
+                                <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
+                                <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex flex-col gap-1.5 max-w-[120px]">
+                                <div className="flex items-end justify-between">
+                                  <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-indigo-500 transition-all duration-1000"
+                                    style={{ width: '100%' }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <select 
+                                value={m.plan_type}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  const updates: any = { plan_type: val }
+                                  if (val === 'pro') {
+                                    updates.subscription_status = 'active'
+                                    const expiry = new Date()
+                                    expiry.setDate(expiry.getDate() + 30)
+                                    updates.expiry_date = expiry.toISOString()
+                                    updates.last_bill_code = 'admin_override'
+                                  } else {
+                                    updates.subscription_status = null
+                                    updates.expiry_date = null
+                                    updates.last_bill_code = null
+                                  }
+                                  updateMerchant(m.id, updates)
+                                }}
+                                disabled={verifyingId === m.id}
+                                className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
+                              >
+                                <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
+                                <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
+                              </select>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    if (isEditingLocation) {
+                                      setLocationFormId(null)
+                                    } else {
+                                      setLocationFormId(m.id)
+                                      setLocationForm({
+                                        latitude: m.latitude?.toString() || '',
+                                        longitude: m.longitude?.toString() || '',
+                                        category: m.category || '',
+                                        state: m.state || ''
+                                      })
+                                    }
+                                  }}
+                                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${isEditingLocation ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 border border-white/10'}`}
+                                >
+                                  <MapPin size={11} />
+                                  {isEditingLocation ? 'Cancel' : 'Set Location'}
+                                </button>
+                                <button 
+                                  onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
+                                  disabled={verifyingId === m.id}
+                                  className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
+                                >
+                                  {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
+                                </button>
+                                {m.phone && (
+                                  <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
+                                    <Smartphone size={14} />
+                                  </a>
+                                )}
+                              </div>
+                            </td>
                           </tr>
-                        )}
-                      </>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          {isEditingLocation && (
+                            <tr key={`${m.id}-location`} className="bg-indigo-500/5 border-b border-indigo-500/20">
+                              <td colSpan={6} className="px-6 py-5">
+                                <div className="flex flex-col gap-4">
+                                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                    <MapPin size={12} /> Set Location & Category for {m.name || 'this merchant'}
+                                  </p>
+                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Latitude</label>
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        value={locationForm.latitude}
+                                        onChange={e => setLocationForm(f => ({ ...f, latitude: e.target.value }))}
+                                        placeholder="e.g. 3.1390"
+                                        className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Longitude</label>
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        value={locationForm.longitude}
+                                        onChange={e => setLocationForm(f => ({ ...f, longitude: e.target.value }))}
+                                        placeholder="e.g. 101.6869"
+                                        className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 transition-all"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">State (Negeri)</label>
+                                      <select
+                                        value={locationForm.state}
+                                        onChange={e => setLocationForm(f => ({ ...f, state: e.target.value }))}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                      >
+                                        <option value="" className="bg-[#0a0b0f]">Select state...</option>
+                                        {['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan', 'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'].map(st => (
+                                          <option key={st} value={st} className="bg-[#0a0b0f]">{st}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div className="space-y-1.5 md:col-span-2">
+                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                                      <select
+                                        value={locationForm.category}
+                                        onChange={e => setLocationForm(f => ({ ...f, category: e.target.value }))}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white text-xs outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                      >
+                                        <option value="" className="bg-[#0a0b0f]">Select category...</option>
+                                        {MERCHANT_CATEGORIES.map(cat => (
+                                          <option key={cat} value={cat} className="bg-[#0a0b0f]">{cat}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => handleSaveLocation(m.id)}
+                                      disabled={savingLocation}
+                                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                    >
+                                      {savingLocation ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                      Save Location
+                                    </button>
+                                    <button
+                                      onClick={() => setLocationFormId(null)}
+                                      className="px-5 py-2.5 rounded-xl bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest transition-all hover:bg-white/10"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        ) : null}
+        )}
 
         {filteredMerchants.length === 0 && !loading && activeTab === 'merchants' && (
           <div className="text-center py-40 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
@@ -898,10 +929,10 @@ export default function AdminPage() {
 
             {/* Ads Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <StatCard icon={<Tv size={20} />} label="Total Ads" value={ads.length} color="indigo" trend="All Statuses" />
-              <StatCard icon={<Eye size={20} />} label="Impressions" value={ads.reduce((acc, ad) => acc + ad.impressions, 0).toLocaleString()} color="amber" trend="Total Views" />
-              <StatCard icon={<MousePointerClick size={20} />} label="Total Clicks" value={ads.reduce((acc, ad) => acc + ad.clicks, 0).toLocaleString()} color="emerald" trend="Engagements" />
-              <StatCard icon={<DollarSign size={20} />} label="CPV Revenue" value={`RM ${totalCpvRevenue.toFixed(2)}`} color="rose" trend="Total Debit" />
+              <StatCard icon={<Tv size={20} />} label="Total Ads" value={ads.length} color="indigo" trend="All Statuses" isLoading={adsLoading && ads.length === 0} />
+              <StatCard icon={<Eye size={20} />} label="Impressions" value={ads.reduce((acc, ad) => acc + ad.impressions, 0).toLocaleString()} color="amber" trend="Total Views" isLoading={adsLoading && ads.length === 0} />
+              <StatCard icon={<MousePointerClick size={20} />} label="Total Clicks" value={ads.reduce((acc, ad) => acc + ad.clicks, 0).toLocaleString()} color="emerald" trend="Engagements" isLoading={adsLoading && ads.length === 0} />
+              <StatCard icon={<DollarSign size={20} />} label="CPV Revenue" value={`RM ${totalCpvRevenue.toFixed(2)}`} color="rose" trend="Total Debit" isLoading={adsLoading && ads.length === 0} />
             </div>
 
             {/* Sub-tabs */}
@@ -990,12 +1021,7 @@ export default function AdminPage() {
               </form>
             )}
 
-            {adsLoading ? (
-               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                 <Loader2 size={32} className="text-indigo-500 animate-spin" />
-                 <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Network Data...</p>
-               </div>
-            ) : (
+            <div className={`transition-opacity duration-300 ${adsLoading && ads.length > 0 ? 'opacity-60 pointer-events-none' : ''}`}>
               <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
                 <div className="overflow-x-auto w-full">
                   <table className="w-full text-left border-collapse">
@@ -1010,162 +1036,201 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {displayedAds.map((ad) => (
-                        <tr key={ad.id} className="hover:bg-white/[0.02] transition-colors group">
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className="absolute -inset-1 blur-sm rounded-lg opacity-20 bg-indigo-500" />
-                                <div className="relative w-10 h-16 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                  {ad.image_url ? (
-                                    <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-                                  ) : ad.video_url ? (
-                                    <div className="w-full h-full flex items-center justify-center bg-indigo-950/20">
-                                      <PlayCircle size={18} className="text-indigo-400" />
-                                    </div>
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                                      <Tv size={18} className="text-slate-600" />
-                                    </div>
+                      {adsLoading && ads.length === 0 ? (
+                        Array.from({ length: 4 }).map((_, idx) => (
+                          <tr key={idx} className="animate-pulse">
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-4">
+                                <Skeleton className="w-10 h-16 rounded-lg" />
+                                <div className="space-y-2">
+                                  <Skeleton className="w-32 h-4" />
+                                  <Skeleton className="w-48 h-3" />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <Skeleton className="w-16 h-4" />
+                            </td>
+                            <td className="py-4 px-6">
+                              <Skeleton className="w-16 h-5 rounded-lg" />
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="space-y-1">
+                                <Skeleton className="w-20 h-3" />
+                                <Skeleton className="w-20 h-3" />
+                                <Skeleton className="w-20 h-3" />
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <Skeleton className="w-16 h-5 rounded-lg" />
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Skeleton className="w-20 h-8 rounded-xl" />
+                                <Skeleton className="w-10 h-8 rounded-xl" />
+                                <Skeleton className="w-8 h-8 rounded-xl" />
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        displayedAds.map((ad) => (
+                          <tr key={ad.id} className="hover:bg-white/[0.02] transition-colors group">
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className="absolute -inset-1 blur-sm rounded-lg opacity-20 bg-indigo-500" />
+                                  <div className="relative w-10 h-16 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                    {ad.image_url ? (
+                                      <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+                                    ) : ad.video_url ? (
+                                      <div className="w-full h-full flex items-center justify-center bg-indigo-950/20">
+                                        <PlayCircle size={18} className="text-indigo-400" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                        <Tv size={18} className="text-slate-600" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors truncate max-w-[200px]" title={ad.title}>
+                                    {ad.title}
+                                  </p>
+                                  {ad.description && (
+                                    <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]" title={ad.description}>
+                                      {ad.description}
+                                    </p>
+                                  )}
+                                  {ad.link_url && (
+                                    <a 
+                                      href={ad.link_url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="flex items-center gap-1 mt-1 text-[10px] text-indigo-400/80 hover:text-indigo-400 font-mono truncate max-w-[200px]"
+                                    >
+                                      {ad.cta_text || 'Link'} <ExternalLink size={8} />
+                                    </a>
                                   )}
                                 </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors truncate max-w-[200px]" title={ad.title}>
-                                  {ad.title}
-                                </p>
-                                {ad.description && (
-                                  <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]" title={ad.description}>
-                                    {ad.description}
-                                  </p>
-                                )}
-                                {ad.link_url && (
-                                  <a 
-                                    href={ad.link_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="flex items-center gap-1 mt-1 text-[10px] text-indigo-400/80 hover:text-indigo-400 font-mono truncate max-w-[200px]"
-                                  >
-                                    {ad.cta_text || 'Link'} <ExternalLink size={8} />
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            {ad.cpv_bid ? (
-                              <span className="text-emerald-400 text-xs font-mono font-bold">RM {ad.cpv_bid.toFixed(3)}</span>
-                            ) : (
-                              <span className="text-slate-600 text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="py-4 px-6">
-                            {ad.category ? (
-                              <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg border border-white/10">
-                                {ad.category}
-                              </span>
-                            ) : (
-                              <span className="text-slate-600 text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex flex-col gap-0.5 text-xs text-slate-400">
-                              <div>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Views:</span>{' '}
-                                <span className="font-mono text-white font-bold">{ad.impressions || 0}</span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Clicks:</span>{' '}
-                                <span className="font-mono text-white font-bold">{ad.clicks || 0}</span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CTR:</span>{' '}
-                                <span className="font-mono text-emerald-400 font-bold">{ad.ctr || '0.0'}%</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
-                              ad.status === 'active' 
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                : ad.status === 'pending_review' 
-                                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
-                                  : ad.status === 'paused' 
-                                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
-                                    : ad.status === 'rejected'
-                                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                                      : 'bg-white/5 text-slate-400 border-white/10'
-                            }`}>
-                              {ad.status || 'unknown'}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setPreviewAd(ad)}
-                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 font-black text-[9px] uppercase tracking-widest transition-all"
-                                title="Preview Ad"
-                              >
-                                <Eye size={11} />
-                                Preview
-                              </button>
-                              
-                              {ad.status === 'pending_review' && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApproveAd(ad.id)}
-                                    disabled={adsModerating === ad.id}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
-                                    title="Approve"
-                                  >
-                                    {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
-                                    Approve
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRejectAd(ad.id)}
-                                    disabled={adsModerating === ad.id}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
-                                    title="Reject"
-                                  >
-                                    {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
-                                    Reject
-                                  </button>
-                                </>
+                            </td>
+                            <td className="py-4 px-6">
+                              {ad.cpv_bid ? (
+                                <span className="text-emerald-400 text-xs font-mono font-bold">RM {ad.cpv_bid.toFixed(3)}</span>
+                              ) : (
+                                <span className="text-slate-600 text-xs">-</span>
                               )}
+                            </td>
+                            <td className="py-4 px-6">
+                              {ad.category ? (
+                                <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg border border-white/10">
+                                  {ad.category}
+                                </span>
+                              ) : (
+                                <span className="text-slate-600 text-xs">-</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex flex-col gap-0.5 text-xs text-slate-400">
+                                <div>
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Views:</span>{' '}
+                                  <span className="font-mono text-white font-bold">{ad.impressions || 0}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Clicks:</span>{' '}
+                                  <span className="font-mono text-white font-bold">{ad.clicks || 0}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CTR:</span>{' '}
+                                  <span className="font-mono text-emerald-400 font-bold">{ad.ctr || '0.0'}%</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
+                                ad.status === 'active' 
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                  : ad.status === 'pending_review' 
+                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+                                    : ad.status === 'paused' 
+                                      ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
+                                      : ad.status === 'rejected'
+                                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                        : 'bg-white/5 text-slate-400 border-white/10'
+                              }`}>
+                                {ad.status || 'unknown'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewAd(ad)}
+                                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 font-black text-[9px] uppercase tracking-widest transition-all"
+                                  title="Preview Ad"
+                                >
+                                  <Eye size={11} />
+                                  Preview
+                                </button>
+                                
+                                {ad.status === 'pending_review' && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveAd(ad.id)}
+                                      disabled={adsModerating === ad.id}
+                                      className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                      title="Approve"
+                                    >
+                                      {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectAd(ad.id)}
+                                      disabled={adsModerating === ad.id}
+                                      className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                      title="Reject"
+                                    >
+                                      {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
 
-                              <button
-                                type="button"
-                                onClick={() => toggleAdActive(ad.id, ad.is_active)}
-                                className={`px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                                  ad.is_active 
-                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500' 
-                                    : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                                }`}
-                                title={ad.is_active ? 'Turn OFF' : 'Turn ON'}
-                              >
-                                {ad.is_active ? 'ON' : 'OFF'}
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                                  className={`px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                                    ad.is_active 
+                                      ? 'bg-indigo-600 text-white hover:bg-indigo-500' 
+                                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                  }`}
+                                  title={ad.is_active ? 'Turn OFF' : 'Turn ON'}
+                                >
+                                  {ad.is_active ? 'ON' : 'OFF'}
+                                </button>
 
-                              <button
-                                type="button"
-                                onClick={() => deleteAd(ad.id)}
-                                className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shrink-0"
-                                title="Delete Ad"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                <button
+                                  type="button"
+                                  onClick={() => deleteAd(ad.id)}
+                                  className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shrink-0"
+                                  title="Delete Ad"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
-            )}
+            </div>
             
             {displayedAds.length === 0 && !adsLoading && (
               <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
@@ -1194,39 +1259,37 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {infraData ? (
+            <div className={`transition-opacity duration-300 ${infraLoading && infraData ? 'opacity-60 pointer-events-none' : ''}`}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <CircularMeter 
-                  percentage={(infraData.supabase.databaseSizeBytes / infraData.supabase.databaseLimitBytes) * 100}
+                  percentage={infraData ? (infraData.supabase.databaseSizeBytes / infraData.supabase.databaseLimitBytes) * 100 : 0}
                   label="Supabase DB Size"
                   color="indigo"
-                  limit={`${(infraData.supabase.databaseLimitBytes / 1024 / 1024).toFixed(0)}MB`}
-                  current={`${(infraData.supabase.databaseSizeBytes / 1024 / 1024).toFixed(2)}MB`}
+                  limit={infraData ? `${(infraData.supabase.databaseLimitBytes / 1024 / 1024).toFixed(0)}MB` : ''}
+                  current={infraData ? `${(infraData.supabase.databaseSizeBytes / 1024 / 1024).toFixed(2)}MB` : ''}
                   description="Total database size consumed by active sessions, pagers, and merchants."
+                  isLoading={infraLoading && !infraData}
                 />
                 <CircularMeter 
-                  percentage={(infraData.supabase.storageSizeBytes / infraData.supabase.storageLimitBytes) * 100}
+                  percentage={infraData ? (infraData.supabase.storageSizeBytes / infraData.supabase.storageLimitBytes) * 100 : 0}
                   label="Supabase Storage"
                   color="emerald"
-                  limit={`${(infraData.supabase.storageLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB`}
-                  current={`${(infraData.supabase.storageSizeBytes / 1024 / 1024).toFixed(2)}MB`}
+                  limit={infraData ? `${(infraData.supabase.storageLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB` : ''}
+                  current={infraData ? `${(infraData.supabase.storageSizeBytes / 1024 / 1024).toFixed(2)}MB` : ''}
                   description="Total storage consumed by WebP compressed merchant logos."
+                  isLoading={infraLoading && !infraData}
                 />
                 <CircularMeter 
-                  percentage={(infraData.vercel.bandwidthBytes / infraData.vercel.bandwidthLimitBytes) * 100}
+                  percentage={infraData ? (infraData.vercel.bandwidthBytes / infraData.vercel.bandwidthLimitBytes) * 100 : 0}
                   label="Vercel Bandwidth"
                   color="amber"
-                  limit={`${(infraData.vercel.bandwidthLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB`}
-                  current={`${(infraData.vercel.bandwidthBytes / 1024 / 1024 / 1024).toFixed(4)}GB`}
-                  description={infraData.vercel.missingToken ? "Simulated data. Set VERCEL_ACCESS_TOKEN for exact API sync." : "Actual bandwidth used this billing cycle."}
+                  limit={infraData ? `${(infraData.vercel.bandwidthLimitBytes / 1024 / 1024 / 1024).toFixed(0)}GB` : ''}
+                  current={infraData ? `${(infraData.vercel.bandwidthBytes / 1024 / 1024 / 1024).toFixed(4)}GB` : ''}
+                  description={infraData ? (infraData.vercel.missingToken ? "Simulated data. Set VERCEL_ACCESS_TOKEN for exact API sync." : "Actual bandwidth used this billing cycle.") : ""}
+                  isLoading={infraLoading && !infraData}
                 />
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                 <Loader2 size={32} className="text-indigo-500 animate-spin" />
-                 <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Calculating Infra Metrics...</p>
-              </div>
-            )}
+            </div>
             
             <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl mt-8">
               <h4 className="text-indigo-400 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -1260,74 +1323,85 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {behaviorLoading && !behaviorStats ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 size={32} className="text-violet-500 animate-spin" />
-              <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Behavior Data...</p>
+          <div className={`transition-opacity duration-300 ${behaviorLoading && behaviorStats ? 'opacity-60 pointer-events-none' : ''}`}>
+            {/* ── Stat Cards ── */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              <StatCard
+                icon={<Users size={20} />}
+                label="Page Loads"
+                value={behaviorStats ? behaviorStats.totalLoads.toLocaleString() : 0}
+                color="indigo"
+                trend="All time"
+                isLoading={behaviorLoading && !behaviorStats}
+              />
+              <StatCard
+                icon={<CheckCheck size={20} />}
+                label="Activated"
+                value={behaviorStats && behaviorStats.totalLoads > 0
+                  ? `${((behaviorStats.totalActivated / behaviorStats.totalLoads) * 100).toFixed(1)}%`
+                  : '—'}
+                color="emerald"
+                trend={behaviorStats ? `${behaviorStats.totalActivated} total` : ''}
+                isLoading={behaviorLoading && !behaviorStats}
+              />
+              <StatCard
+                icon={<Gauge size={20} />}
+                label="Avg Duration"
+                value={behaviorStats && behaviorStats.avgDurationSeconds > 0
+                  ? `${Math.floor(behaviorStats.avgDurationSeconds / 60)}m ${behaviorStats.avgDurationSeconds % 60}s`
+                  : '—'}
+                color="amber"
+                trend="Per session"
+                isLoading={behaviorLoading && !behaviorStats}
+              />
+              <StatCard
+                icon={<Activity size={20} />}
+                label="Test Beeps"
+                value={behaviorStats && behaviorStats.totalLoads > 0
+                  ? `${((behaviorStats.totalTestBeeps / behaviorStats.totalLoads) * 100).toFixed(1)}%`
+                  : '—'}
+                color="indigo"
+                trend={behaviorStats ? `${behaviorStats.totalTestBeeps} total` : ''}
+                isLoading={behaviorLoading && !behaviorStats}
+              />
+              <StatCard
+                icon={<WifiOff size={20} />}
+                label="Offline Events"
+                value={behaviorStats ? behaviorStats.totalOfflineEvents.toLocaleString() : 0}
+                color="rose"
+                trend="Network drops"
+                isLoading={behaviorLoading && !behaviorStats}
+              />
+              <StatCard
+                icon={<Zap size={20} />}
+                label="Alarm Dismissed"
+                value={behaviorStats ? behaviorStats.totalAlarmDismissed.toLocaleString() : 0}
+                color="amber"
+                trend="Dings silenced"
+                isLoading={behaviorLoading && !behaviorStats}
+              />
             </div>
-          ) : behaviorStats ? (
-            <>
-              {/* ── Stat Cards ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard
-                  icon={<Users size={20} />}
-                  label="Page Loads"
-                  value={behaviorStats.totalLoads.toLocaleString()}
-                  color="indigo"
-                  trend="All time"
-                />
-                <StatCard
-                  icon={<CheckCheck size={20} />}
-                  label="Activated"
-                  value={behaviorStats.totalLoads > 0
-                    ? `${((behaviorStats.totalActivated / behaviorStats.totalLoads) * 100).toFixed(1)}%`
-                    : '—'}
-                  color="emerald"
-                  trend={`${behaviorStats.totalActivated} total`}
-                />
-                <StatCard
-                  icon={<Gauge size={20} />}
-                  label="Avg Duration"
-                  value={behaviorStats.avgDurationSeconds > 0
-                    ? `${Math.floor(behaviorStats.avgDurationSeconds / 60)}m ${behaviorStats.avgDurationSeconds % 60}s`
-                    : '—'}
-                  color="amber"
-                  trend="Per session"
-                />
-                <StatCard
-                  icon={<Activity size={20} />}
-                  label="Test Beeps"
-                  value={behaviorStats.totalLoads > 0
-                    ? `${((behaviorStats.totalTestBeeps / behaviorStats.totalLoads) * 100).toFixed(1)}%`
-                    : '—'}
-                  color="indigo"
-                  trend={`${behaviorStats.totalTestBeeps} total`}
-                />
-                <StatCard
-                  icon={<WifiOff size={20} />}
-                  label="Offline Events"
-                  value={behaviorStats.totalOfflineEvents.toLocaleString()}
-                  color="rose"
-                  trend="Network drops"
-                />
-                <StatCard
-                  icon={<Zap size={20} />}
-                  label="Alarm Dismissed"
-                  value={behaviorStats.totalAlarmDismissed.toLocaleString()}
-                  color="amber"
-                  trend="Dings silenced"
-                />
-              </div>
 
-              {/* ── Device Breakdown ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Browser */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <Globe size={13} /> Browser Breakdown
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(behaviorStats.browserBreakdown)
+            {/* ── Device Breakdown ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {/* Browser */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <Globe size={13} /> Browser Breakdown
+                </p>
+                <div className="space-y-3">
+                  {behaviorLoading && !behaviorStats ? (
+                    Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-16 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : behaviorStats ? (
+                    Object.entries(behaviorStats.browserBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .map(([browser, count]) => {
                         const total = Object.values(behaviorStats.browserBreakdown).reduce((a, b) => a + b, 0)
@@ -1346,20 +1420,32 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(behaviorStats.browserBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {behaviorStats && Object.keys(behaviorStats.browserBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
+              </div>
 
-                {/* OS */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <Smartphone size={13} /> OS Breakdown
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(behaviorStats.osBreakdown)
+              {/* OS */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <Smartphone size={13} /> OS Breakdown
+                </p>
+                <div className="space-y-3">
+                  {behaviorLoading && !behaviorStats ? (
+                    Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-16 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : behaviorStats ? (
+                    Object.entries(behaviorStats.osBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .map(([os, count]) => {
                         const total = Object.values(behaviorStats.osBreakdown).reduce((a, b) => a + b, 0)
@@ -1378,34 +1464,56 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(behaviorStats.osBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {behaviorStats && Object.keys(behaviorStats.osBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* ── Activity Log ── */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
-                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
-                    <Clock size={13} /> Latest 50 Events
-                  </p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
-                        <th className="py-4 px-5 font-black">Event</th>
-                        <th className="py-4 px-5 font-black">Session / Receipt</th>
-                        <th className="py-4 px-5 font-black">Device</th>
-                        <th className="py-4 px-5 font-black">Duration</th>
-                        <th className="py-4 px-5 font-black text-right">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {behaviorLog.map((row) => {
+            {/* ── Activity Log ── */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden mt-8">
+              <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                  <Clock size={13} /> Latest 50 Events
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                      <th className="py-4 px-5 font-black">Event</th>
+                      <th className="py-4 px-5 font-black">Session / Receipt</th>
+                      <th className="py-4 px-5 font-black">Device</th>
+                      <th className="py-4 px-5 font-black">Duration</th>
+                      <th className="py-4 px-5 font-black text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {behaviorLoading && !behaviorStats ? (
+                      Array.from({ length: 5 }).map((_, idx) => (
+                        <tr key={idx} className="animate-pulse">
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-24 h-5 rounded-lg" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-16 h-4" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-32 h-4" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-16 h-4" />
+                          </td>
+                          <td className="py-3 px-5 text-right">
+                            <Skeleton className="w-24 h-4 ml-auto" />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      behaviorLog.map((row) => {
                         const eventColors: Record<string, string> = {
                           page_loaded: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
                           pager_activated: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -1452,22 +1560,13 @@ export default function AdminPage() {
                             </td>
                           </tr>
                         )
-                      })}
-                      {behaviorLog.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-16 text-center">
-                            <Activity size={32} className="mx-auto text-slate-700 mb-3" />
-                            <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px]">No behavior events recorded yet.</p>
-                            <p className="text-slate-700 text-[10px] mt-1">Run the SQL migration and visit the pager page to start collecting data.</p>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </>
-          ) : null}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1491,54 +1590,63 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {visitorLoading && !visitorStats ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 size={32} className="text-teal-500 animate-spin" />
-              <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Visitor Data...</p>
+          <div className={`transition-opacity duration-300 ${visitorLoading && visitorStats ? 'opacity-60 pointer-events-none' : ''}`}>
+            {/* ── Stat Cards ── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                icon={<Eye size={20} />}
+                label="Total Page Views"
+                value={visitorStats ? visitorStats.totalViews.toLocaleString() : 0}
+                color="indigo"
+                trend="All pages"
+                isLoading={visitorLoading && !visitorStats}
+              />
+              <StatCard
+                icon={<Globe size={20} />}
+                label="Unique Paths"
+                value={visitorStats ? visitorStats.uniquePaths.toLocaleString() : 0}
+                color="amber"
+                trend="Different routes"
+                isLoading={visitorLoading && !visitorStats}
+              />
+              <StatCard
+                icon={<Users size={20} />}
+                label="Unique Browsers"
+                value={visitorStats ? Object.keys(visitorStats.browserBreakdown).length.toLocaleString() : 0}
+                color="emerald"
+                trend="Device types"
+                isLoading={visitorLoading && !visitorStats}
+              />
+              <StatCard
+                icon={<Smartphone size={20} />}
+                label="Unique OSs"
+                value={visitorStats ? Object.keys(visitorStats.osBreakdown).length.toLocaleString() : 0}
+                color="rose"
+                trend="Operating systems"
+                isLoading={visitorLoading && !visitorStats}
+              />
             </div>
-          ) : visitorStats ? (
-            <>
-              {/* ── Stat Cards ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                  icon={<Eye size={20} />}
-                  label="Total Page Views"
-                  value={visitorStats.totalViews.toLocaleString()}
-                  color="indigo"
-                  trend="All pages"
-                />
-                <StatCard
-                  icon={<Globe size={20} />}
-                  label="Unique Paths"
-                  value={visitorStats.uniquePaths.toLocaleString()}
-                  color="amber"
-                  trend="Different routes"
-                />
-                <StatCard
-                  icon={<Users size={20} />}
-                  label="Unique Browsers"
-                  value={Object.keys(visitorStats.browserBreakdown).length.toLocaleString()}
-                  color="emerald"
-                  trend="Device types"
-                />
-                <StatCard
-                  icon={<Smartphone size={20} />}
-                  label="Unique OSs"
-                  value={Object.keys(visitorStats.osBreakdown).length.toLocaleString()}
-                  color="rose"
-                  trend="Operating systems"
-                />
-              </div>
 
-              {/* ── Popular Pages & Referrers Grid ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Popular Pages */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <Globe size={13} /> Popular Pages (Top 10)
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(visitorStats.pathBreakdown)
+            {/* ── Popular Pages & Referrers Grid ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {/* Popular Pages */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <Globe size={13} /> Popular Pages (Top 10)
+                </p>
+                <div className="space-y-3">
+                  {visitorLoading && !visitorStats ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-1/2 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : visitorStats ? (
+                    Object.entries(visitorStats.pathBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 10)
                       .map(([path, count]) => {
@@ -1558,20 +1666,32 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(visitorStats.pathBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {visitorStats && Object.keys(visitorStats.pathBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
+              </div>
 
-                {/* Referrers */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <ArrowUpRight size={13} /> Top Referrers (Top 10)
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(visitorStats.referrerBreakdown)
+              {/* Referrers */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <ArrowUpRight size={13} /> Top Referrers (Top 10)
+                </p>
+                <div className="space-y-3">
+                  {visitorLoading && !visitorStats ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-1/2 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : visitorStats ? (
+                    Object.entries(visitorStats.referrerBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 10)
                       .map(([referrer, count]) => {
@@ -1591,23 +1711,35 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(visitorStats.referrerBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {visitorStats && Object.keys(visitorStats.referrerBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* ── Browser & OS Breakdowns ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Browser */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <Globe size={13} /> Browser Breakdown
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(visitorStats.browserBreakdown)
+            {/* ── Browser & OS Breakdowns ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {/* Browser */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <Globe size={13} /> Browser Breakdown
+                </p>
+                <div className="space-y-3">
+                  {visitorLoading && !visitorStats ? (
+                    Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-16 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : visitorStats ? (
+                    Object.entries(visitorStats.browserBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .map(([browser, count]) => {
                         const total = Object.values(visitorStats.browserBreakdown).reduce((a, b) => a + b, 0)
@@ -1626,20 +1758,32 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(visitorStats.browserBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {visitorStats && Object.keys(visitorStats.browserBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
+              </div>
 
-                {/* OS */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
-                    <Smartphone size={13} /> OS Breakdown
-                  </p>
-                  <div className="space-y-3">
-                    {Object.entries(visitorStats.osBreakdown)
+              {/* OS */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                  <Smartphone size={13} /> OS Breakdown
+                </p>
+                <div className="space-y-3">
+                  {visitorLoading && !visitorStats ? (
+                    Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="w-16 h-3" />
+                          <Skeleton className="w-10 h-3" />
+                        </div>
+                        <Skeleton className="w-full h-1.5 rounded-full" />
+                      </div>
+                    ))
+                  ) : visitorStats ? (
+                    Object.entries(visitorStats.osBreakdown)
                       .sort((a, b) => b[1] - a[1])
                       .map(([os, count]) => {
                         const total = Object.values(visitorStats.osBreakdown).reduce((a, b) => a + b, 0)
@@ -1658,34 +1802,56 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )
-                      })}
-                    {Object.keys(visitorStats.osBreakdown).length === 0 && (
-                      <p className="text-slate-600 text-xs">No data yet.</p>
-                    )}
-                  </div>
+                      })
+                  ) : null}
+                  {visitorStats && Object.keys(visitorStats.osBreakdown).length === 0 && (
+                    <p className="text-slate-600 text-xs">No data yet.</p>
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* ── Visitor Activity Log ── */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
-                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
-                    <Clock size={13} /> Latest 100 Page Views
-                  </p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
-                        <th className="py-4 px-5 font-black">Path</th>
-                        <th className="py-4 px-5 font-black">Referrer</th>
-                        <th className="py-4 px-5 font-black">Device & Browser</th>
-                        <th className="py-4 px-5 font-black">Resolution</th>
-                        <th className="py-4 px-5 font-black text-right">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {visitorLog.map((row) => {
+            {/* ── Visitor Activity Log ── */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden mt-8">
+              <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                  <Clock size={13} /> Latest 100 Page Views
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                      <th className="py-4 px-5 font-black">Path</th>
+                      <th className="py-4 px-5 font-black">Referrer</th>
+                      <th className="py-4 px-5 font-black">Device & Browser</th>
+                      <th className="py-4 px-5 font-black">Resolution</th>
+                      <th className="py-4 px-5 font-black text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {visitorLoading && !visitorStats ? (
+                      Array.from({ length: 5 }).map((_, idx) => (
+                        <tr key={idx} className="animate-pulse">
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-32 h-4" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-40 h-4" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-24 h-4" />
+                          </td>
+                          <td className="py-3 px-5">
+                            <Skeleton className="w-16 h-4" />
+                          </td>
+                          <td className="py-3 px-5 text-right">
+                            <Skeleton className="w-24 h-4 ml-auto" />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      visitorLog.map((row) => {
                         return (
                           <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
                             <td className="py-3 px-5">
@@ -1717,22 +1883,13 @@ export default function AdminPage() {
                             </td>
                           </tr>
                         )
-                      })}
-                      {visitorLog.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-16 text-center">
-                            <Users size={32} className="mx-auto text-slate-700 mb-3" />
-                            <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px]">No visitor page views recorded yet.</p>
-                            <p className="text-slate-700 text-[10px] mt-1">Run the SQL migration and visit any page of Beepme to start collecting data.</p>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </>
-          ) : null}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1904,7 +2061,13 @@ export default function AdminPage() {
   )
 }
 
-function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode, label: string, value: string | number, color: string, trend: string }) {
+function Skeleton({ className }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-white/5 rounded border border-white/5 ${className}`} />
+  )
+}
+
+function StatCard({ icon, label, value, color, trend, isLoading }: { icon: React.ReactNode, label: string, value: string | number, color: string, trend: string, isLoading?: boolean }) {
   const colors: any = {
     indigo: 'from-indigo-500/20 to-indigo-500/5 text-indigo-400 border-indigo-500/20',
     amber: 'from-amber-500/20 to-amber-500/5 text-amber-400 border-amber-500/20',
@@ -1920,12 +2083,16 @@ function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode,
         </div>
         <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest opacity-60">
           <ArrowUpRight size={12} />
-          {trend}
+          {isLoading ? <Skeleton className="w-10 h-3" /> : trend}
         </div>
       </div>
       <div>
         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">{label}</p>
-        <p className="text-3xl font-black text-white tracking-tighter">{value}</p>
+        {isLoading ? (
+          <Skeleton className="w-24 h-8 mt-1" />
+        ) : (
+          <p className="text-3xl font-black text-white tracking-tighter">{value}</p>
+        )}
       </div>
       
       {/* Subtle Bottom Glow */}
@@ -1934,8 +2101,8 @@ function StatCard({ icon, label, value, color, trend }: { icon: React.ReactNode,
   )
 }
 
-function CircularMeter({ percentage, label, color, limit, current, description }: any) {
-  const safePercentage = Math.min(Math.max(percentage, 0), 100)
+function CircularMeter({ percentage, label, color, limit, current, description, isLoading }: any) {
+  const safePercentage = Math.min(Math.max(percentage || 0, 0), 100)
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (safePercentage / 100) * circumference;
@@ -1945,40 +2112,57 @@ function CircularMeter({ percentage, label, color, limit, current, description }
 
   return (
     <div className={`relative p-8 rounded-[32px] bg-white/[0.01] border transition-all duration-500 ${isDanger ? 'border-rose-500/30 shadow-[0_0_30px_-5px_rgba(244,63,94,0.1)] hover:bg-rose-500/5' : 'border-white/5 hover:bg-white/[0.03]'}`}>
-      <div className="flex flex-col gap-6">
-        <div className="flex items-start justify-between">
+      {isLoading ? (
+        <div className="flex flex-col gap-6 animate-pulse">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <Skeleton className="w-24 h-3" />
+              <Skeleton className="w-16 h-6" />
+              <Skeleton className="w-20 h-3" />
+            </div>
+            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/5 shrink-0" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="w-full h-3" />
+            <Skeleton className="w-2/3 h-3" />
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between">
+            <div>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{label}</p>
+               <p className="text-2xl font-black text-white">{current}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Limit: {limit}</p>
+            </div>
+            <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r={radius} className="stroke-white/5 fill-none" strokeWidth="8" />
+                <circle 
+                  cx="50" cy="50" r={radius} 
+                  className={`${strokeColor} fill-none transition-all duration-1000 ease-out`} 
+                  strokeWidth="8" 
+                  strokeLinecap="round"
+                  style={{ strokeDasharray: circumference, strokeDashoffset }} 
+                />
+              </svg>
+              <div className={`absolute inset-0 flex flex-col items-center justify-center ${isDanger ? 'animate-pulse text-rose-500' : 'text-white'}`}>
+                 <span className="text-sm font-black">{safePercentage.toFixed(1)}</span>
+                 <span className="text-[8px] font-bold uppercase tracking-widest">%</span>
+              </div>
+            </div>
+          </div>
           <div>
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{label}</p>
-             <p className="text-2xl font-black text-white">{current}</p>
-             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Limit: {limit}</p>
-          </div>
-          <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r={radius} className="stroke-white/5 fill-none" strokeWidth="8" />
-              <circle 
-                cx="50" cy="50" r={radius} 
-                className={`${strokeColor} fill-none transition-all duration-1000 ease-out`} 
-                strokeWidth="8" 
-                strokeLinecap="round"
-                style={{ strokeDasharray: circumference, strokeDashoffset }} 
-              />
-            </svg>
-            <div className={`absolute inset-0 flex flex-col items-center justify-center ${isDanger ? 'animate-pulse text-rose-500' : 'text-white'}`}>
-               <span className="text-sm font-black">{safePercentage.toFixed(1)}</span>
-               <span className="text-[8px] font-bold uppercase tracking-widest">%</span>
-            </div>
+            <p className="text-xs text-slate-500 leading-relaxed min-h-[40px]">{description}</p>
+            {isDanger && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-2 text-rose-400">
+                 <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                 <p className="text-[10px] font-bold leading-tight">Critical Limit Reached. Consider upgrading your plan immediately.</p>
+              </div>
+            )}
           </div>
         </div>
-        <div>
-          <p className="text-xs text-slate-500 leading-relaxed min-h-[40px]">{description}</p>
-          {isDanger && (
-            <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-2 text-rose-400">
-               <AlertCircle size={14} className="shrink-0 mt-0.5" />
-               <p className="text-[10px] font-bold leading-tight">Critical Limit Reached. Consider upgrading your plan immediately.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
