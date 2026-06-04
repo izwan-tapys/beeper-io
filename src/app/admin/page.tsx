@@ -48,7 +48,7 @@ export default function AdminPage() {
   const [savingLocation, setSavingLocation] = useState(false)
 
   // Ads State
-  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior'>('merchants')
+  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior' | 'visitors'>('merchants')
   const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all'>('active')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
@@ -88,6 +88,18 @@ export default function AdminPage() {
   } | null>(null)
   const [behaviorLog, setBehaviorLog] = useState<any[]>([])
   const [behaviorLoading, setBehaviorLoading] = useState(false)
+
+  // Visitor Analytics State
+  const [visitorStats, setVisitorStats] = useState<{
+    totalViews: number
+    uniquePaths: number
+    pathBreakdown: Record<string, number>
+    referrerBreakdown: Record<string, number>
+    browserBreakdown: Record<string, number>
+    osBreakdown: Record<string, number>
+  } | null>(null)
+  const [visitorLog, setVisitorLog] = useState<any[]>([])
+  const [visitorLoading, setVisitorLoading] = useState(false)
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -348,6 +360,72 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchVisitorsData = useCallback(async () => {
+    setVisitorLoading(true)
+    try {
+      // 1. Get the total count of page views
+      const { count: totalViewsCount } = await supabase
+        .from('page_views')
+        .select('*', { count: 'exact', head: true })
+
+      // 2. Fetch the latest 100 page views for the activity log
+      const { data: logData } = await supabase
+        .from('page_views')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (logData) setVisitorLog(logData)
+
+      // 3. Fetch the latest 1000 page views to compute breakdowns
+      const { data: recentViews } = await supabase
+        .from('page_views')
+        .select('path, referrer, browser, os')
+        .order('created_at', { ascending: false })
+        .limit(1000)
+
+      const pathBreakdown: Record<string, number> = {}
+      const referrerBreakdown: Record<string, number> = {}
+      const browserBreakdown: Record<string, number> = {}
+      const osBreakdown: Record<string, number> = {}
+      const uniquePathsSet = new Set<string>()
+
+      if (recentViews) {
+        for (const view of recentViews) {
+          if (view.path) {
+            pathBreakdown[view.path] = (pathBreakdown[view.path] ?? 0) + 1
+            uniquePathsSet.add(view.path)
+          }
+          if (view.referrer) {
+            const ref = view.referrer.trim()
+            referrerBreakdown[ref] = (referrerBreakdown[ref] ?? 0) + 1
+          } else {
+            referrerBreakdown['Direct / None'] = (referrerBreakdown['Direct / None'] ?? 0) + 1
+          }
+          if (view.browser) {
+            browserBreakdown[view.browser] = (browserBreakdown[view.browser] ?? 0) + 1
+          }
+          if (view.os) {
+            osBreakdown[view.os] = (osBreakdown[view.os] ?? 0) + 1
+          }
+        }
+      }
+
+      setVisitorStats({
+        totalViews: totalViewsCount ?? 0,
+        uniquePaths: uniquePathsSet.size,
+        pathBreakdown,
+        referrerBreakdown,
+        browserBreakdown,
+        osBreakdown,
+      })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setVisitorLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (isAdmin && activeTab === 'ads') {
       fetchAds()
@@ -360,7 +438,10 @@ export default function AdminPage() {
     if (isAdmin && activeTab === 'behavior') {
       fetchBehaviorData()
     }
-  }, [isAdmin, activeTab, fetchAds, fetchInfraData, fetchBehaviorData])
+    if (isAdmin && activeTab === 'visitors') {
+      fetchVisitorsData()
+    }
+  }, [isAdmin, activeTab, fetchAds, fetchInfraData, fetchBehaviorData, fetchVisitorsData])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -509,6 +590,12 @@ export default function AdminPage() {
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'behavior' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
             <Activity size={16} /> Behavior
+          </button>
+          <button
+            onClick={() => setActiveTab('visitors')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'visitors' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <Users size={16} /> Visitors
           </button>
         </div>
 
@@ -1372,6 +1459,271 @@ export default function AdminPage() {
                             <Activity size={32} className="mx-auto text-slate-700 mb-3" />
                             <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px]">No behavior events recorded yet.</p>
                             <p className="text-slate-700 text-[10px] mt-1">Run the SQL migration and visit the pager page to start collecting data.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────── */}
+      {/* VISITORS TAB                            */}
+      {/* ─────────────────────────────────────── */}
+      {activeTab === 'visitors' && (
+        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Page Visitor Analytics</h2>
+              <p className="text-[10px] font-bold text-slate-600">Track and monitor custom page view metrics directly from Supabase.</p>
+            </div>
+            <button
+              onClick={fetchVisitorsData}
+              disabled={visitorLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600/10 border border-teal-500/20 text-xs font-black text-teal-400 hover:bg-teal-600 hover:text-white transition-all disabled:opacity-50"
+            >
+              {visitorLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+              Refresh
+            </button>
+          </div>
+
+          {visitorLoading && !visitorStats ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 size={32} className="text-teal-500 animate-spin" />
+              <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Visitor Data...</p>
+            </div>
+          ) : visitorStats ? (
+            <>
+              {/* ── Stat Cards ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  icon={<Eye size={20} />}
+                  label="Total Page Views"
+                  value={visitorStats.totalViews.toLocaleString()}
+                  color="indigo"
+                  trend="All pages"
+                />
+                <StatCard
+                  icon={<Globe size={20} />}
+                  label="Unique Paths"
+                  value={visitorStats.uniquePaths.toLocaleString()}
+                  color="amber"
+                  trend="Different routes"
+                />
+                <StatCard
+                  icon={<Users size={20} />}
+                  label="Unique Browsers"
+                  value={Object.keys(visitorStats.browserBreakdown).length.toLocaleString()}
+                  color="emerald"
+                  trend="Device types"
+                />
+                <StatCard
+                  icon={<Smartphone size={20} />}
+                  label="Unique OSs"
+                  value={Object.keys(visitorStats.osBreakdown).length.toLocaleString()}
+                  color="rose"
+                  trend="Operating systems"
+                />
+              </div>
+
+              {/* ── Popular Pages & Referrers Grid ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Popular Pages */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <Globe size={13} /> Popular Pages (Top 10)
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(visitorStats.pathBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 10)
+                      .map(([path, count]) => {
+                        const total = Object.values(visitorStats.pathBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={path}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80 font-mono truncate max-w-[70%]">{path}</span>
+                              <span className="text-[10px] font-mono text-slate-400 shrink-0">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-teal-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(visitorStats.pathBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Referrers */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <ArrowUpRight size={13} /> Top Referrers (Top 10)
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(visitorStats.referrerBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 10)
+                      .map(([referrer, count]) => {
+                        const total = Object.values(visitorStats.referrerBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={referrer}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80 font-mono truncate max-w-[70%]" title={referrer}>{referrer}</span>
+                              <span className="text-[10px] font-mono text-slate-400 shrink-0">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-amber-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(visitorStats.referrerBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Browser & OS Breakdowns ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Browser */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <Globe size={13} /> Browser Breakdown
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(visitorStats.browserBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([browser, count]) => {
+                        const total = Object.values(visitorStats.browserBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={browser}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80">{browser}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(visitorStats.browserBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* OS */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <Smartphone size={13} /> OS Breakdown
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(visitorStats.osBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([os, count]) => {
+                        const total = Object.values(visitorStats.osBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={os}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80">{os}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-rose-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(visitorStats.osBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Visitor Activity Log ── */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                    <Clock size={13} /> Latest 100 Page Views
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                        <th className="py-4 px-5 font-black">Path</th>
+                        <th className="py-4 px-5 font-black">Referrer</th>
+                        <th className="py-4 px-5 font-black">Device & Browser</th>
+                        <th className="py-4 px-5 font-black">Resolution</th>
+                        <th className="py-4 px-5 font-black text-right">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {visitorLog.map((row) => {
+                        return (
+                          <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3 px-5">
+                              <span className="text-xs font-mono font-bold text-teal-400">
+                                {row.path}
+                              </span>
+                            </td>
+                            <td className="py-3 px-5 max-w-[200px] truncate">
+                              <span className="text-xs font-mono text-slate-400">
+                                {row.referrer || 'Direct / None'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-medium">{row.os ?? '—'}</span>
+                                <span className="text-white/20">·</span>
+                                <span className="text-[10px] text-slate-500">{row.browser ?? '—'}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-5">
+                              <span className="text-xs font-mono text-slate-400">
+                                {row.screen_width && row.screen_height ? `${row.screen_width}x${row.screen_height}` : '—'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-5 text-right">
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {new Date(row.created_at).toLocaleString('en-MY', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {visitorLog.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-16 text-center">
+                            <Users size={32} className="mx-auto text-slate-700 mb-3" />
+                            <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px]">No visitor page views recorded yet.</p>
+                            <p className="text-slate-700 text-[10px] mt-1">Run the SQL migration and visit any page of Beepme to start collecting data.</p>
                           </td>
                         </tr>
                       )}
