@@ -79,6 +79,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [showInstructions, setShowInstructions] = useState(true)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
 
+  // ── Google Review quota state (free plan: 30 clicks/month) ─────────────────
+  const [isGmbQuotaExceeded, setIsGmbQuotaExceeded] = useState(false)
+
   // ── Ad state ───────────────────────────────────────────────────────────────
   const [clientUuid, setClientUuid] = useState<string | null>(null)
   const [adsList, setAdsList] = useState<any[]>([])
@@ -452,6 +455,28 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         setMerchantLogo(merchantData.logo_url)
         setGmbUrl(merchantData.gmb_url)
         setThemeColor(merchantData.theme_color || '#6366f1')
+
+        // Check GMB quota for free plan merchants
+        const isMerchantPro =
+          merchantData.plan_type === 'pro' &&
+          merchantData.subscription_status === 'active' &&
+          !!merchantData.expiry_date &&
+          new Date(merchantData.expiry_date) > new Date()
+
+        if (!isMerchantPro && merchantData.gmb_url) {
+          const startOfMonth = new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            1
+          ).toISOString()
+          const { count } = await supabase
+            .from('ad_analytics')
+            .select('id', { count: 'exact', head: true })
+            .eq('merchant_id', data.merchant_id)
+            .eq('event_type', 'gmb_click')
+            .gte('created_at', startOfMonth)
+          setIsGmbQuotaExceeded((count ?? 0) >= 30)
+        }
       }
 
       setReceiptNumber(data.receipt_number)
@@ -595,6 +620,23 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         event_type: 'click',
       }).then(({ error }) => { if (error) console.error('Failed to log click:', error) })
     }
+  }
+
+  // ── Handle GMB (Google Review) button click ────────────────────────────────
+  const handleGmbClick = async (gmbHref: string) => {
+    if (!merchantId) return
+    // Fire-and-forget: track click, update quota state, then navigate
+    fetch('/api/merchant/track-gmb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchant_id: merchantId, session_id: sessionId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.isPro && (data.count ?? 0) >= 30) setIsGmbQuotaExceeded(true)
+      })
+      .catch(console.error)
+    window.open(gmbHref, '_blank', 'noopener,noreferrer')
   }
 
   // ── Wake Lock ──────────────────────────────────────────────────────────────
@@ -897,30 +939,40 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                       </div>
                     </div>
                   </div>
-                  <a
-                    href={session.gmbUrl!}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => handleGmbClick(session.gmbUrl!)}
                     className="px-4 py-2 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide shrink-0 transition-transform active:scale-95 hover:bg-slate-100 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                   >
                     {lang === 'bm' ? 'Nilai' : 'Rate'}
-                  </a>
+                  </button>
                 </motion.div>
               ))}
             </div>
           ) : completedSessionsWithGmb.length === 1 ? (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-2 shadow-2xl">
-              <a href={completedSessionsWithGmb[0].gmbUrl!} target="_blank" rel="noopener noreferrer" className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-100 to-yellow-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex gap-1 relative z-10">
-                  {[0, 100, 200, 300, 400].map((d) => <span key={d} className="text-2xl animate-bounce" style={{ animationDelay: `${d}ms` }}>⭐</span>)}
+              {isGmbQuotaExceeded ? (
+                <div className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white/5 border border-white/10 text-center">
+                  <span className="text-2xl">👋</span>
+                  <span className="uppercase tracking-wide text-[13px] text-slate-400 font-bold">
+                    {lang === 'bm' ? 'Jumpa Lagi!' : 'See You Again!'}
+                  </span>
                 </div>
-                <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">
-                  {lang === 'bm' 
-                    ? `Nilai ${completedSessionsWithGmb[0].merchantName} di Google` 
-                    : `Rate ${completedSessionsWithGmb[0].merchantName} on Google`}
-                </span>
-              </a>
+              ) : (
+                <button
+                  onClick={() => handleGmbClick(completedSessionsWithGmb[0].gmbUrl!)}
+                  className="w-full flex flex-col items-center justify-center gap-1.5 px-8 py-5 rounded-[24px] bg-white text-black font-black hover:scale-[0.98] transition-transform shadow-[0_0_40px_rgba(255,255,255,0.15)] group relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-100 to-yellow-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex gap-1 relative z-10">
+                    {[0, 100, 200, 300, 400].map((d) => <span key={d} className="text-2xl animate-bounce" style={{ animationDelay: `${d}ms` }}>⭐</span>)}
+                  </div>
+                  <span className="relative z-10 uppercase tracking-wide text-[13px] text-slate-800">
+                    {lang === 'bm'
+                      ? `Nilai ${completedSessionsWithGmb[0].merchantName} di Google`
+                      : `Rate ${completedSessionsWithGmb[0].merchantName} on Google`}
+                  </span>
+                </button>
+              )}
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center shadow-2xl">
@@ -1079,14 +1131,15 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                             {ad.cta_text}
                           </a>
                         )}
-                        {gmbUrl && (
-                          <a href={gmbUrl} target="_blank" rel="noopener noreferrer"
+                        {gmbUrl && !isGmbQuotaExceeded && (
+                          <button
+                            onClick={() => handleGmbClick(gmbUrl)}
                             className="w-9 h-9 rounded-full bg-white flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-transform relative">
                             <span className="text-sm leading-none">⭐</span>
                             <span className="text-[6px] font-black uppercase text-black">Rate</span>
                             <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping opacity-75" />
                             <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full" />
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>

@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [syncCooldown, setSyncCooldown] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>(null)
   const [monthlyCount, setMonthlyCount] = useState(0)
+  const [gmbClickCount, setGmbClickCount] = useState(0)
   const [isOnline, setIsOnline] = useState(true)
   const [onboardingPhone, setOnboardingPhone] = useState('')
   const [savingOnboarding, setSavingOnboarding] = useState(false)
@@ -308,6 +309,23 @@ export default function DashboardPage() {
 
     if (!error && count !== null) {
       setMonthlyCount(count)
+    }
+
+    // Fetch GMB click count for free-plan merchants
+    const isMerchantPro =
+      merchant.plan_type === 'pro' &&
+      merchant.subscription_status === 'active' &&
+      !!merchant.expiry_date &&
+      new Date(merchant.expiry_date) > new Date()
+
+    if (!isMerchantPro && merchant.gmb_url) {
+      const { count: gmbCount } = await supabase
+        .from('ad_analytics')
+        .select('id', { count: 'exact', head: true })
+        .eq('merchant_id', merchant.id)
+        .eq('event_type', 'gmb_click')
+        .gte('created_at', startOfMonth.toISOString())
+      setGmbClickCount(gmbCount ?? 0)
     }
   }, [merchant])
 
@@ -1047,6 +1065,60 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Google Review Quota Widget (Free Plan Only) */}
+              {!isPremiumActive && merchant?.gmb_url && (() => {
+                const GMB_LIMIT = 30
+                const pct = Math.min(100, Math.round((gmbClickCount / GMB_LIMIT) * 100))
+                const isNear = pct >= 80
+                const isOver = gmbClickCount >= GMB_LIMIT
+                const barColor = isOver ? '#ef4444' : isNear ? '#f59e0b' : '#6366f1'
+                return (
+                  <div className={`mt-3 pt-3 border-t border-white/5 space-y-2 ${
+                    isOver ? 'animate-pulse' : ''
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        ⭐ Google Review Clicks
+                      </span>
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: barColor }}
+                      >
+                        {gmbClickCount} / {GMB_LIMIT}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: barColor }}
+                      />
+                    </div>
+                    {isNear && (
+                      <div
+                        className="flex items-center justify-between gap-3 p-3 rounded-xl border"
+                        style={{
+                          background: isOver ? 'rgba(239,68,68,0.05)' : 'rgba(245,158,11,0.05)',
+                          borderColor: isOver ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold leading-snug" style={{ color: isOver ? '#f87171' : '#fbbf24' }}>
+                          {isOver
+                            ? '⛔ Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
+                            : `⚠️ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
+                        </p>
+                        <button
+                          onClick={() => { setOpenSection('subscription'); setIsSettingsOpen(true) }}
+                          className="shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider text-white transition-all active:scale-95"
+                          style={{ background: isOver ? '#ef4444' : '#f59e0b' }}
+                        >
+                          Upgrade
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Latest Receipts List */}
               {latestReceipts.length > 0 && (

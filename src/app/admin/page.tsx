@@ -142,8 +142,6 @@ export default function AdminPage() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      const { data: analyticsData } = await supabase.from('ad_analytics').select('ad_id, event_type')
-
       // Fetch CPV revenue: sum of debits
       const { data: txData } = await supabase
         .from('ad_wallet_transactions')
@@ -156,17 +154,33 @@ export default function AdminPage() {
       }
       
       if (adsData) {
-        const enrichedAds = adsData.map((ad: any) => {
-          const adAnalytics = analyticsData?.filter((a: any) => a.ad_id === ad.id) || []
-          const impressions = adAnalytics.filter((a: any) => a.event_type === 'impression').length
-          const clicks = adAnalytics.filter((a: any) => a.event_type === 'click').length
-          return { 
-            ...ad, 
-            impressions, 
-            clicks, 
-            ctr: impressions > 0 ? ((clicks / impressions) * 100).toFixed(1) : '0.0' 
-          }
-        })
+        const enrichedAds = await Promise.all(
+          adsData.map(async (ad: any) => {
+            // Fetch impressions count
+            const { count: impressions } = await supabase
+              .from('ad_analytics')
+              .select('*', { count: 'exact', head: true })
+              .eq('ad_id', ad.id)
+              .eq('event_type', 'impression')
+
+            // Fetch clicks count
+            const { count: clicks } = await supabase
+              .from('ad_analytics')
+              .select('*', { count: 'exact', head: true })
+              .eq('ad_id', ad.id)
+              .eq('event_type', 'click')
+
+            const impCount = impressions || 0
+            const clickCount = clicks || 0
+
+            return { 
+              ...ad, 
+              impressions: impCount, 
+              clicks: clickCount, 
+              ctr: impCount > 0 ? ((clickCount / impCount) * 100).toFixed(1) : '0.0' 
+            }
+          })
+        )
         setAds(enrichedAds)
       }
     } catch (e) {

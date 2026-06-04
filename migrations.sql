@@ -434,3 +434,100 @@ BEGIN
         RAISE NOTICE 'Dropped broad storage policy: %', pol.policyname;
     END LOOP;
 END $$;
+
+-- 22. Fix Ads Reporting RLS Policies & missing track_ad_event RPC
+-- Allow advertisers to select their own transaction history
+DROP POLICY IF EXISTS "Advertiser can select own transactions" ON ad_wallet_transactions;
+CREATE POLICY "Advertiser can select own transactions"
+ON ad_wallet_transactions FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM advertiser_profiles
+    WHERE advertiser_profiles.id = ad_wallet_transactions.advertiser_id
+      AND advertiser_profiles.user_id = auth.uid()
+  )
+);
+
+-- Ensure public insert is enabled on ad_analytics for public pager devices
+DROP POLICY IF EXISTS "Allow public insert to ad_analytics" ON ad_analytics;
+CREATE POLICY "Allow public insert to ad_analytics"
+ON ad_analytics FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+-- Ensure track_ad_event function exists in the database
+CREATE OR REPLACE FUNCTION track_ad_event(
+  p_ad_id UUID,
+  p_session_id UUID,
+  p_event_type TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_cpv_bid FLOAT;
+  v_advertiser_id UUID;
+  v_wallet_balance FLOAT;
+  v_merchant_id UUID;
+BEGIN
+  -- If event is 'impression', check for deduplication
+  IF p_event_type = 'impression' THEN
+    IF EXISTS (
+      SELECT 1 FROM ad_analytics
+      WHERE ad_id = p_ad_id AND session_id = p_session_id AND event_type = 'impression'
+    ) THEN
+      -- Already tracked for this session, exit early
+      RETURN TRUE;
+    END IF;
+  END IF;
+
+  -- Get ad details
+  SELECT cpv_bid, advertiser_id INTO v_cpv_bid, v_advertiser_id
+  FROM ads WHERE id = p_ad_id;
+
+  IF NOT FOUND THEN
+    RETURN FALSE;
+  END IF;
+
+  -- Get session's merchant_id
+  IF p_session_id IS NOT NULL THEN
+    SELECT merchant_id INTO v_merchant_id
+    FROM sessions WHERE id = p_session_id;
+  END IF;
+
+  -- Wallet deduction is only for impressions in a CPV model
+  IF p_event_type = 'impression' THEN
+    -- Check wallet balance
+    IF v_advertiser_id IS NOT NULL THEN
+      SELECT wallet_balance INTO v_wallet_balance
+      FROM advertiser_profiles WHERE user_id = v_advertiser_id FOR UPDATE;
+
+      IF v_wallet_balance >= v_cpv_bid THEN
+        -- Deduct from wallet
+        UPDATE advertiser_profiles
+        SET wallet_balance = wallet_balance - v_cpv_bid
+        WHERE user_id = v_advertiser_id;
+
+        -- Log transaction
+        INSERT INTO ad_wallet_transactions (advertiser_id, ad_id, session_id, amount, type)
+        SELECT id, p_ad_id, p_session_id, v_cpv_bid, 'debit'
+        FROM advertiser_profiles WHERE user_id = v_advertiser_id;
+      ELSE
+        -- Insufficient balance
+        RETURN FALSE;
+      END IF;
+    END IF;
+
+    -- Update impressions count
+    UPDATE ads SET impressions_count = COALESCE(impressions_count, 0) + 1 WHERE id = p_ad_id;
+  END IF;
+
+  -- Log analytics
+  INSERT INTO ad_analytics (ad_id, merchant_id, session_id, event_type)
+  VALUES (p_ad_id, v_merchant_id, p_session_id, p_event_type);
+
+  RETURN TRUE;
+END;
+$$;
