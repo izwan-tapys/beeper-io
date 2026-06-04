@@ -10,7 +10,7 @@ import {
   Zap, Clock, BarChart3, Globe, ExternalLink,
   ChevronRight, ArrowUpRight, TrendingUp, AlertCircle, LogOut, ArrowLeft,
   Tv, PlayCircle, Image, Plus, Trash2, Eye, MousePointerClick, Percent,
-  MapPin, DollarSign, Clock3
+  MapPin, DollarSign, Clock3, Activity, Users, WifiOff, CheckCheck, Gauge
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -48,7 +48,7 @@ export default function AdminPage() {
   const [savingLocation, setSavingLocation] = useState(false)
 
   // Ads State
-  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra'>('merchants')
+  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior'>('merchants')
   const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all'>('active')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
@@ -74,6 +74,20 @@ export default function AdminPage() {
   // Infra State
   const [infraData, setInfraData] = useState<any>(null)
   const [infraLoading, setInfraLoading] = useState(false)
+
+  // Behavior Analytics State
+  const [behaviorStats, setBehaviorStats] = useState<{
+    totalLoads: number
+    totalActivated: number
+    totalTestBeeps: number
+    totalAlarmDismissed: number
+    totalOfflineEvents: number
+    avgDurationSeconds: number
+    browserBreakdown: Record<string, number>
+    osBreakdown: Record<string, number>
+  } | null>(null)
+  const [behaviorLog, setBehaviorLog] = useState<any[]>([])
+  const [behaviorLoading, setBehaviorLoading] = useState(false)
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -265,6 +279,75 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchBehaviorData = useCallback(async () => {
+    setBehaviorLoading(true)
+    try {
+      // Fetch the latest 50 events for the activity log
+      const { data: logData } = await supabase
+        .from('pager_analytics')
+        .select('*, sessions(receipt_number, merchant_id), merchants(name)')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (logData) setBehaviorLog(logData)
+
+      // Aggregate counts for stat cards
+      const eventTypes = ['page_loaded', 'pager_activated', 'test_beep_clicked', 'alarm_dismissed', 'offline'] as const
+      const counts: Record<string, number> = {}
+      for (const et of eventTypes) {
+        const { count } = await supabase
+          .from('pager_analytics')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_type', et)
+        counts[et] = count ?? 0
+      }
+
+      // Average duration from heartbeat events
+      const { data: heartbeats } = await supabase
+        .from('pager_analytics')
+        .select('elapsed_seconds')
+        .eq('event_type', 'heartbeat')
+        .not('elapsed_seconds', 'is', null)
+        .order('elapsed_seconds', { ascending: false })
+        .limit(500)
+
+      const avgDuration = heartbeats && heartbeats.length > 0
+        ? Math.round(heartbeats.reduce((acc, h) => acc + (h.elapsed_seconds ?? 0), 0) / heartbeats.length)
+        : 0
+
+      // Device breakdowns from all events
+      const { data: allRows } = await supabase
+        .from('pager_analytics')
+        .select('browser, os')
+        .order('created_at', { ascending: false })
+        .limit(500)
+
+      const browserBreakdown: Record<string, number> = {}
+      const osBreakdown: Record<string, number> = {}
+      if (allRows) {
+        for (const row of allRows) {
+          if (row.browser) browserBreakdown[row.browser] = (browserBreakdown[row.browser] ?? 0) + 1
+          if (row.os) osBreakdown[row.os] = (osBreakdown[row.os] ?? 0) + 1
+        }
+      }
+
+      setBehaviorStats({
+        totalLoads: counts['page_loaded'] ?? 0,
+        totalActivated: counts['pager_activated'] ?? 0,
+        totalTestBeeps: counts['test_beep_clicked'] ?? 0,
+        totalAlarmDismissed: counts['alarm_dismissed'] ?? 0,
+        totalOfflineEvents: counts['offline'] ?? 0,
+        avgDurationSeconds: avgDuration,
+        browserBreakdown,
+        osBreakdown,
+      })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setBehaviorLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (isAdmin && activeTab === 'ads') {
       fetchAds()
@@ -274,7 +357,10 @@ export default function AdminPage() {
       const interval = setInterval(fetchInfraData, 60000) // Poll every 60s
       return () => clearInterval(interval)
     }
-  }, [isAdmin, activeTab, fetchAds, fetchInfraData])
+    if (isAdmin && activeTab === 'behavior') {
+      fetchBehaviorData()
+    }
+  }, [isAdmin, activeTab, fetchAds, fetchInfraData, fetchBehaviorData])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -417,6 +503,12 @@ export default function AdminPage() {
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'infra' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
             <BarChart3 size={16} /> Infra Usage
+          </button>
+          <button
+            onClick={() => setActiveTab('behavior')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'behavior' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <Activity size={16} /> Behavior
           </button>
         </div>
 
@@ -1060,6 +1152,237 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* ─────────────────────────────────────── */}
+      {/* BEHAVIOR TAB                            */}
+      {/* ─────────────────────────────────────── */}
+      {activeTab === 'behavior' && (
+        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Customer Behavior Analytics</h2>
+              <p className="text-[10px] font-bold text-slate-600">How customers interact with the virtual pager page.</p>
+            </div>
+            <button
+              onClick={fetchBehaviorData}
+              disabled={behaviorLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600/10 border border-violet-500/20 text-xs font-black text-violet-400 hover:bg-violet-600 hover:text-white transition-all disabled:opacity-50"
+            >
+              {behaviorLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+              Refresh
+            </button>
+          </div>
+
+          {behaviorLoading && !behaviorStats ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 size={32} className="text-violet-500 animate-spin" />
+              <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading Behavior Data...</p>
+            </div>
+          ) : behaviorStats ? (
+            <>
+              {/* ── Stat Cards ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <StatCard
+                  icon={<Users size={20} />}
+                  label="Page Loads"
+                  value={behaviorStats.totalLoads.toLocaleString()}
+                  color="indigo"
+                  trend="All time"
+                />
+                <StatCard
+                  icon={<CheckCheck size={20} />}
+                  label="Activated"
+                  value={behaviorStats.totalLoads > 0
+                    ? `${((behaviorStats.totalActivated / behaviorStats.totalLoads) * 100).toFixed(1)}%`
+                    : '—'}
+                  color="emerald"
+                  trend={`${behaviorStats.totalActivated} total`}
+                />
+                <StatCard
+                  icon={<Gauge size={20} />}
+                  label="Avg Duration"
+                  value={behaviorStats.avgDurationSeconds > 0
+                    ? `${Math.floor(behaviorStats.avgDurationSeconds / 60)}m ${behaviorStats.avgDurationSeconds % 60}s`
+                    : '—'}
+                  color="amber"
+                  trend="Per session"
+                />
+                <StatCard
+                  icon={<Activity size={20} />}
+                  label="Test Beeps"
+                  value={behaviorStats.totalLoads > 0
+                    ? `${((behaviorStats.totalTestBeeps / behaviorStats.totalLoads) * 100).toFixed(1)}%`
+                    : '—'}
+                  color="indigo"
+                  trend={`${behaviorStats.totalTestBeeps} total`}
+                />
+                <StatCard
+                  icon={<WifiOff size={20} />}
+                  label="Offline Events"
+                  value={behaviorStats.totalOfflineEvents.toLocaleString()}
+                  color="rose"
+                  trend="Network drops"
+                />
+                <StatCard
+                  icon={<Zap size={20} />}
+                  label="Alarm Dismissed"
+                  value={behaviorStats.totalAlarmDismissed.toLocaleString()}
+                  color="amber"
+                  trend="Dings silenced"
+                />
+              </div>
+
+              {/* ── Device Breakdown ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Browser */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <Globe size={13} /> Browser Breakdown
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(behaviorStats.browserBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([browser, count]) => {
+                        const total = Object.values(behaviorStats.browserBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={browser}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80">{browser}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(behaviorStats.browserBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* OS */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[28px] p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-5 flex items-center gap-2">
+                    <Smartphone size={13} /> OS Breakdown
+                  </p>
+                  <div className="space-y-3">
+                    {Object.entries(behaviorStats.osBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([os, count]) => {
+                        const total = Object.values(behaviorStats.osBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+                        return (
+                          <div key={os}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white/80">{os}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{count} ({pct}%)</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-violet-500 rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {Object.keys(behaviorStats.osBreakdown).length === 0 && (
+                      <p className="text-slate-600 text-xs">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Activity Log ── */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                    <Clock size={13} /> Latest 50 Events
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                        <th className="py-4 px-5 font-black">Event</th>
+                        <th className="py-4 px-5 font-black">Session / Receipt</th>
+                        <th className="py-4 px-5 font-black">Device</th>
+                        <th className="py-4 px-5 font-black">Duration</th>
+                        <th className="py-4 px-5 font-black text-right">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {behaviorLog.map((row) => {
+                        const eventColors: Record<string, string> = {
+                          page_loaded: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+                          pager_activated: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                          test_beep_clicked: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                          alarm_dismissed: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+                          warning_dismissed: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                          offline: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                          online: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+                          heartbeat: 'bg-white/5 text-slate-400 border-white/10',
+                          visibility_hidden: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                          visibility_visible: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                          qr_scanner_opened: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                          qr_scanner_closed: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                          qr_code_scanned: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
+                        }
+                        const colorClass = eventColors[row.event_type] || 'bg-white/5 text-slate-400 border-white/10'
+                        const receiptNum = row.sessions?.receipt_number ?? '—'
+                        return (
+                          <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3 px-5">
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${colorClass}`}>
+                                {row.event_type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-5">
+                              <span className="text-xs font-mono text-slate-400">#{receiptNum}</span>
+                            </td>
+                            <td className="py-3 px-5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-medium">{row.os ?? '—'}</span>
+                                <span className="text-white/20">·</span>
+                                <span className="text-[10px] text-slate-500">{row.browser ?? '—'}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-5">
+                              {row.elapsed_seconds != null
+                                ? <span className="text-xs font-mono text-slate-400">{Math.floor(row.elapsed_seconds / 60)}m {row.elapsed_seconds % 60}s</span>
+                                : <span className="text-slate-700">—</span>}
+                            </td>
+                            <td className="py-3 px-5 text-right">
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {new Date(row.created_at).toLocaleString('en-MY', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {behaviorLog.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-16 text-center">
+                            <Activity size={32} className="mx-auto text-slate-700 mb-3" />
+                            <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-[10px]">No behavior events recorded yet.</p>
+                            <p className="text-slate-700 text-[10px] mt-1">Run the SQL migration and visit the pager page to start collecting data.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {/* Ad Preview Modal Overlay */}
       {previewAd && (

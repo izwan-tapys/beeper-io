@@ -12,6 +12,7 @@ import { Logo } from '@/components/Logo'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { PremiumPagerZone, type ActiveSession } from '@/components/pager/PremiumPagerZone'
 import { QrScannerModal } from '@/components/pager/QrScannerModal'
+import { trackPagerEvent } from '@/lib/pager-analytics'
 
 type PagerStatus = 'loading' | 'confirm' | 'waiting' | 'called' | 'completed' | 'error'
 
@@ -109,6 +110,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const isInitialFetchRef = useRef<boolean>(true)
   const seenAdsRef = useRef<Set<string>>(new Set())
   const lastCompiledMerchantIdsRef = useRef<string | null>(null)
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null)
+  const pageLoadedAtRef = useRef<number>(Date.now())
+  const hasTrackedLoadRef = useRef<boolean>(false)
 
   useEffect(() => { setIsDescExpanded(false) }, [currentAdIndex])
 
@@ -506,6 +510,19 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       processSessionStatus({ ...data, id: sessionId })
       isInitialFetchRef.current = false
 
+      // ── Track page_loaded (once per session) ──────────────────────────────
+      if (!hasTrackedLoadRef.current) {
+        hasTrackedLoadRef.current = true
+        pageLoadedAtRef.current = Date.now()
+        trackPagerEvent({
+          supabase,
+          eventType: 'page_loaded',
+          sessionId,
+          merchantId: data.merchant_id,
+          clientUuid,
+        })
+      }
+
       // After primary session confirmed, load all device sessions
       if (clientUuid) await fetchAllDeviceSessions(clientUuid, resolvedLocation)
     } else {
@@ -538,6 +555,22 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       }, 90000)
     }
 
+    // ── Heartbeat: send elapsed duration every 30s ─────────────────────────
+    if (!heartbeatRef.current) {
+      heartbeatRef.current = setInterval(() => {
+        if (document.visibilityState !== 'visible') return
+        const elapsed = Math.floor((Date.now() - pageLoadedAtRef.current) / 1000)
+        trackPagerEvent({
+          supabase,
+          eventType: 'heartbeat',
+          sessionId,
+          merchantId,
+          clientUuid,
+          elapsedSeconds: elapsed,
+        })
+      }, 30000)
+    }
+
     // Realtime: primary session channel
     const primaryChannel = supabase
       .channel(`session-${sessionId}`)
@@ -561,22 +594,35 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         .subscribe()
     }
 
+    // ── Visibility change tracking ─────────────────────────────────────────
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchSession()
         if (clientUuid) fetchAllDeviceSessions(clientUuid, userLocation)
+        trackPagerEvent({ supabase, eventType: 'visibility_visible', sessionId, merchantId, clientUuid })
+      } else {
+        trackPagerEvent({ supabase, eventType: 'visibility_hidden', sessionId, merchantId, clientUuid })
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
+    // ── Online / Offline tracking ──────────────────────────────────────────
+    const handleOnline = () => trackPagerEvent({ supabase, eventType: 'online', sessionId, merchantId, clientUuid })
+    const handleOffline = () => trackPagerEvent({ supabase, eventType: 'offline', sessionId, merchantId, clientUuid })
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
     return () => {
       if (waitTimerRef.current) { clearInterval(waitTimerRef.current); waitTimerRef.current = null }
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null }
+      if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
       supabase.removeChannel(primaryChannel)
       if (deviceChannel) supabase.removeChannel(deviceChannel)
     }
-  }, [status, sessionId, clientUuid, fetchSession, processSessionStatus, fetchAllDeviceSessions, userLocation])
+  }, [status, sessionId, clientUuid, merchantId, fetchSession, processSessionStatus, fetchAllDeviceSessions, userLocation])
 
   // ── Ad impression tracking ─────────────────────────────────────────────────
   useEffect(() => {
@@ -681,6 +727,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     }).eq('id', sessionId)
     if (error) { alert('Gagal sambung: ' + error.message) }
     else {
+      trackPagerEvent({ supabase, eventType: 'pager_activated', sessionId, merchantId, clientUuid })
       setStatus('waiting')
       fetchSession()
     }
@@ -737,6 +784,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     const m = Array.isArray(data.merchants) ? data.merchants[0] : data.merchants
     const vendorName = m?.name || 'Gerai'
     showToast(`✅ ${vendorName} ditambah!`)
+    trackPagerEvent({ supabase, eventType: 'qr_code_scanned', sessionId, merchantId, clientUuid })
 
     // Re-compile ads with all updated sessions
     if (clientUuid) await fetchAllDeviceSessions(clientUuid, userLocation)
@@ -815,6 +863,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
       }
       return next
     })
+    trackPagerEvent({ supabase, eventType: 'alarm_dismissed', sessionId, merchantId, clientUuid })
     stopAlert()
   }
 
@@ -1174,9 +1223,15 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               lang={lang}
               formattedWaitTime={isGhostActive() ? undefined : formatWaitTime()}
               isGhostActive={isGhostActive()}
-              onTestBeep={initAudio}
+              onTestBeep={() => {
+                trackPagerEvent({ supabase, eventType: 'test_beep_clicked', sessionId, merchantId, clientUuid })
+                initAudio()
+              }}
               onShowWarning={() => setShowInstructions(true)}
-              onScanQr={() => setShowQrScanner(true)}
+              onScanQr={() => {
+                trackPagerEvent({ supabase, eventType: 'qr_scanner_opened', sessionId, merchantId, clientUuid })
+                setShowQrScanner(true)
+              }}
               // Multi-session: pass all active sessions
               sessions={activeSessions.length > 0 ? activeSessions : undefined}
             />
@@ -1204,6 +1259,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                   <button
                     onClick={() => {
                       setShowInstructions(false)
+                      trackPagerEvent({ supabase, eventType: 'warning_dismissed', sessionId, merchantId, clientUuid })
                       initAudio()
                     }}
                     className="w-full py-4 rounded-xl font-black text-[#111] text-xs uppercase tracking-widest bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-transform"
@@ -1220,7 +1276,10 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         {showQrScanner && (
           <QrScannerModal
             onScan={handleQrScan}
-            onClose={() => setShowQrScanner(false)}
+            onClose={() => {
+              trackPagerEvent({ supabase, eventType: 'qr_scanner_closed', sessionId, merchantId, clientUuid })
+              setShowQrScanner(false)
+            }}
           />
         )}
 
