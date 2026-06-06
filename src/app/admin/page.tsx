@@ -858,7 +858,14 @@ export default function AdminPage() {
                                   {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
                                 </button>
                                 {m.phone && (
-                                  <a href={`https://wa.me/${m.phone}`} target="_blank" className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
+                                  <a 
+                                    href={`https://wa.me/${(() => {
+                                      const cleaned = m.phone.replace(/\D/g, '');
+                                      return cleaned.startsWith('0') ? '6' + cleaned : cleaned;
+                                    })()}`} 
+                                    target="_blank" 
+                                    className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all"
+                                  >
                                     <Smartphone size={14} />
                                   </a>
                                 )}
