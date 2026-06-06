@@ -12,6 +12,13 @@ import { Logo } from '@/components/Logo'
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [activePriceIndex, setActivePriceIndex] = useState(0)
+
+  const handlePriceScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget
+    const index = Math.round(container.scrollLeft / container.clientWidth)
+    setActivePriceIndex(index)
+  }
 
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-[#020203] text-slate-200 selection:bg-indigo-500/30 selection:text-white font-sans no-scrollbar">
@@ -21,6 +28,9 @@ export default function LandingPage() {
           <Logo size={36} />
 
           <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <Link href="/partner" className="hover:text-white transition-colors">
+              Partner
+            </Link>
             <Link href="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
               Login
             </Link>
@@ -38,6 +48,7 @@ export default function LandingPage() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center gap-8 text-2xl font-black uppercase tracking-widest animate-fade-in">
+          <Link href="/partner" onClick={() => setIsMenuOpen(false)}>Partner Program</Link>
           <Link href="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
           <Link href="/login" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
           <button onClick={() => setIsMenuOpen(false)} className="absolute top-8 right-8"><X size={32} /></button>
@@ -76,11 +87,11 @@ export default function LandingPage() {
       </section>
 
       {/* 2. WHY BEEPME (CAROUSEL ON MOBILE) */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
+      <section className="min-h-screen py-24 md:py-32 snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-8 md:mb-16">
-            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Why Beepme?</h2>
-            <h3 className="text-3xl md:text-6xl font-black text-white tracking-tight">Better Than Hardware.</h3>
+            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Why Beepme?</p>
+            <h2 className="text-3xl md:text-6xl font-black text-white tracking-tight">Better Than Hardware.</h2>
           </div>
 
           <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0">
@@ -113,11 +124,11 @@ export default function LandingPage() {
       </section>
 
       {/* 3. PROCESS */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
+      <section className="min-h-screen py-24 md:py-32 snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
           <div className="flex-1 text-center lg:text-left">
-            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Simple Process</h2>
-            <h3 className="text-3xl md:text-6xl font-black text-white tracking-tight mb-8 md:mb-12">Done in Seconds.</h3>
+            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3">Simple Process</p>
+            <h2 className="text-3xl md:text-6xl font-black text-white tracking-tight mb-8 md:mb-12">Done in Seconds.</h2>
             
             <div className="space-y-6 md:space-y-10 max-w-md mx-auto lg:mx-0">
               <StepItem num="01" title="Issue Pager" desc="Enter receipt # on your dashboard." />
@@ -147,15 +158,18 @@ export default function LandingPage() {
       </section>
 
       {/* 4. PRICING */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
+      <section className="min-h-screen py-24 md:py-32 snap-start shrink-0 relative flex flex-col items-center justify-center px-6 bg-white/[0.01] overflow-hidden">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-6 md:mb-12">
-            <h2 className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-2">Pricing Plans</h2>
-            <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight">Choose Your Growth.</h3>
+            <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-2">Pricing Plans</p>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">Choose Your Growth.</h2>
           </div>
 
           {/* Pricing Grid/Carousel */}
-          <div className="flex md:grid md:grid-cols-2 max-w-4xl mx-auto gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pt-8 pb-10 md:pb-0">
+          <div 
+            onScroll={handlePriceScroll}
+            className="flex md:grid md:grid-cols-2 max-w-4xl mx-auto gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar px-4 md:px-0 pt-8 pb-10 md:pb-0"
+          >
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Always Free"
@@ -176,19 +190,18 @@ export default function LandingPage() {
             </div>
           </div>
           
-          {/* Mobile indicator for 3 items */}
+          {/* Mobile indicator for 2 items */}
           <div className="flex md:hidden justify-center gap-2 mt-8">
-            <div className="w-2 h-2 rounded-full bg-white/20" />
-            <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
-            <div className="w-2 h-2 rounded-full bg-white/20" />
+            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${activePriceIndex === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-white/20'}`} />
+            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${activePriceIndex === 1 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-white/20'}`} />
           </div>
         </div>
       </section>
 
       {/* 5. CTA & FOOTER */}
-      <section className="h-screen snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
+      <section className="min-h-screen py-24 md:py-32 snap-start shrink-0 relative flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-indigo-600/5" />
-        <div className="relative z-10 w-full max-w-4xl text-center">
+        <div className="relative z-10 w-full max-w-4xl text-center pb-12">
           <h2 className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter animate-fade-in">Ready to Beep?</h2>
           <p className="text-slate-400 text-base md:text-xl mb-12 max-w-lg mx-auto">
             Join innovative restaurants in Malaysia today. Instant setup, cancel anytime.
@@ -207,8 +220,11 @@ export default function LandingPage() {
         <footer className="absolute bottom-0 left-0 right-0 py-6 border-t border-white/5">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-[8px] font-bold text-slate-600 uppercase tracking-[0.3em]">© 2026 BEEPME.PRO</p>
-            <div className="flex gap-6 text-[8px] font-black uppercase tracking-widest text-slate-500">
-               <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a>
+            <div className="flex flex-wrap justify-center gap-6 text-[8px] font-black uppercase tracking-widest text-slate-500">
+               <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+               <Link href="/partner/terms" className="hover:text-white transition-colors">Terms</Link>
+               <Link href="/partner" className="hover:text-white transition-colors">Partner Program</Link>
+               <a href="mailto:support@beepme.pro" className="hover:text-white transition-colors">Support</a>
             </div>
           </div>
         </footer>
@@ -234,7 +250,7 @@ function FeatureCard({ icon, title, desc, color }: { icon: React.ReactNode, titl
       <div className={`p-3 md:p-4 rounded-2xl border mb-5 inline-block ${colors[color]}`}>
         {icon}
       </div>
-      <h4 className="text-lg md:text-xl font-bold text-white mb-3 tracking-tight">{title}</h4>
+      <h3 className="text-lg md:text-xl font-bold text-white mb-3 tracking-tight">{title}</h3>
       <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{desc}</p>
     </div>
   )
@@ -245,7 +261,7 @@ function StepItem({ num, title, desc }: { num: string, title: string, desc: stri
     <div className="flex gap-4 md:gap-6 text-left items-start">
       <div className="text-xl md:text-2xl font-black text-indigo-500/20 font-mono mt-1">{num}</div>
       <div>
-        <h4 className="text-lg md:text-xl font-black text-white mb-1 md:mb-2 uppercase tracking-tight">{title}</h4>
+        <h3 className="text-lg md:text-xl font-black text-white mb-1 md:mb-2 uppercase tracking-tight">{title}</h3>
         <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{desc}</p>
       </div>
     </div>
@@ -259,9 +275,9 @@ function PricingCard({ name, price, period, features, recommended, isPro }: { na
         <div className="absolute top-0 right-8 -translate-y-1/2 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Best Value</div>
       )}
       <p className={`font-bold text-[9px] uppercase tracking-widest mb-1 ${recommended ? 'text-indigo-400' : 'text-slate-600'}`}>{name}</p>
-      <h4 className="text-2xl md:text-3xl font-black text-white mb-6">
+      <h3 className="text-2xl md:text-3xl font-black text-white mb-6">
         {price} <span className="text-xs font-medium text-slate-600">{period}</span>
-      </h4>
+      </h3>
       <ul className="space-y-3 mb-8 flex-1">
         {features.map((f, i) => (
           <li key={i} className="flex items-center gap-2 text-[10px] md:text-[11px]">
