@@ -141,9 +141,9 @@ export default function PartnerPage() {
           {/* 3-Step Process */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
             {[
-              { icon: <QrCode size={28} />, step: '01', title: 'Kedai Print Poster QR', desc: 'Satu poster QR unik Beepme diletakkan di kaunter pesanan.' },
-              { icon: <Smartphone size={28} />, step: '02', title: 'Customer Scan dengan Telefon', desc: 'Customer scan QR dan telefon mereka kini menjadi pager digital.' },
-              { icon: <Bell size={28} />, step: '03', title: 'Telefon Bergetar & Berbunyi', desc: 'Apabila makanan siap, kedai klik "Beep" dan telefon customer akan bergetar, berbunyi, dan skrin cerah.' },
+              { icon: <QrCode size={28} />, step: '01', title: 'Daftar & Jana QR', desc: 'Kedai masukkan no. resit di dashboard untuk jana kod QR unik bagi pesanan tersebut.' },
+              { icon: <Smartphone size={28} />, step: '02', title: 'Pelanggan Scan QR', desc: 'Pelanggan scan QR pada skrin/tablet kaunter. Telefon mereka kini menjadi pager.' },
+              { icon: <Bell size={28} />, step: '03', title: 'Panggil (Beep) Pelanggan', desc: 'Apabila pesanan siap, kedai klik "Call" di dashboard. Telefon pelanggan akan bergetar & berbunyi.' },
             ].map((item) => (
               <div key={item.step} className="p-8 rounded-[32px] border border-white/5 bg-white/[0.02] text-left">
                 <div className="flex items-center gap-3 mb-4">
@@ -231,10 +231,10 @@ export default function PartnerPage() {
           </div>
           <div className="space-y-4">
             {[
-              { num: '01', title: 'Hubungi Admin', desc: 'Klik butang WhatsApp di bawah dan hantarkan maklumat anda (Nama, Saluran Media Sosial, Kod Yang Dikehendaki).' },
-              { num: '02', title: 'Dapatkan Pautan Unik', desc: 'Admin akan mengaktifkan akaun partner anda dan memberikan link rujukan khas seperti beepme.pro/login?ref=KODANDA.' },
-              { num: '03', title: 'Kongsi & Promosikan', desc: 'Kongsikan link semasa Live TikTok, reel, atau caption. Setiap klik link anda akan dijejak secara automatik.' },
-              { num: '04', title: 'Terima Komisen Bulanan', desc: 'Login ke Dashboard Partner anda untuk pantau komisen secara live. Duit masuk ke bank anda setiap awal bulan.' },
+              { num: '01', title: 'Daftar Sebagai Partner', desc: 'Klik butang "Daftar Sekarang" dan isi borang pendaftaran rakan kongsi dengan maklumat anda.' },
+              { num: '02', title: 'Kelulusan Akaun', desc: 'Admin akan menyemak permohonan anda. Setelah diluluskan, akaun partner anda akan diaktifkan.' },
+              { num: '03', title: 'Kongsi Pautan Rujukan', desc: 'Log masuk ke Dashboard Partner anda, salin pautan unik anda, dan mula kongsikan di media sosial atau kepada kenalan F&B.' },
+              { num: '04', title: 'Kumpul Komisen Bulanan', desc: 'Pantau komisen secara live dari dashboard anda. Duit komisen akan dipindahkan terus ke akaun bank anda setiap awal bulan.' },
             ].map((step) => (
               <div key={step.num} className="flex gap-6 p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-indigo-500/20 transition-all items-start">
                 <span className="text-3xl font-black text-indigo-500/20 font-mono shrink-0">{step.num}</span>
