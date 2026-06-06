@@ -48,11 +48,18 @@ export default function AdminPage() {
   const [savingLocation, setSavingLocation] = useState(false)
 
   // Ads State
-  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior' | 'visitors'>('merchants')
+  const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior' | 'visitors' | 'partners'>('merchants')
   const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all'>('active')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
   const [isAddingAd, setIsAddingAd] = useState(false)
+  // Partners state
+  const [partners, setPartners] = useState<any[]>([])
+  const [partnerTransactions, setPartnerTransactions] = useState<Record<string, any[]>>({})
+  const [partnerPayouts, setPartnerPayouts] = useState<Record<string, any[]>>({})
+  const [partnersLoading, setPartnersLoading] = useState(false)
+  const [partnerPayoutMonth, setPartnerPayoutMonth] = useState('')
+  const [partnerPayoutNote, setPartnerPayoutNote] = useState('')
   const [newAd, setNewAd] = useState({
     title: '',
     description: '',
@@ -426,6 +433,41 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchPartnersData = useCallback(async () => {
+    if (!isAdmin) return
+    setPartnersLoading(true)
+    const { data: partnerList } = await supabase
+      .from('partners')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (partnerList) {
+      setPartners(partnerList)
+      // For each partner, fetch their referred merchants' transactions
+      for (const p of partnerList) {
+        const { data: merchantIds } = await supabase
+          .from('merchants')
+          .select('id')
+          .eq('referred_by', p.referral_code)
+        const ids = merchantIds?.map((m: any) => m.id) || []
+        if (ids.length > 0) {
+          const { data: txs } = await supabase
+            .from('merchant_transactions')
+            .select('*')
+            .in('merchant_id', ids)
+            .eq('status', 'completed')
+          setPartnerTransactions(prev => ({ ...prev, [p.id]: txs || [] }))
+        }
+        const { data: pays } = await supabase
+          .from('partner_payouts')
+          .select('*')
+          .eq('partner_id', p.id)
+          .order('created_at', { ascending: false })
+        setPartnerPayouts(prev => ({ ...prev, [p.id]: pays || [] }))
+      }
+    }
+    setPartnersLoading(false)
+  }, [isAdmin])
+
   useEffect(() => {
     if (isAdmin && activeTab === 'ads') {
       fetchAds()
@@ -596,6 +638,12 @@ export default function AdminPage() {
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'visitors' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
           >
             <Users size={16} /> Visitors
+          </button>
+          <button
+            onClick={() => { setActiveTab('partners'); fetchPartnersData() }}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'partners' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <DollarSign size={16} /> Partners
           </button>
         </div>
 
@@ -778,7 +826,7 @@ export default function AdminPage() {
                                 className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
                               >
                                 <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
-                                <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM39)</option>
+                                <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM49)</option>
                               </select>
                             </td>
                             <td className="py-4 px-6 text-right">
@@ -2055,6 +2103,144 @@ export default function AdminPage() {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {activeTab === 'partners' && (
+        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Partner &amp; Commission Console</h2>
+              <p className="text-[10px] font-bold text-slate-600">Urus komisen rakan kongsi dan rekod payout.</p>
+            </div>
+            <button
+              onClick={fetchPartnersData}
+              disabled={partnersLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600/10 border border-violet-500/20 text-xs font-black text-violet-400 hover:bg-violet-600 hover:text-white transition-all disabled:opacity-50"
+            >
+              {partnersLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+              Refresh
+            </button>
+          </div>
+
+          {partnersLoading && partners.length === 0 ? (
+            <div className="text-center py-12 text-slate-600"><Loader2 size={24} className="mx-auto animate-spin mb-2" />Memuatkan data partner...</div>
+          ) : partners.length === 0 ? (
+            <div className="text-center py-12 text-slate-600">
+              <DollarSign size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Tiada partner aktif lagi.</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {partners.map((partner) => {
+                const txs = partnerTransactions[partner.id] || []
+                const pays = partnerPayouts[partner.id] || []
+                const commRate = partner.commission_rate || 0.30
+                const claimable = txs
+                  .filter((tx: any) => tx.clearance_status === 'claimable')
+                  .reduce((s: number, tx: any) => s + tx.amount * commRate, 0)
+                const pending = txs
+                  .filter((tx: any) => tx.clearance_status === 'pending_clearance')
+                  .reduce((s: number, tx: any) => s + tx.amount * commRate, 0)
+                const totalPaid = pays
+                  .filter((p: any) => p.status === 'paid')
+                  .reduce((s: number, p: any) => s + p.amount, 0)
+
+                return (
+                  <div key={partner.id} className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8 space-y-6">
+                    {/* Partner Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            partner.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          }`}>{partner.is_active ? 'Aktif' : 'Tidak Aktif'}</span>
+                          <span className="text-slate-500 text-[10px] font-mono">{partner.referral_code}</span>
+                          <span className="text-violet-400 text-[10px] font-black">{(commRate * 100).toFixed(0)}% komisen</span>
+                        </div>
+                        <p className="text-sm font-black text-white">{partner.bank_account_name || partner.user_id}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{partner.bank_name} · {partner.bank_account_no}</p>
+                        {partner.ic_number && <p className="text-[10px] text-slate-600 mt-0.5">IC: {partner.ic_number}</p>}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-right">
+                        <div className="p-3 rounded-xl bg-black/30 border border-white/5">
+                          <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Boleh Tuntut</p>
+                          <p className="text-xl font-black text-violet-400">RM{claimable.toFixed(2)}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-black/30 border border-white/5">
+                          <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Dalam Proses</p>
+                          <p className="text-xl font-black text-amber-400">RM{pending.toFixed(2)}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-black/30 border border-white/5">
+                          <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Sudah Dibayar</p>
+                          <p className="text-xl font-black text-emerald-400">RM{totalPaid.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pay Out button */}
+                    {claimable >= 100 && (
+                      <div className="p-5 rounded-2xl bg-violet-500/5 border border-violet-500/20">
+                        <p className="text-xs font-black text-white mb-3">Rekod Payout Baharu</p>
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            placeholder="Bulan (cth: Jun 2026)"
+                            value={partnerPayoutMonth}
+                            onChange={(e) => setPartnerPayoutMonth(e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-sm"
+                          />
+                          <button
+                            onClick={async () => {
+                              if (!partnerPayoutMonth) return
+                              if (!confirm(`Sahkan payout RM${claimable.toFixed(2)} untuk ${partner.bank_account_name}?`)) return
+                              const { error } = await supabase.from('partner_payouts').insert({
+                                partner_id: partner.id,
+                                amount: Math.round(claimable * 100) / 100,
+                                payout_month: partnerPayoutMonth,
+                                status: 'paid',
+                                bank_name_snapshot: partner.bank_name,
+                                bank_account_no_snapshot: partner.bank_account_no,
+                                bank_account_name_snapshot: partner.bank_account_name,
+                              })
+                              if (!error) {
+                                alert('✅ Payout berjaya direkodkan!')
+                                setPartnerPayoutMonth('')
+                                fetchPartnersData()
+                              } else {
+                                alert('❌ Error: ' + error.message)
+                              }
+                            }}
+                            className="px-5 py-2 rounded-xl bg-violet-600 text-white font-black text-xs hover:bg-violet-500 transition-all active:scale-95"
+                          >
+                            Rekod Payout
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payout History */}
+                    {pays.length > 0 && (
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">Sejarah Payout</p>
+                        <div className="space-y-2">
+                          {pays.map((p: any) => (
+                            <div key={p.id} className="flex items-center justify-between px-4 py-2 rounded-xl bg-black/20 border border-white/5 text-xs">
+                              <span className="text-slate-400">{p.payout_month}</span>
+                              <span className="font-black text-white">RM{p.amount.toFixed(2)}</span>
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                                p.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                              }`}>{p.status === 'paid' ? 'Dibayar' : 'Pending'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

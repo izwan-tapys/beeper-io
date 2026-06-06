@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const stripe = new Stripe(stripeSecretKey)
 
     // Hardcoded plan settings
-    const amount = 39 // RM39.00
+    const amount = 49 // RM49.00
     const planName = 'Premium'
     const successUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://beepme.pro'}/dashboard?status=success`
     const cancelUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://beepme.pro'}/dashboard?status=cancelled`

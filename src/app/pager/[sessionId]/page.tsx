@@ -1337,8 +1337,12 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                 </div>
               )}
             </main>
-            <footer className="p-2 relative z-20 shrink-0 mt-4 text-center">
+            <footer className="p-2 relative z-20 shrink-0 mt-4 text-center space-y-1">
               <p className="text-[8px] text-slate-700 font-black uppercase tracking-[0.4em]">Beepme.pro — Virtual Paging System</p>
+              <p className="text-[7px] text-slate-800 leading-relaxed">
+                Tiada data peribadi dikumpul. ID peranti rawak digunakan semata-mata untuk giliran ini.{' '}
+                <a href="/privacy" className="underline hover:text-slate-600">Polisi Privasi (PDPA)</a>
+              </p>
             </footer>
           </>
         )}

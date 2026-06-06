@@ -146,6 +146,26 @@ export async function POST(request: Request) {
           return new Response('Database Error', { status: 500 })
         }
 
+        // Log transaction for partner commission tracking
+        const { data: merchantRow } = await supabaseAdmin
+          .from('merchants')
+          .select('id')
+          .eq('user_id', userId)
+          .single()
+
+        if (merchantRow) {
+          const chargeAmount = session.amount_total ? session.amount_total / 100 : 49
+          await supabaseAdmin.from('merchant_transactions').insert({
+            merchant_id: merchantRow.id,
+            amount: chargeAmount,
+            currency: 'MYR',
+            status: 'completed',
+            clearance_status: 'pending_clearance',
+            reference_id: subscriptionId,
+          })
+          console.log(`[Stripe Webhook] ✅ Commission transaction logged for merchant ${merchantRow.id}`)
+        }
+
         console.log(`[Stripe Webhook] ✅ Merchant ${userId} upgraded to Premium, subscription ${subscriptionId}, expires ${expiryDate.toISOString()}`)
         break
       }

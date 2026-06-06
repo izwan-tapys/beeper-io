@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Analytics } from "@vercel/analytics/next";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { Suspense } from "react";
+import { ReferralTracker } from "@/components/ReferralTracker";
 
 export default function RootLayout({
   children,
@@ -35,6 +37,9 @@ export default function RootLayout({
         <LanguageProvider>
           {children}
         </LanguageProvider>
+        <Suspense fallback={null}>
+          <ReferralTracker />
+        </Suspense>
         <PageViewTracker />
         <Analytics />
       </body>

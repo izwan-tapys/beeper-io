@@ -167,7 +167,7 @@ export default function LandingPage() {
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <PricingCard 
                 name="Premium Station"
-                price="RM39"
+                price="RM49"
                 period="/ month"
                 features={["100% Ad-Free Pagers", "Custom Upsell Video/Image", "Custom Brand Logo", "Custom Color Themes", "WhatsApp Admin Approval"]}
                 recommended

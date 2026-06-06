@@ -1592,7 +1592,7 @@ export default function DashboardPage() {
                             <p className="text-[10px] text-slate-500">For premium brand experience</p>
                           </div>
                           <div className="text-right">
-                            <span className="text-white font-bold text-sm">RM39</span>
+                            <span className="text-white font-bold text-sm">RM49</span>
                             <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
                           </div>
                         </div>
@@ -1618,7 +1618,7 @@ export default function DashboardPage() {
                             className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
                           >
                             {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                            Upgrade to Premium (RM39)
+                            Upgrade to Premium (RM49)
                           </button>
                         ) : (
                           <div className="mt-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-center">

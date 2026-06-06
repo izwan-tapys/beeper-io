@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [loadingRole, setLoadingRole] = useState<'merchant' | 'advertiser' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [referralCode, setReferralCode] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -59,6 +60,10 @@ export default function LoginPage() {
     setError(null)
     setMessage(null)
 
+    // Read referral code: manual input takes priority, then localStorage
+    const storedRef = typeof window !== 'undefined' ? localStorage.getItem('beepme_referred_by') : null
+    const finalRef = referralCode.trim().toUpperCase() || storedRef || null
+
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       setError(error.message)
@@ -69,6 +74,14 @@ export default function LoginPage() {
     if (role === 'advertiser' && data.user) {
       // Auto-create advertiser_profile record
       await supabase.from('advertiser_profiles').insert({ user_id: data.user.id })
+    }
+
+    // If merchant with a referral code, store it (merchant row created on first dashboard login)
+    if (role === 'merchant' && finalRef && data.user) {
+      // Store in user metadata so dashboard can pick it up on first login
+      await supabase.auth.updateUser({ data: { referred_by: finalRef } })
+      // Clear localStorage after successful capture
+      if (typeof window !== 'undefined') localStorage.removeItem('beepme_referred_by')
     }
 
     if (role === 'merchant') {
@@ -163,6 +176,17 @@ export default function LoginPage() {
             ) : (
               <div className="flex flex-col gap-3 mt-2">
                 <p className="text-xs text-center" style={{ color: 'var(--muted-foreground)' }}>Choose how you want to use Beepme.pro</p>
+                <input
+                  id="referral-code-input"
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  placeholder="Kod Rujukan (Optional)"
+                  className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none transition-all text-sm"
+                  style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--card-border)'}
+                />
                 <button
                   id="signup-merchant-btn"
                   type="button"
@@ -185,6 +209,11 @@ export default function LoginPage() {
                   {loadingRole === 'advertiser' ? <Loader2 size={18} className="animate-spin" /> : null}
                   I want to Advertise
                 </button>
+                <p className="text-[10px] text-center text-slate-600 leading-relaxed mt-2">
+                  Dengan mendaftar, anda bersetuju dengan{' '}
+                  <a href="/partner/terms" target="_blank" className="underline hover:text-slate-400">Terma Perkhidmatan</a>{' '}dan{' '}
+                  <a href="/privacy" target="_blank" className="underline hover:text-slate-400">Polisi Privasi (PDPA)</a>{' '}kami.
+                </p>
               </div>
             )}
           </form>
