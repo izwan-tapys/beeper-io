@@ -59,6 +59,11 @@ ON partners FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create own partner profile" ON partners;
+CREATE POLICY "Users can create own partner profile"
+ON partners FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
 DROP POLICY IF EXISTS "Admin can manage partners" ON partners;
 CREATE POLICY "Admin can manage partners"
 ON partners FOR ALL TO authenticated

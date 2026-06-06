@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
   LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon, Languages,
-  Megaphone
+  Megaphone, DollarSign
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
@@ -94,6 +94,16 @@ export default function DashboardPage() {
   const [isOnline, setIsOnline] = useState(true)
   const [onboardingPhone, setOnboardingPhone] = useState('')
   const [savingOnboarding, setSavingOnboarding] = useState(false)
+  
+  // Partner / Affiliate states
+  const [partnerProfile, setPartnerProfile] = useState<any>(null)
+  const [fetchingPartner, setFetchingPartner] = useState(true)
+  const [partnerRefCode, setPartnerRefCode] = useState('')
+  const [partnerBankName, setPartnerBankName] = useState('')
+  const [partnerBankAccountNo, setPartnerBankAccountNo] = useState('')
+  const [partnerBankAccountName, setPartnerBankAccountName] = useState('')
+  const [partnerIcNumber, setPartnerIcNumber] = useState('')
+  const [partnerAddress, setPartnerAddress] = useState('')
   const [mfaEnrollData, setMfaEnrollData] = useState<any>(null)
   const [mfaCode, setMfaCode] = useState('')
   const [isMfaChallenge, setIsMfaChallenge] = useState(false)
@@ -329,6 +339,23 @@ export default function DashboardPage() {
     }
   }, [merchant])
 
+  const fetchPartnerProfile = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      setPartnerProfile(data)
+    } catch (err) {
+      console.error('Error fetching partner profile:', err)
+    } finally {
+      setFetchingPartner(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchMonthlyCount()
   }, [fetchMonthlyCount, sessions])
@@ -337,6 +364,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
     setUserEmail(user.email || '')
+    fetchPartnerProfile()
 
     let { data: m, error: fetchError } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
     
@@ -586,6 +614,56 @@ export default function DashboardPage() {
       })
       setIsSettingsOpen(false)
       fetchMerchant()
+    }
+    setSavingSettings(false)
+  }
+
+  const registerAsPartner = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!partnerRefCode.trim()) {
+      alert('Sila masukkan kod rujukan.')
+      return
+    }
+    setSavingSettings(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setSavingSettings(false)
+      return
+    }
+
+    const cleanRef = partnerRefCode.trim().toUpperCase()
+
+    // Check if referral code is already taken in partners table
+    const { data: existingRef } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('referral_code', cleanRef)
+      .maybeSingle()
+
+    if (existingRef) {
+      alert(`Kod rujukan "${cleanRef}" telah digunakan. Sila pilih kod lain.`)
+      setSavingSettings(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('partners')
+      .insert({
+        user_id: user.id,
+        referral_code: cleanRef,
+        bank_name: partnerBankName,
+        bank_account_no: partnerBankAccountNo,
+        bank_account_name: partnerBankAccountName,
+        ic_number: partnerIcNumber,
+        full_address: partnerAddress,
+        is_active: false // pending approval
+      })
+
+    if (error) {
+      alert('Gagal mendaftar: ' + error.message)
+    } else {
+      alert('Pendaftaran Rakan Kongsi berjaya! Permohonan anda sedang menunggu kelulusan Admin.')
+      await fetchPartnerProfile()
     }
     setSavingSettings(false)
   }
@@ -1685,6 +1763,171 @@ export default function DashboardPage() {
                         <div className="flex gap-2">
                           <button onClick={() => setMfaEnrollData(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-slate-400 text-xs font-bold">Cancel</button>
                           <button onClick={verifyMfa} className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg shadow-indigo-600/20">Verify & Activate</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* Affiliate Program (Rakan Kongsi) */}
+              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+                <button 
+                  type="button"
+                  onClick={() => toggleSection('affiliate')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Affiliate Program (Rakan Kongsi)</span>
+                  </div>
+                  <DollarSign size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'affiliate' ? 'rotate-90' : ''}`} />
+                </button>
+
+                {openSection === 'affiliate' && (
+                  <div className="p-4 pt-0 space-y-4 animate-fade-in text-left">
+                    {fetchingPartner ? (
+                      <div className="text-center py-4 text-xs text-slate-500 animate-pulse">Memuatkan data partner...</div>
+                    ) : partnerProfile ? (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status Akaun</span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                              partnerProfile.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}>
+                              {partnerProfile.is_active ? 'Aktif' : 'Menunggu Kelulusan (Pending)'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400">
+                            {partnerProfile.is_active 
+                              ? 'Akaun anda aktif! Anda boleh mula berkongsi pautan rujukan untuk menjana komisen 30%.'
+                              : 'Permohonan anda telah diterima dan sedang menunggu pengaktifan daripada Admin.'
+                            }
+                          </p>
+                        </div>
+
+                        {partnerProfile.is_active ? (
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Pautan Rujukan Anda</label>
+                              <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-indigo-300 font-mono text-xs truncate select-all">
+                                {baseUrl}/login?ref={partnerProfile.referral_code}
+                              </div>
+                            </div>
+                            <a 
+                              href="/partner/dashboard"
+                              target="_blank"
+                              className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+                            >
+                              <DollarSign size={16} />
+                              Buka Dashboard Rakan Kongsi
+                            </a>
+                          </div>
+                        ) : (() => {
+                          const waMessage = encodeURIComponent(
+                            `Salam Admin Beepme.pro! Saya baru mendaftar akaun Partner dengan e-mel: ${userEmail} dan memohon kod rujukan: ${partnerProfile.referral_code}. Sila bantu approve akaun saya.`
+                          )
+                          const waUrl = `https://wa.me/60194696158?text=${waMessage}`
+                          return (
+                            <a 
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm transition-all active:scale-95"
+                            >
+                              Hubungi Admin via WhatsApp
+                            </a>
+                          )
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          Jana <strong>30% komisen berulang</strong> setiap bulan dengan merujuk pemilik restoran F&B lain ke Beepme.pro! Isi butiran di bawah untuk mendaftar sebagai Rakan Kongsi.
+                        </p>
+                        
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Kod Rujukan Diminta (Referral Code)</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Cth: MYCODE, TIKTOKPOS"
+                              value={partnerRefCode}
+                              onChange={(e) => setPartnerRefCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs font-mono uppercase"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nama Bank</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="Cth: Maybank"
+                                value={partnerBankName}
+                                onChange={(e) => setPartnerBankName(e.target.value)}
+                                className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">No. Akaun Bank</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="Cth: 1640123456"
+                                value={partnerBankAccountNo}
+                                onChange={(e) => setPartnerBankAccountNo(e.target.value)}
+                                className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nama Pemilik Akaun Bank</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Nama penuh di akaun bank"
+                              value={partnerBankAccountName}
+                              onChange={(e) => setPartnerBankAccountName(e.target.value)}
+                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">No. Kad Pengenalan (IC)</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Cth: 900101141234"
+                              value={partnerIcNumber}
+                              onChange={(e) => setPartnerIcNumber(e.target.value)}
+                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Alamat Penuh</label>
+                            <textarea
+                              rows={2}
+                              placeholder="Alamat surat menyurat"
+                              value={partnerAddress}
+                              onChange={(e) => setPartnerAddress(e.target.value)}
+                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs resize-none"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={registerAsPartner}
+                            disabled={savingSettings}
+                            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer"
+                          >
+                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <DollarSign size={12} />}
+                            Daftar Rakan Kongsi
+                          </button>
                         </div>
                       </div>
                     )}
