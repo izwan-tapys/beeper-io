@@ -2157,6 +2157,26 @@ export default function AdminPage() {
                           }`}>{partner.is_active ? 'Aktif' : 'Tidak Aktif'}</span>
                           <span className="text-slate-500 text-[10px] font-mono">{partner.referral_code}</span>
                           <span className="text-violet-400 text-[10px] font-black">{(commRate * 100).toFixed(0)}% komisen</span>
+                          {!partner.is_active && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Sahkan kelulusan untuk ${partner.bank_account_name || partner.user_id}?`)) return
+                                const { error } = await supabase
+                                  .from('partners')
+                                  .update({ is_active: true })
+                                  .eq('id', partner.id)
+                                if (!error) {
+                                  alert('✅ Partner berjaya diaktifkan!')
+                                  fetchPartnersData()
+                                } else {
+                                  alert('❌ Error: ' + error.message)
+                                }
+                              }}
+                              className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-wider transition-all ml-2"
+                            >
+                              Approve
+                            </button>
+                          )}
                         </div>
                         <p className="text-sm font-black text-white">{partner.bank_account_name || partner.user_id}</p>
                         <p className="text-xs text-slate-500 mt-0.5">{partner.bank_name} · {partner.bank_account_no}</p>

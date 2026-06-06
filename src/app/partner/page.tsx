@@ -84,9 +84,9 @@ export default function PartnerPage() {
             <Link href="/login" className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors border border-white/10 hover:bg-white/5">
               Log Masuk
             </Link>
-            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-500 transition-all active:scale-95">
+            <Link href="/partner/register" className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-500 transition-all active:scale-95">
               Daftar Partner
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -112,11 +112,11 @@ export default function PartnerPage() {
             RM{(MONTHLY_PRICE * 0.3).toFixed(2)} / bulan × bilangan kedai = pendapatan pasif anda.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href={waUrl} target="_blank" rel="noopener noreferrer"
+            <Link href="/partner/register"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black text-base hover:bg-indigo-500 shadow-2xl shadow-indigo-600/25 transition-all active:scale-95">
               Sertai Sebagai Rakan Kongsi
               <ArrowRight size={18} />
-            </a>
+            </Link>
             <Link href="/partner/terms"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border border-white/10 text-slate-400 font-black text-base hover:text-white hover:bg-white/5 transition-all">
               Baca Terma & Syarat
@@ -287,15 +287,13 @@ export default function PartnerPage() {
             <Link href="/partner/terms" className="text-indigo-400 underline hover:text-indigo-300">Terma & Syarat</Link>{' '}dan{' '}
             <Link href="/privacy" className="text-indigo-400 underline hover:text-indigo-300">Polisi Privasi (PDPA)</Link> kami.
           </p>
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/partner/register"
             className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:bg-indigo-500 shadow-2xl shadow-indigo-600/25 transition-all active:scale-95"
           >
-            Hubungi Admin via WhatsApp
+            Daftar Sekarang
             <ArrowRight size={20} />
-          </a>
+          </Link>
         </div>
       </section>
 

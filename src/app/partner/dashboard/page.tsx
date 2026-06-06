@@ -105,6 +105,51 @@ export default function PartnerDashboard() {
     )
   }
 
+  if (!partner?.is_active) {
+    const waMessage = encodeURIComponent(
+      `Salam Admin Beepme.pro! Akaun partner saya masih belum aktif. Sila bantu aktifkan.\n\nE-mel: ${partner?.user_id || ''}\nReferral Code: ${partner?.referral_code || ''}`
+    )
+    const waUrl = `https://wa.me/60194696158?text=${waMessage}`
+
+    return (
+      <div className="min-h-screen bg-[#020203] text-slate-200 font-sans flex items-center justify-center p-6 relative">
+        <div className="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/5 blur-[150px] rounded-full pointer-events-none" />
+        <div className="max-w-md w-full bg-white/[0.02] border border-white/5 rounded-[32px] p-8 text-center space-y-6 relative z-10">
+          <div className="mx-auto w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center text-amber-400">
+            <Clock size={32} />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-white tracking-tight">Akaun Belum Aktif ⏳</h1>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Pendaftaran anda telah diterima! Akaun partner anda sedang menunggu kelulusan dan pengaktifan daripada pihak Admin.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-left text-slate-400 space-y-2">
+            <p><span className="font-bold text-white">Kod Rujukan:</span> {partner?.referral_code}</p>
+            <p><span className="font-bold text-white">Bank:</span> {partner?.bank_name} ({partner?.bank_account_no})</p>
+            <p><span className="font-bold text-white">Nama Akaun:</span> {partner?.bank_account_name}</p>
+          </div>
+          <div className="flex flex-col gap-3 pt-2">
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-500 transition-all active:scale-95 shadow-xl shadow-indigo-600/25"
+            >
+              Hubungi Admin via WhatsApp
+            </a>
+            <button
+              onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
+              className="w-full py-3 rounded-xl border border-white/10 text-slate-400 text-xs font-bold hover:text-white hover:bg-white/5 transition-all"
+            >
+              Log Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#020203] text-slate-200 font-sans p-4 md:p-10">
       <div className="fixed top-[-10%] left-[-5%] w-[40%] h-[40%] bg-indigo-600/8 blur-[120px] rounded-full pointer-events-none" />
@@ -261,7 +306,7 @@ export default function PartnerDashboard() {
 
         <p className="text-center text-slate-700 text-[9px] uppercase tracking-widest mt-12">
           Isu atau pertanyaan? Hubungi Admin di{' '}
-          <a href="https://wa.me/60123456789" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">WhatsApp</a>
+          <a href="https://wa.me/60194696158" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">WhatsApp</a>
         </p>
       </div>
     </div>
