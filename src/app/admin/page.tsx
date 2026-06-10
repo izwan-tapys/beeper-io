@@ -111,54 +111,15 @@ export default function AdminPage() {
   const fetchStats = useCallback(async () => {
     setLoading(true)
     try {
-      const { count: mCount } = await supabase.from('merchants').select('*', { count: 'exact', head: true })
-      const { count: sCount } = await supabase.from('sessions').select('*', { count: 'exact', head: true })
-      
-      const today = new Date()
-      today.setHours(0,0,0,0)
-      const { count: todayCount } = await supabase
-        .from('sessions')
-        .select('*', { count: 'exact', head: true })
-        .gt('created_at', today.toISOString())
-
-      const { data: mData, error: mError } = await supabase
-        .from('merchants')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (mError) throw mError
-
-      if (mData) {
-        const firstOfMonth = new Date()
-        firstOfMonth.setDate(1)
-        firstOfMonth.setHours(0,0,0,0)
-
-        const processedMerchants = await Promise.all(mData.map(async (m) => {
-          try {
-            const { count } = await supabase
-              .from('sessions')
-              .select('*', { count: 'exact', head: true })
-              .eq('merchant_id', m.id)
-              .gt('created_at', firstOfMonth.toISOString())
-            return { ...m, monthly_count: count || 0 }
-          } catch (e) {
-            return { ...m, monthly_count: 0 }
-          }
-        }))
-        
-        setMerchants(processedMerchants)
-        
-        setStats({
-          totalMerchants: mCount || 0,
-          totalOrders: sCount || 0,
-          ordersToday: todayCount || 0,
-          estimatedRevenue: mData.reduce((acc, m) => {
-            if (m.plan_type === 'basic') return acc + 30
-            if (m.plan_type === 'pro') return acc + 49
-            return acc
-          }, 0)
-        })
+      // Use server-side API route (service role) to bypass RLS
+      const res = await fetch('/api/admin/merchants')
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to fetch merchants')
       }
+      const { merchants: merchantList, stats: fetchedStats } = await res.json()
+      setMerchants(merchantList || [])
+      setStats(fetchedStats || { totalMerchants: 0, totalOrders: 0, ordersToday: 0, estimatedRevenue: 0 })
     } catch (error: any) {
       console.error('Admin Fetch Error:', error)
     } finally {
@@ -497,15 +458,20 @@ export default function AdminPage() {
 
   const updateMerchant = async (id: string, updates: any) => {
     setVerifyingId(id)
-    const { error } = await supabase
-      .from('merchants')
-      .update(updates)
-      .eq('id', id)
-    
-    if (!error) {
-      setMerchants(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m))
-    } else {
-      alert('Error: ' + error.message)
+    try {
+      const res = await fetch('/api/admin/merchants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert('Error: ' + (err.error || 'Unknown error'))
+      } else {
+        setMerchants(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m))
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message)
     }
     setVerifyingId(null)
   }
