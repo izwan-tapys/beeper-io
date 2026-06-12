@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "Beepme — Virtual Pager for F&B",
   description: "Replace physical pagers with a frictionless, web-based real-time notification system for your restaurant.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
