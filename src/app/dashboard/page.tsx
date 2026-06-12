@@ -361,55 +361,63 @@ export default function DashboardPage() {
   }, [fetchMonthlyCount, sessions])
 
   const fetchMerchant = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-    setUserEmail(user.email || '')
-    fetchPartnerProfile()
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      setUserEmail(user.email || '')
+      fetchPartnerProfile()
 
-    let { data: m, error: fetchError } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
-    
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error fetching merchant:', fetchError)
-    }
-
-    if (!m) {
-      const storeName = user.email?.split('@')[0] || 'My Store'
-      const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName, email: user.email }).select().single()
-      if (insertError) {
-        console.error('Error creating merchant:', insertError)
-        return
+      let { data: m, error: fetchError } = await supabase.from('merchants').select('*').eq('user_id', user.id).single()
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching merchant:', fetchError)
       }
-      m = newMerchant
-    } else if (!m.email && user.email) {
-      // Auto-backfill email for existing merchants when they login
-      await supabase.from('merchants').update({ email: user.email }).eq('id', m.id)
-      m.email = user.email
-    }
-    
-    if (m) {
-      setMerchant(m)
-      setSettingsName(m.name || '')
-      setSettingsLogo(m.logo_url || '')
-      setSettingsLoyverseToken(m.loyverse_token || '')
-      setSettingsGmbUrl(m.gmb_url || '')
-      setSettingsThemeColor(m.theme_color || '#6366f1')
-      setSettingsState(m.state || '')
-      setSettingsCategory(m.category || '')
 
-      // Fetch webhook URL securely from backend API
-      fetch('/api/merchant/webhook-url')
-        .then(res => res.json())
-        .then(data => {
-          if (data.webhookUrl) setWebhookUrl(data.webhookUrl)
-        })
-        .catch(err => console.error('Failed to fetch webhook URL:', err))
-
-
-      // Check for MFA Challenge
-      const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-      if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
-        setIsMfaChallenge(true)
+      if (!m) {
+        const storeName = user.email?.split('@')[0] || 'My Store'
+        const { data: newMerchant, error: insertError } = await supabase.from('merchants').insert({ user_id: user.id, name: storeName, email: user.email }).select().single()
+        if (insertError) {
+          console.error('Error creating merchant:', insertError)
+          setLoading(false)
+          return
+        }
+        m = newMerchant
+      } else if (!m.email && user.email) {
+        // Auto-backfill email for existing merchants when they login
+        await supabase.from('merchants').update({ email: user.email }).eq('id', m.id)
+        m.email = user.email
       }
+      
+      if (m) {
+        setMerchant(m)
+        setSettingsName(m.name || '')
+        setSettingsLogo(m.logo_url || '')
+        setSettingsLoyverseToken(m.loyverse_token || '')
+        setSettingsGmbUrl(m.gmb_url || '')
+        setSettingsThemeColor(m.theme_color || '#6366f1')
+        setSettingsState(m.state || '')
+        setSettingsCategory(m.category || '')
+
+        // Fetch webhook URL securely from backend API
+        fetch('/api/merchant/webhook-url')
+          .then(res => res.json())
+          .then(data => {
+            if (data.webhookUrl) setWebhookUrl(data.webhookUrl)
+          })
+          .catch(err => console.error('Failed to fetch webhook URL:', err))
+
+        // Check for MFA Challenge
+        const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+        if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
+          setIsMfaChallenge(true)
+        }
+      } else {
+        // m is null after all attempts — stop loading to avoid infinite spinner
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('Unexpected error in fetchMerchant:', err)
+      setLoading(false)
     }
   }, [router])
 
