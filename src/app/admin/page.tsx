@@ -739,9 +739,17 @@ export default function AdminPage() {
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                   <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-                                  <div className="relative w-9 h-9 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform text-xs shrink-0">
-                                    {m.name?.[0] || 'M'}
-                                  </div>
+                                  {m.logo_url ? (
+                                    <img 
+                                      src={m.logo_url} 
+                                      alt={m.name || 'Merchant Logo'} 
+                                      className="relative w-9 h-9 rounded-lg object-cover border border-white/10 group-hover:scale-105 transition-transform shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="relative w-9 h-9 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform text-xs shrink-0">
+                                      {m.name?.[0] || 'M'}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
