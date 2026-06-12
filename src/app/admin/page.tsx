@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { PremiumPagerZone } from '@/components/pager/PremiumPagerZone'
 import { 
   CheckCircle, XCircle, ShieldCheck, 
   Loader2, Search, Smartphone, Store,
@@ -1921,55 +1922,80 @@ export default function AdminPage() {
             
             {/* Phone/Ad Preview Frame (Left/Top side) */}
             <div className="w-full md:w-[380px] bg-black flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-white/5 relative shrink-0">
-              <div className="w-[240px] md:w-[280px] aspect-[9/16] rounded-[24px] overflow-hidden border border-white/10 relative shadow-2xl bg-[#020203]">
-                {previewAd.video_url ? (
-                  (() => {
-                    const ytMatch = previewAd.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)
-                    const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
-                    if (ytId) {
-                      return (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                          className="w-full h-full object-cover pointer-events-none scale-105"
-                          allow="autoplay; encrypted-media"
-                        />
-                      )
-                    }
-                    const tiktokMatch = previewAd.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/)
-                    const tiktokId = tiktokMatch ? tiktokMatch[1] : null
-                    if (tiktokId) {
-                      return (
-                        <iframe
-                          src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
-                          className="w-full h-full object-cover pointer-events-none"
-                          allow="autoplay; encrypted-media"
-                        />
-                      )
-                    }
-                    return (
-                      <video src={previewAd.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
-                    )
-                  })()
-                ) : previewAd.image_url ? (
-                  <img src={previewAd.image_url} alt={previewAd.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/50 to-black p-6 text-center">
-                    <p className="text-white font-black text-xl">{previewAd.title}</p>
-                  </div>
-                )}
+              <div className="w-[240px] md:w-[280px] aspect-[9/16] rounded-[24px] overflow-hidden border border-white/10 relative shadow-2xl bg-[#020203] flex flex-col">
                 
-                {/* Foreground Overlay mimicking customer view */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent p-4 flex flex-col justify-end">
-                  <h4 className="text-white font-black text-base leading-tight uppercase tracking-tight line-clamp-2 mb-1">{previewAd.title}</h4>
-                  {previewAd.description && (
-                    <p className="text-[11px] text-slate-300 leading-normal line-clamp-3 mb-3">{previewAd.description}</p>
-                  )}
-                  {previewAd.link_url && (
-                    <div className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-center text-xs font-black uppercase tracking-widest cursor-pointer shadow-lg shadow-indigo-600/35">
-                      {previewAd.cta_text || 'Learn More'}
+                {/* ── TOP 50%: Ad Zone ── */}
+                <div className="relative h-1/2 overflow-hidden bg-[#020203] flex-shrink-0">
+                  {previewAd.video_url ? (
+                    (() => {
+                      const ytMatch = previewAd.video_url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)
+                      const ytId = (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null
+                      if (ytId) {
+                        return (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                            className="w-full h-full object-cover pointer-events-none scale-105"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+                      const tiktokMatch = previewAd.video_url.match(/tiktok\.com\/@.*\/video\/(\d+)/)
+                      const tiktokId = tiktokMatch ? tiktokMatch[1] : null
+                      if (tiktokId) {
+                        return (
+                          <iframe
+                            src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                            className="w-full h-full object-cover pointer-events-none"
+                            allow="autoplay; encrypted-media"
+                          />
+                        )
+                      }
+                      return (
+                        <video src={previewAd.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                      )
+                    })()
+                  ) : previewAd.image_url ? (
+                    <img src={previewAd.image_url} alt={previewAd.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/50 to-black p-6 text-center">
+                      <p className="text-white font-black text-xl">{previewAd.title}</p>
                     </div>
                   )}
+                  
+                  {/* Foreground Overlay mimicking customer view */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent p-4 flex flex-col justify-end">
+                    <h4 className="text-white font-black text-sm leading-tight uppercase tracking-tight line-clamp-1 mb-0.5">@{previewAd.title}</h4>
+                    {previewAd.description && (
+                      <p className="text-[10px] text-slate-300 leading-normal line-clamp-2 mb-2">{previewAd.description}</p>
+                    )}
+                    {previewAd.link_url && (
+                      <div className="w-fit px-2.5 py-1 rounded bg-white/20 backdrop-blur-md text-white text-center text-[8px] font-black uppercase tracking-widest cursor-pointer shadow-lg">
+                        {previewAd.cta_text || 'Learn More'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sponsored badge */}
+                  <div className="absolute top-2 right-2 z-20">
+                    <span className="text-[7px] text-white/50 font-bold uppercase tracking-widest bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded-full">Sponsored</span>
+                  </div>
                 </div>
+
+                {/* ── BOTTOM 50%: Premium Pager Zone (Read-only mockup) ── */}
+                {(() => {
+                  const adMerchant = merchants.find((m) => m.id === previewAd.advertiser_id)
+                  return (
+                    <PremiumPagerZone
+                      merchantName={adMerchant?.name || "BEEPME MERCHANT"}
+                      merchantLogo={adMerchant?.logo_url || null}
+                      receiptNumber="001"
+                      lang="bm"
+                      formattedWaitTime="05:00"
+                      previewMode={true}
+                    />
+                  )
+                })()}
+
               </div>
             </div>
 
