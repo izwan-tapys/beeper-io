@@ -43,19 +43,33 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .gt('created_at', today.toISOString())
 
-    // Enrich merchants with monthly session count
+    // Enrich merchants with daily & monthly session count
     const firstOfMonth = new Date()
     firstOfMonth.setDate(1)
     firstOfMonth.setHours(0, 0, 0, 0)
 
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+
     const enriched = await Promise.all(
       (merchants || []).map(async (m) => {
-        const { count } = await service
+        const { count: monthlyCount } = await service
           .from('sessions')
           .select('*', { count: 'exact', head: true })
           .eq('merchant_id', m.id)
           .gt('created_at', firstOfMonth.toISOString())
-        return { ...m, monthly_count: count || 0 }
+
+        const { count: todayCount } = await service
+          .from('sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('merchant_id', m.id)
+          .gt('created_at', startOfToday.toISOString())
+
+        return { 
+          ...m, 
+          monthly_count: monthlyCount || 0,
+          today_count: todayCount || 0
+        }
       })
     )
 

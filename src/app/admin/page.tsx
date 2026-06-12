@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [merchantSort, setMerchantSort] = useState<'latest' | 'today' | 'monthly'>('latest')
   const [stats, setStats] = useState({
     totalMerchants: 0,
     totalOrders: 0,
@@ -494,11 +495,21 @@ export default function AdminPage() {
     checkAdmin()
   }, [checkAdmin])
 
-  const filteredMerchants = merchants.filter(m => 
-    m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.phone?.includes(searchQuery) ||
-    m.id.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredMerchants = merchants
+    .filter(m => 
+      m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.phone?.includes(searchQuery) ||
+      m.id.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (merchantSort === 'today') {
+        return (b.today_count || 0) - (a.today_count || 0)
+      }
+      if (merchantSort === 'monthly') {
+        return (b.monthly_count || 0) - (a.monthly_count || 0)
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   // Derived ad lists
   const pendingAds = ads.filter(a => a.status === 'pending_review')
@@ -649,9 +660,17 @@ export default function AdminPage() {
         {/* Merchants View */}
         <div className={`mb-8 flex items-center justify-between px-2 ${activeTab !== 'merchants' ? 'hidden' : ''}`}>
           <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Merchant Directory</h2>
-          <div className="flex items-center gap-4 text-[10px] font-bold text-slate-600 uppercase">
-            <span>Sort by Latest</span>
-            <ChevronRight size={12} />
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+            <span className="text-slate-500">Sort:</span>
+            <select
+              value={merchantSort}
+              onChange={(e) => setMerchantSort(e.target.value as any)}
+              className="bg-transparent text-white font-black uppercase outline-none cursor-pointer pr-1"
+            >
+              <option value="latest" className="bg-[#0a0b0f] text-white">Latest Joined</option>
+              <option value="today" className="bg-[#0a0b0f] text-white">Today's Pagers</option>
+              <option value="monthly" className="bg-[#0a0b0f] text-white">Monthly Pagers</option>
+            </select>
           </div>
         </div>
 
@@ -757,16 +776,14 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td className="py-4 px-6">
-                              <div className="flex flex-col gap-1.5 max-w-[120px]">
-                                <div className="flex items-end justify-between">
-                                  <span className="text-sm font-black text-white">{m.monthly_count.toLocaleString()}</span>
-                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pagers</span>
+                              <div className="flex flex-col gap-1 min-w-[110px]">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Today</span>
+                                  <span className="text-xs font-black text-white bg-white/5 border border-white/10 px-2 py-0.5 rounded">{m.today_count || 0}</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-indigo-500 transition-all duration-1000"
-                                    style={{ width: '100%' }}
-                                  />
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Month</span>
+                                  <span className="text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">{m.monthly_count || 0}</span>
                                 </div>
                               </div>
                             </td>
