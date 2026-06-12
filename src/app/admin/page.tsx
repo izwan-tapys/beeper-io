@@ -684,8 +684,9 @@ export default function AdminPage() {
                       <th className="py-5 px-6 font-black">Merchant</th>
                       <th className="py-5 px-6 font-black">Contact</th>
                       <th className="py-5 px-6 font-black">Email</th>
-                      <th className="py-5 px-6 font-black">Usage</th>
-                      <th className="py-5 px-6 font-black">Subscription Plan</th>
+                      <th className="py-5 px-6 font-black text-center">Today</th>
+                      <th className="py-5 px-6 font-black text-center">Month</th>
+                      <th className="py-5 px-6 font-black">Plan</th>
                       <th className="py-5 px-6 font-black text-right">Actions</th>
                     </tr>
                   </thead>
@@ -695,38 +696,36 @@ export default function AdminPage() {
                         <tr key={idx} className="animate-pulse">
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-4">
-                              <Skeleton className="w-12 h-12 rounded-xl" />
-                              <div className="space-y-2">
-                                <Skeleton className="w-32 h-4" />
+                              <Skeleton className="w-9 h-9 rounded-lg" />
+                              <div className="space-y-1.5">
+                                <Skeleton className="w-28 h-3.5" />
                                 <div className="flex items-center gap-2">
-                                  <Skeleton className="w-12 h-3" />
-                                  <Skeleton className="w-16 h-3" />
+                                  <Skeleton className="w-10 h-3" />
+                                  <Skeleton className="w-14 h-3" />
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              <Skeleton className="w-4 h-4 rounded-full" />
-                              <Skeleton className="w-20 h-3" />
-                            </div>
+                            <Skeleton className="w-20 h-3" />
                           </td>
                           <td className="py-4 px-6">
-                            <Skeleton className="w-32 h-3" />
+                            <Skeleton className="w-28 h-3" />
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <Skeleton className="w-8 h-5 mx-auto rounded" />
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <Skeleton className="w-8 h-5 mx-auto rounded" />
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex flex-col gap-1.5 max-w-[120px]">
-                              <Skeleton className="w-8 h-4" />
-                              <Skeleton className="w-full h-1.5 rounded-full" />
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <Skeleton className="w-28 h-8 rounded-xl" />
+                            <Skeleton className="w-20 h-6 rounded-lg" />
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Skeleton className="w-24 h-8 rounded-xl" />
-                              <Skeleton className="w-20 h-8 rounded-xl" />
+                              <Skeleton className="w-8 h-8 rounded-lg" />
+                              <Skeleton className="w-8 h-8 rounded-lg" />
+                              <Skeleton className="w-16 h-7 rounded-lg" />
                             </div>
                           </td>
                         </tr>
@@ -737,55 +736,42 @@ export default function AdminPage() {
                         <>
                           <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
                             <td className="py-4 px-6">
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3">
                                 <div className="relative">
                                   <div className={`absolute -inset-1 blur-sm rounded-full opacity-20 transition-all duration-500 group-hover:opacity-40 ${m.is_verified ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-                                  <div className="relative w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform">
+                                  <div className="relative w-9 h-9 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center font-black text-white group-hover:scale-105 transition-transform text-xs shrink-0">
                                     {m.name?.[0] || 'M'}
                                   </div>
                                 </div>
-                                <div>
-                                  <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{m.name || 'Anonymous Store'}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${m.is_verified ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors" title={m.name || 'Anonymous Store'}>
+                                      {m.name || 'Anonymous Store'}
+                                    </span>
+                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${m.is_verified ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                       {m.is_verified ? 'Verified' : 'Pending'}
                                     </span>
                                     {m.category && (
-                                      <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">{m.category}</span>
+                                      <span className="text-[8px] font-bold text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 shrink-0">{m.category}</span>
                                     )}
-                                    <span className="text-[10px] text-slate-600 font-medium">{new Date(m.created_at).toLocaleDateString()}</span>
+                                    <span className="text-[8px] text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 shrink-0" title="Joined Date">
+                                      {new Date(m.created_at).toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })}
+                                    </span>
                                   </div>
-                                  {(m.latitude || m.longitude) && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <MapPin size={9} className="text-indigo-400" />
-                                      <span className="text-[9px] text-slate-500 font-mono">{m.latitude?.toFixed(4)}, {m.longitude?.toFixed(4)}</span>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
-                                <Smartphone size={14} className={m.phone ? 'text-indigo-500' : 'text-slate-600'} />
-                                <span className="text-xs font-medium">{m.phone || 'NO PHONE'}</span>
-                              </div>
+                            <td className="py-4 px-6 text-slate-300 font-mono text-xs whitespace-nowrap">
+                              {m.phone || '-'}
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
-                                <span className="text-xs font-medium">{m.email || 'NO EMAIL'}</span>
-                              </div>
+                            <td className="py-4 px-6 text-slate-300 text-xs truncate max-w-[150px]" title={m.email}>
+                              {m.email || '-'}
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="flex flex-col gap-1 min-w-[110px]">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Today</span>
-                                  <span className="text-xs font-black text-white bg-white/5 border border-white/10 px-2 py-0.5 rounded">{m.today_count || 0}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Month</span>
-                                  <span className="text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">{m.monthly_count || 0}</span>
-                                </div>
-                              </div>
+                            <td className="py-4 px-6 text-center">
+                              <span className="text-xs font-black text-white bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">{m.today_count || 0}</span>
+                            </td>
+                            <td className="py-4 px-6 text-center">
+                              <span className="text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">{m.monthly_count || 0}</span>
                             </td>
                             <td className="py-4 px-6">
                               <select 
@@ -807,7 +793,7 @@ export default function AdminPage() {
                                   updateMerchant(m.id, updates)
                                 }}
                                 disabled={verifyingId === m.id}
-                                className="w-full max-w-[140px] px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white/[0.06]"
+                                className="px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[9px] font-black text-white uppercase tracking-wider outline-none focus:border-indigo-500 transition-all cursor-pointer hover:bg-white/[0.06]"
                               >
                                 <option value="free" className="bg-[#0a0b0f] text-white">Trial (Free)</option>
                                 <option value="pro" className="bg-[#0a0b0f] text-white">Pro (RM49)</option>
@@ -815,6 +801,20 @@ export default function AdminPage() {
                             </td>
                             <td className="py-4 px-6 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {m.phone && (
+                                  <a 
+                                    href={`https://wa.me/${(() => {
+                                      const cleaned = m.phone.replace(/\D/g, '');
+                                      return cleaned.startsWith('0') ? '6' + cleaned : cleaned;
+                                    })()}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center border border-emerald-500/20"
+                                    title="WhatsApp Chat"
+                                  >
+                                    <Smartphone size={12} />
+                                  </a>
+                                )}
                                 <button
                                   onClick={() => {
                                     if (isEditingLocation) {
@@ -829,36 +829,24 @@ export default function AdminPage() {
                                       })
                                     }
                                   }}
-                                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${isEditingLocation ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 border border-white/10'}`}
+                                  className={`w-8 h-8 rounded-lg transition-all flex items-center justify-center border ${isEditingLocation ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 border-white/10'}`}
+                                  title="Set Location"
                                 >
-                                  <MapPin size={11} />
-                                  {isEditingLocation ? 'Cancel' : 'Set Location'}
+                                  <MapPin size={12} />
                                 </button>
                                 <button 
                                   onClick={() => updateMerchant(m.id, { is_verified: !m.is_verified })}
                                   disabled={verifyingId === m.id}
-                                  className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'}`}
+                                  className={`px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1 border ${m.is_verified ? 'bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 border-white/10' : 'bg-indigo-600 text-white hover:bg-indigo-500 border-indigo-500 shadow-md shadow-indigo-600/15'}`}
                                 >
-                                  {verifyingId === m.id ? <Loader2 size={12} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
+                                  {verifyingId === m.id ? <Loader2 size={10} className="animate-spin" /> : m.is_verified ? 'Kill' : 'Activate'}
                                 </button>
-                                {m.phone && (
-                                  <a 
-                                    href={`https://wa.me/${(() => {
-                                      const cleaned = m.phone.replace(/\D/g, '');
-                                      return cleaned.startsWith('0') ? '6' + cleaned : cleaned;
-                                    })()}`} 
-                                    target="_blank" 
-                                    className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all"
-                                  >
-                                    <Smartphone size={14} />
-                                  </a>
-                                )}
                               </div>
                             </td>
                           </tr>
                           {isEditingLocation && (
                             <tr key={`${m.id}-location`} className="bg-indigo-500/5 border-b border-indigo-500/20">
-                              <td colSpan={6} className="px-6 py-5">
+                              <td colSpan={7} className="px-6 py-5">
                                 <div className="flex flex-col gap-4">
                                   <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                                     <MapPin size={12} /> Set Location & Category for {m.name || 'this merchant'}
