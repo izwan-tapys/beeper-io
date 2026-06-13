@@ -10,7 +10,7 @@ import {
   Megaphone, Wallet, BarChart3, Eye, Plus, LogOut, Store,
   TrendingUp, Clock, CheckCircle, PauseCircle, XCircle,
   AlertCircle, Loader2, ChevronRight, MessageCircle, Sparkles,
-  ArrowUpRight, ArrowDownRight, X
+  ArrowUpRight, ArrowDownRight, X, ShieldAlert, Send, RotateCcw
 } from 'lucide-react'
 
 const supabase = createClient()
@@ -19,6 +19,11 @@ type AdvertiserProfile = {
   id: string
   user_id: string
   wallet_balance: number
+  status: 'pending' | 'approved' | 'rejected'
+  business_name?: string
+  phone?: string
+  advertised_products?: string
+  rejection_reason?: string
 }
 
 type Ad = {
@@ -71,7 +76,6 @@ const STATUS_CONFIG = {
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return dateString
-  
   const day = date.getDate()
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -79,13 +83,11 @@ const formatDate = (dateString: string) => {
   ]
   const month = monthNames[date.getMonth()]
   const year = date.getFullYear()
-  
   return `${day} ${month} ${year}`
 }
 
 export default function AdsManagerPage() {
   const router = useRouter()
-
   const [profile, setProfile] = useState<AdvertiserProfile | null>(null)
   const [ads, setAds] = useState<Ad[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -93,9 +95,14 @@ export default function AdsManagerPage() {
   const [loading, setLoading] = useState(true)
   const [successMsg, setSuccessMsg] = useState('')
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
+  const [showRegForm, setShowRegForm] = useState(false)
+  const [regBusinessName, setRegBusinessName] = useState('')
+  const [regPhone, setRegPhone] = useState('')
+  const [regProducts, setRegProducts] = useState('')
+  const [regSubmitting, setRegSubmitting] = useState(false)
+  const [regError, setRegError] = useState('')
 
   useEffect(() => {
-    // Check for success query param
     const params = new URLSearchParams(window.location.search)
     if (params.get('success') === '1') {
       setSuccessMsg('Campaign submitted for review! ✅')
@@ -117,51 +124,43 @@ export default function AdsManagerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login'); return }
 
-      // Fetch or create advertiser profile
-      let { data: prof } = await supabase
+      const { data: prof } = await supabase
         .from('advertiser_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single()
 
       if (!prof) {
-        const { data: newProf } = await supabase
-          .from('advertiser_profiles')
-          .insert({ user_id: user.id, wallet_balance: 0 })
-          .select()
-          .single()
-        prof = newProf
-      }
-      if (prof) setProfile(prof)
-
-      // Fetch ads
-      const { data: adsData } = await supabase
-        .from('ads')
-        .select('*')
-        .eq('advertiser_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (adsData) {
-        // Fetch total views per ad from ad_analytics
-        const adsWithViews = await Promise.all(
-          adsData.map(async (ad: Ad) => {
-            const { count } = await supabase
-              .from('ad_analytics')
-              .select('*', { count: 'exact', head: true })
-              .eq('ad_id', ad.id)
-              .eq('event_type', 'impression')
-            return { ...ad, total_views: count || 0 }
-          })
-        )
-        setAds(adsWithViews)
-
-        // Total impressions across all ads
-        const total = adsWithViews.reduce((sum, a) => sum + (a.total_views || 0), 0)
-        setTotalImpressions(total)
+        setShowRegForm(true)
+        setLoading(false)
+        return
       }
 
-      // Fetch transaction history
-      if (prof) {
+      setProfile(prof)
+
+      if (prof.status === 'approved') {
+        const { data: adsData } = await supabase
+          .from('ads')
+          .select('*')
+          .eq('advertiser_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (adsData) {
+          const adsWithViews = await Promise.all(
+            adsData.map(async (ad: Ad) => {
+              const { count } = await supabase
+                .from('ad_analytics')
+                .select('*', { count: 'exact', head: true })
+                .eq('ad_id', ad.id)
+                .eq('event_type', 'impression')
+              return { ...ad, total_views: count || 0 }
+            })
+          )
+          setAds(adsWithViews)
+          const total = adsWithViews.reduce((sum, a) => sum + (a.total_views || 0), 0)
+          setTotalImpressions(total)
+        }
+
         const { data: txsData } = await supabase
           .from('ad_wallet_transactions')
           .select('*')
@@ -169,14 +168,7 @@ export default function AdsManagerPage() {
           .order('created_at', { ascending: false })
 
         if (txsData) {
-          const enrichedTxs = txsData.map((tx: any) => {
-            const relatedAd = adsData?.find((a: any) => a.id === tx.ad_id)
-            return {
-              ...tx,
-              ad_title: relatedAd ? relatedAd.title : undefined
-            }
-          })
-          setTransactions(enrichedTxs)
+          setTransactions(txsData)
         }
       }
 
@@ -184,6 +176,88 @@ export default function AdsManagerPage() {
     }
     init()
   }, [router])
+
+  const handleSubmitRegistration = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRegError('')
+    if (!regBusinessName.trim() || !regPhone.trim() || !regProducts.trim()) {
+      setRegError('Sila isi semua maklumat.')
+      return
+    }
+    setRegSubmitting(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.replace('/login'); return }
+
+    const { error } = await supabase.from('advertiser_profiles').insert({
+      user_id: user.id,
+      wallet_balance: 0,
+      status: 'pending',
+      business_name: regBusinessName.trim(),
+      phone: regPhone.trim(),
+      advertised_products: regProducts.trim(),
+    })
+
+    if (error) {
+      setRegError(error.message)
+      setRegSubmitting(false)
+      return
+    }
+
+    const { data: newProf } = await supabase
+      .from('advertiser_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    setProfile(newProf)
+    setShowRegForm(false)
+    setRegSubmitting(false)
+  }
+
+  const handleReapply = () => {
+    setShowRegForm(true)
+    setRegBusinessName(profile?.business_name || '')
+    setRegPhone(profile?.phone || '')
+    setRegProducts(profile?.advertised_products || '')
+  }
+
+  const handleReapplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRegError('')
+    if (!regBusinessName.trim() || !regPhone.trim() || !regProducts.trim()) {
+      setRegError('Sila isi semua maklumat.')
+      return
+    }
+    setRegSubmitting(true)
+
+    const { error } = await supabase
+      .from('advertiser_profiles')
+      .update({
+        status: 'pending',
+        business_name: regBusinessName.trim(),
+        phone: regPhone.trim(),
+        advertised_products: regProducts.trim(),
+        rejection_reason: null,
+      })
+      .eq('id', profile!.id)
+
+    if (error) {
+      setRegError(error.message)
+      setRegSubmitting(false)
+      return
+    }
+
+    setProfile(prev => prev ? {
+      ...prev,
+      status: 'pending',
+      business_name: regBusinessName,
+      phone: regPhone,
+      advertised_products: regProducts,
+      rejection_reason: undefined
+    } : prev)
+    setShowRegForm(false)
+    setRegSubmitting(false)
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -213,63 +287,155 @@ export default function AdsManagerPage() {
     )
   }
 
+  if (showRegForm) {
+    const isReapply = !!profile && profile.status === 'rejected'
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: '#020203' }}>
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
+        </div>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
+          <div className="rounded-3xl border border-white/10 p-8 space-y-6" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                <Megaphone size={24} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-black text-white">Beepme Ad Network</h1>
+                <p className="text-xs text-indigo-400 font-semibold uppercase tracking-widest">
+                  {isReapply ? 'Permohonan Semula' : 'Pendaftaran Pengiklan'}
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              {isReapply
+                ? 'Kemaskini maklumat perniagaan anda dan hantar semula permohonan untuk disemak oleh Admin.'
+                : 'Isi borang ringkas ini untuk memohon akses ke Ads Manager. Permohonan anda akan disemak oleh Admin.'}
+            </p>
+            <form onSubmit={isReapply ? handleReapplySubmit : handleSubmitRegistration} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nama Perniagaan</label>
+                <input type="text" value={regBusinessName} onChange={e => setRegBusinessName(e.target.value)} placeholder="Cth: Warung Makan ABC" className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 transition-all" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nombor Telefon</label>
+                <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} placeholder="Cth: 0192345678" className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 transition-all" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Produk / Perkhidmatan yang Diiklankan</label>
+                <textarea value={regProducts} onChange={e => setRegProducts(e.target.value)} placeholder="Cth: Makanan & minuman, promosi set makan tengah hari..." rows={3} className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 transition-all resize-none" required />
+              </div>
+              {regError && <p className="text-rose-500 text-xs font-bold">{regError}</p>}
+              <button type="submit" disabled={regSubmitting} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-60">
+                {regSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {isReapply ? 'Hantar Permohonan Semula' : 'Hantar Permohonan'}
+              </button>
+            </form>
+            <button onClick={() => router.push('/dashboard')} className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors text-center">
+              ← Kembali ke Merchant Dashboard
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (profile && profile.status === 'pending') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#020203' }}>
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-600/5 rounded-full blur-3xl" />
+        </div>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md text-center">
+          <div className="rounded-3xl border border-amber-500/20 p-10 space-y-6" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center mx-auto">
+              <Clock size={36} className="text-amber-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white mb-2">Permohonan Sedang Disemak</h1>
+              <p className="text-slate-400 text-sm leading-relaxed">Terima kasih kerana mendaftar! Permohonan anda sebagai pengiklan Beepme sedang disemak oleh Admin.</p>
+            </div>
+            {profile.business_name && (
+              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-left space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/70">Maklumat Permohonan</p>
+                <p className="text-white text-sm font-bold">{profile.business_name}</p>
+                <p className="text-slate-400 text-xs">{profile.phone}</p>
+                <p className="text-slate-400 text-xs">{profile.advertised_products}</p>
+              </div>
+            )}
+            <button onClick={() => router.push('/dashboard')} className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+              ← Kembali ke Merchant Dashboard
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (profile && profile.status === 'rejected') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#020203' }}>
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-rose-600/5 rounded-full blur-3xl" />
+        </div>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md text-center">
+          <div className="rounded-3xl border border-rose-500/20 p-10 space-y-6" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
+            <div className="w-20 h-20 rounded-3xl bg-rose-500/10 flex items-center justify-center mx-auto">
+              <ShieldAlert size={36} className="text-rose-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white mb-2">Permohonan Tidak Berjaya</h1>
+              <p className="text-slate-400 text-sm leading-relaxed">Maaf, permohonan anda tidak diluluskan oleh Admin. Anda boleh kemaskini maklumat dan memohon semula.</p>
+            </div>
+            {profile.rejection_reason && (
+              <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10 text-left">
+                <p className="text-[10px] font-black uppercase tracking-widest text-rose-500/70 mb-1">Sebab Penolakan</p>
+                <p className="text-rose-300 text-sm">{profile.rejection_reason}</p>
+              </div>
+            )}
+            <button onClick={handleReapply} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+              <RotateCcw size={16} />Mohon Semula
+            </button>
+            <button onClick={() => router.push('/dashboard')} className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors text-center">
+              ← Kembali ke Merchant Dashboard
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className={`min-h-screen ${isComingSoonOpen ? 'overflow-hidden' : ''}`} style={{ background: '#020203' }}>
-      {/* Coming Soon Modal */}
       {isComingSoonOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
-          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center relative overflow-hidden animate-bounce-in">
-            <button 
-              onClick={() => setIsComingSoonOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
-            >
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
+          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl text-center relative">
+            <button onClick={() => setIsComingSoonOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500">
               <X size={20} />
             </button>
-            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 mx-auto">
               <Megaphone size={40} className="text-white animate-pulse" />
             </div>
             <h2 className="text-3xl font-black text-white mb-3">Akan Datang!</h2>
             <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-6">Sistem Pembayaran Premium</h3>
-            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-              Pendaftaran Payment Gateway (Stripe & ToyyibPay) sedang diproses. Pembelian kredit/ad top-up akan diaktifkan sepenuhnya tidak lama lagi! Terima kasih atas kesabaran anda.
-            </p>
-            <button 
-              onClick={() => setIsComingSoonOpen(false)}
-              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
-            >
-              Baik, Terima Kasih
-            </button>
+            <p className="text-slate-400 mb-8 text-sm">Pendaftaran Payment Gateway sedang diproses. Top-up akan diaktifkan tidak lama lagi!</p>
+            <button onClick={() => setIsComingSoonOpen(false)} className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg">Baik, Terima Kasih</button>
           </div>
         </div>
       )}
-
-      {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-violet-600/5 rounded-full blur-3xl" />
       </div>
-
       <div className="relative max-w-5xl mx-auto px-4 py-8 space-y-8">
-        {/* Success Toast */}
         <AnimatePresence>
           {successMsg && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-sm backdrop-blur-xl shadow-xl"
-            >
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-sm backdrop-blur-xl shadow-xl">
               {successMsg}
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
               <Megaphone size={20} className="text-white" />
@@ -280,194 +446,86 @@ export default function AdsManagerPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-all"
-            >
-              <Store size={16} />
-              <span className="hidden sm:inline">Merchant Dashboard</span>
+            <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-all">
+              <Store size={16} /><span className="hidden sm:inline">Merchant Dashboard</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 text-sm font-medium transition-all"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Logout</span>
+            <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 text-sm font-medium transition-all">
+              <LogOut size={16} /><span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </motion.div>
-
-        {/* Stat Cards */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-        >
-          {/* Wallet Balance */}
-          <motion.div
-            variants={itemVariants}
-            className="relative rounded-2xl p-6 border border-white/10 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}
-          >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <motion.div variants={itemVariants} className="relative rounded-2xl p-6 border border-white/10 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-600/10 rounded-full blur-2xl" />
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 flex items-center justify-center">
-                <Wallet size={18} className="text-indigo-400" />
-              </div>
+              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 flex items-center justify-center"><Wallet size={18} className="text-indigo-400" /></div>
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Wallet Balance</span>
             </div>
-            <p className="text-3xl font-black text-white">
-              RM {(profile?.wallet_balance ?? 0).toFixed(2)}
-            </p>
+            <p className="text-3xl font-black text-white">RM {(profile?.wallet_balance ?? 0).toFixed(2)}</p>
             <p className="text-xs text-slate-600 mt-1">Available credit</p>
           </motion.div>
-
-          {/* Total Campaigns */}
-          <motion.div
-            variants={itemVariants}
-            className="relative rounded-2xl p-6 border border-white/10 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}
-          >
+          <motion.div variants={itemVariants} className="relative rounded-2xl p-6 border border-white/10 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-violet-600/10 rounded-full blur-2xl" />
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-violet-600/20 flex items-center justify-center">
-                <BarChart3 size={18} className="text-violet-400" />
-              </div>
+              <div className="w-9 h-9 rounded-xl bg-violet-600/20 flex items-center justify-center"><BarChart3 size={18} className="text-violet-400" /></div>
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Campaigns</span>
             </div>
             <p className="text-3xl font-black text-white">{ads.length}</p>
             <p className="text-xs text-slate-600 mt-1">Total created</p>
           </motion.div>
-
-          {/* Total Views */}
-          <motion.div
-            variants={itemVariants}
-            className="relative rounded-2xl p-6 border border-white/10 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}
-          >
+          <motion.div variants={itemVariants} className="relative rounded-2xl p-6 border border-white/10 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #111827 100%)' }}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-600/10 rounded-full blur-2xl" />
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600/20 flex items-center justify-center">
-                <Eye size={18} className="text-emerald-400" />
-              </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-600/20 flex items-center justify-center"><Eye size={18} className="text-emerald-400" /></div>
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Total Views</span>
             </div>
             <p className="text-3xl font-black text-white">{totalImpressions.toLocaleString()}</p>
             <p className="text-xs text-slate-600 mt-1">Ad impressions</p>
           </motion.div>
         </motion.div>
-
-        {/* Top Up Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="rounded-2xl p-6 border border-indigo-500/20"
-          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(109,40,217,0.05) 100%)' }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="rounded-2xl p-6 border border-indigo-500/20" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(109,40,217,0.05) 100%)' }}>
           <div className="flex flex-col md:flex-row items-start gap-6">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-              <Wallet size={20} className="text-indigo-400" />
-            </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center flex-shrink-0"><Wallet size={20} className="text-indigo-400" /></div>
             <div className="flex-1 space-y-4">
               <div>
                 <h3 className="text-white font-bold mb-1">Top Up Wallet</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Add credit securely via FPX or Credit Card to keep your ad campaigns running.
-                </p>
+                <p className="text-slate-400 text-sm">Add credit securely via FPX or Credit Card.</p>
               </div>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  setIsComingSoonOpen(true)
-                }}
-                className="flex items-center gap-3"
-              >
+              <form onSubmit={(e) => { e.preventDefault(); setIsComingSoonOpen(true) }} className="flex items-center gap-3">
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">RM</span>
-                  <input 
-                    type="number" 
-                    name="amount"
-                    min="10" 
-                    step="1"
-                    placeholder="100" 
-                    defaultValue="50"
-                    required
-                    className="w-32 pl-12 pr-4 py-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all"
-                  />
+                  <input type="number" name="amount" min="10" step="1" placeholder="100" defaultValue="50" required className="w-32 pl-12 pr-4 py-3 rounded-xl bg-[#0a0b0f] border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all" />
                 </div>
-                <button
-                  type="submit"
-                  className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/20"
-                >
-                  Top Up Now
-                </button>
+                <button type="submit" className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all">Top Up Now</button>
               </form>
             </div>
-            
             <div className="hidden md:block w-px h-24 bg-white/10" />
-            
             <div className="flex-1">
               <h3 className="text-white font-bold mb-1">Manual Transfer</h3>
-              <p className="text-slate-400 text-xs leading-relaxed mb-3">
-                For large amounts (RM1000+) or manual bank transfer.
-              </p>
-              <a
-                href={`https://wa.me/60194696158?text=${encodeURIComponent('Hi Beepme, I would like to manually top up my Ad Network wallet.\n\nAmount: RM ___\nEmail: ___')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] text-xs font-semibold transition-all"
-              >
-                <MessageCircle size={14} />
-                WhatsApp Us
+              <p className="text-slate-400 text-xs mb-3">For large amounts (RM1000+) or manual bank transfer.</p>
+              <a href={`https://wa.me/60194696158?text=${encodeURIComponent('Hi Beepme, I would like to manually top up my Ad Network wallet.\n\nAmount: RM ___\nEmail: ___')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] text-xs font-semibold transition-all">
+                <MessageCircle size={14} />WhatsApp Us
               </a>
             </div>
           </div>
         </motion.div>
-
-        {/* My Campaigns */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-black text-white">My Campaigns</h2>
-              {ads.length > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400">
-                  {ads.length}
-                </span>
-              )}
+              {ads.length > 0 && <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400">{ads.length}</span>}
             </div>
-            <button
-              onClick={() => router.push('/ads-manager/create')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40"
-            >
-              <Plus size={16} />
-              Create Campaign
+            <button onClick={() => router.push('/ads-manager/create')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-lg shadow-indigo-600/20">
+              <Plus size={16} />Create Campaign
             </button>
           </div>
-
           {ads.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="rounded-2xl border border-white/5 p-12 text-center"
-              style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
-            >
-              <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 flex items-center justify-center mx-auto mb-4">
-                <Sparkles size={28} className="text-indigo-400" />
-              </div>
+            <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border border-white/5 p-12 text-center" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 flex items-center justify-center mx-auto mb-4"><Sparkles size={28} className="text-indigo-400" /></div>
               <p className="text-white font-bold text-lg mb-2">No campaigns yet</p>
               <p className="text-slate-500 text-sm mb-6">Create your first ad campaign to reach diners across Beepme merchants.</p>
-              <button
-                onClick={() => router.push('/ads-manager/create')}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/20"
-              >
-                <Plus size={16} />
-                Create Your First Campaign
+              <button onClick={() => router.push('/ads-manager/create')} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all">
+                <Plus size={16} />Create Your First Campaign
               </button>
             </motion.div>
           ) : (
@@ -477,54 +535,22 @@ export default function AdsManagerPage() {
                   const statusConf = STATUS_CONFIG[ad.status]
                   const StatusIcon = statusConf.icon
                   return (
-                    <motion.div
-                      key={ad.id}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="group flex items-center gap-4 p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all cursor-pointer"
-                      style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
-                    >
-                      {/* Status indicator */}
+                    <motion.div key={ad.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="group flex items-center gap-4 p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
                       <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
                         <StatusIcon size={18} className={ad.status === 'active' ? 'text-emerald-400' : ad.status === 'pending_review' ? 'text-amber-400' : ad.status === 'paused' ? 'text-slate-400' : 'text-red-400'} />
                       </div>
-
-                      {/* Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-white font-semibold text-sm truncate">{ad.title}</p>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${statusConf.className}`}>
-                            {statusConf.label}
-                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${statusConf.className}`}>{statusConf.label}</span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span>{ad.category}</span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <TrendingUp size={11} />
-                            RM {Number(ad.cpv_bid).toFixed(2)}/view
-                          </span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Eye size={11} />
-                            {(ad.total_views || 0).toLocaleString()} views
-                          </span>
+                          <span>{ad.category}</span><span>·</span>
+                          <span className="flex items-center gap-1"><TrendingUp size={11} />RM {Number(ad.cpv_bid).toFixed(2)}/view</span><span>·</span>
+                          <span className="flex items-center gap-1"><Eye size={11} />{(ad.total_views || 0).toLocaleString()} views</span>
                         </div>
                       </div>
-
-                      {/* Edit Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/ads-manager/edit/${ad.id}`)
-                        }}
-                        className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-indigo-600 hover:text-white border border-white/10 text-xs font-black uppercase tracking-wider text-slate-300 transition-all active:scale-95 shrink-0"
-                      >
-                        Edit
-                      </button>
-
-                      {/* Arrow */}
+                      <button onClick={(e) => { e.stopPropagation(); router.push(`/ads-manager/edit/${ad.id}`) }} className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-indigo-600 hover:text-white border border-white/10 text-xs font-black uppercase tracking-wider text-slate-300 transition-all shrink-0">Edit</button>
                       <ChevronRight size={16} className="text-slate-700 group-hover:text-slate-500 transition-colors flex-shrink-0" />
                     </motion.div>
                   )
@@ -533,103 +559,35 @@ export default function AdsManagerPage() {
             </div>
           )}
         </motion.div>
-
-        {/* Transaction History */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="space-y-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-black text-white">Transaction History</h2>
-            {transactions.length > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400">
-                {transactions.length}
-              </span>
-            )}
+            {transactions.length > 0 && <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400">{transactions.length}</span>}
           </div>
-
           {transactions.length === 0 ? (
-            <div
-              className="rounded-2xl border border-white/5 p-8 text-center text-slate-500 text-sm"
-              style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
-            >
-              No transactions recorded yet.
-            </div>
+            <div className="rounded-2xl border border-white/5 p-8 text-center text-slate-500 text-sm" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>No transactions recorded yet.</div>
           ) : (
-            <div 
-              className="rounded-2xl border border-white/5 overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}
-            >
+            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d0e1a 0%, #0a0b0f 100%)' }}>
               <div className="max-h-[350px] overflow-y-auto divide-y divide-white/5">
                 {transactions.map((tx) => {
                   const isTopup = tx.type === 'topup'
                   const isCompleted = tx.status === 'completed'
                   const isFailed = tx.status === 'failed'
-
                   return (
-                    <div 
-                      key={tx.id} 
-                      className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                    >
+                    <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Icon */}
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isTopup 
-                            ? isCompleted 
-                              ? 'bg-emerald-500/10 text-emerald-400' 
-                              : isFailed
-                                ? 'bg-red-500/10 text-red-400'
-                                : 'bg-amber-500/10 text-amber-400'
-                            : 'bg-indigo-500/10 text-indigo-400'
-                        }`}>
-                          {isTopup ? (
-                            <ArrowUpRight size={16} />
-                          ) : (
-                            <ArrowDownRight size={16} />
-                          )}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isTopup ? isCompleted ? 'bg-emerald-500/10 text-emerald-400' : isFailed ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                          {isTopup ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                         </div>
-
-                        {/* Title & Subtitle */}
                         <div className="min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">
-                            {isTopup ? 'Ad Wallet Top-up' : `Charge for view`}
-                          </p>
-                          <p className="text-slate-500 text-xs truncate">
-                            {isTopup 
-                              ? `Via Stripe ${tx.reference_id ? `(${tx.reference_id.substring(0, 8)}...)` : ''}` 
-                              : `Campaign: ${tx.ad_title || 'Ad View'}`
-                            }
-                          </p>
+                          <p className="text-white font-semibold text-sm truncate">{isTopup ? 'Ad Wallet Top-up' : 'Charge for view'}</p>
+                          <p className="text-slate-500 text-xs truncate">{isTopup ? `Via Stripe ${tx.reference_id ? `(${tx.reference_id.substring(0, 8)}...)` : ''}` : `Campaign: ${tx.ad_title || 'Ad View'}`}</p>
                         </div>
                       </div>
-
-                      {/* Right side: Amount & Date */}
                       <div className="text-right flex-shrink-0 space-y-1">
-                        <p className={`font-bold text-sm ${
-                          isTopup 
-                            ? isCompleted 
-                              ? 'text-emerald-400' 
-                              : isFailed
-                                ? 'text-red-400'
-                                : 'text-amber-400'
-                            : 'text-slate-300'
-                        }`}>
-                          {isTopup ? '+' : '-'} RM {Number(tx.amount).toFixed(2)}
-                        </p>
+                        <p className={`font-bold text-sm ${isTopup ? isCompleted ? 'text-emerald-400' : isFailed ? 'text-red-400' : 'text-amber-400' : 'text-slate-300'}`}>{isTopup ? '+' : '-'} RM {Number(tx.amount).toFixed(2)}</p>
                         <div className="flex items-center justify-end gap-1.5 text-[10px] text-slate-500">
-                          {isTopup && (
-                            <span className={`px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[8px] ${
-                              isCompleted 
-                                ? 'bg-emerald-500/10 text-emerald-400' 
-                                : isFailed
-                                  ? 'bg-red-500/10 text-red-400'
-                                  : 'bg-amber-500/10 text-amber-400'
-                            }`}>
-                              {tx.status}
-                            </span>
-                          )}
+                          {isTopup && <span className={`px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[8px] ${isCompleted ? 'bg-emerald-500/10 text-emerald-400' : isFailed ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>{tx.status}</span>}
                           <span>{formatDate(tx.created_at)}</span>
                         </div>
                       </div>
@@ -640,8 +598,6 @@ export default function AdsManagerPage() {
             </div>
           )}
         </motion.div>
-
-        {/* Footer */}
         <div className="pt-4 text-center">
           <p className="text-xs text-slate-700">Beepme Ad Network · Reach diners at the point of hunger</p>
         </div>

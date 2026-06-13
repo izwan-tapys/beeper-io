@@ -51,14 +51,18 @@ export default function AdminPage() {
 
   // Ads State
   const [activeTab, setActiveTab] = useState<'merchants' | 'ads' | 'infra' | 'behavior' | 'visitors' | 'partners'>('merchants')
-  const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all'>('active')
+  const [adsSubTab, setAdsSubTab] = useState<'active' | 'pending' | 'all' | 'advertisers'>('active')
   const [ads, setAds] = useState<any[]>([])
   const [adsLoading, setAdsLoading] = useState(false)
   const [isAddingAd, setIsAddingAd] = useState(false)
+  const [advertisers, setAdvertisers] = useState<any[]>([])
+  const [advertisersLoading, setAdvertisersLoading] = useState(false)
+  const [moderatingAdvertiserId, setModeratingAdvertiserId] = useState<string | null>(null)
   // Partners state
   const [partners, setPartners] = useState<any[]>([])
   const [partnerTransactions, setPartnerTransactions] = useState<Record<string, any[]>>({})
   const [partnerPayouts, setPartnerPayouts] = useState<Record<string, any[]>>({})
+  const [partnerMerchants, setPartnerMerchants] = useState<Record<string, any[]>>({})
   const [partnersLoading, setPartnersLoading] = useState(false)
   const [partnerPayoutMonth, setPartnerPayoutMonth] = useState('')
   const [partnerPayoutNote, setPartnerPayoutNote] = useState('')
@@ -185,6 +189,72 @@ export default function AdminPage() {
       setAdsLoading(false)
     }
   }, [])
+
+  const fetchAdvertisers = useCallback(async () => {
+    setAdvertisersLoading(true)
+    try {
+      const res = await fetch('/api/admin/advertisers')
+      if (!res.ok) {
+        throw new Error('Failed to fetch advertisers')
+      }
+      const data = await res.json()
+      setAdvertisers(data.advertisers || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAdvertisersLoading(false)
+    }
+  }, [])
+
+  const handleApproveAdvertiser = async (id: string) => {
+    if (moderatingAdvertiserId) return
+    setModeratingAdvertiserId(id)
+    try {
+      const res = await fetch('/api/admin/advertisers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          updates: { status: 'approved', rejection_reason: null }
+        })
+      })
+      if (!res.ok) throw new Error('Failed to approve advertiser')
+      setAdvertisers(prev => prev.map(adv => adv.id === id ? { ...adv, status: 'approved', rejection_reason: null } : adv))
+    } catch (e) {
+      console.error(e)
+      alert('Error approving advertiser')
+    } finally {
+      setModeratingAdvertiserId(null)
+    }
+  }
+
+  const handleRejectAdvertiser = async (id: string) => {
+    if (moderatingAdvertiserId) return
+    const reason = prompt('Masukkan sebab penolakan (Rejection Reason):')
+    if (reason === null) return
+    if (!reason.trim()) {
+      alert('Sila isi sebab penolakan.')
+      return
+    }
+    setModeratingAdvertiserId(id)
+    try {
+      const res = await fetch('/api/admin/advertisers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          updates: { status: 'rejected', rejection_reason: reason.trim() }
+        })
+      })
+      if (!res.ok) throw new Error('Failed to reject advertiser')
+      setAdvertisers(prev => prev.map(adv => adv.id === id ? { ...adv, status: 'rejected', rejection_reason: reason.trim() } : adv))
+    } catch (e) {
+      console.error(e)
+      alert('Error rejecting advertiser')
+    } finally {
+      setModeratingAdvertiserId(null)
+    }
+  }
 
   const handleSaveAd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -405,12 +475,17 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (partnerList) {
       setPartners(partnerList)
-      // For each partner, fetch their referred merchants' transactions
+      // For each partner, fetch their referred merchants' transactions & metadata
       for (const p of partnerList) {
         const { data: merchantIds } = await supabase
           .from('merchants')
-          .select('id')
+          .select('id, name, email, plan_type, created_at')
           .eq('referred_by', p.referral_code)
+        
+        if (merchantIds) {
+          setPartnerMerchants(prev => ({ ...prev, [p.id]: merchantIds }))
+        }
+
         const ids = merchantIds?.map((m: any) => m.id) || []
         if (ids.length > 0) {
           const { data: txs } = await supabase
@@ -434,6 +509,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin && activeTab === 'ads') {
       fetchAds()
+      fetchAdvertisers()
     }
     if (isAdmin && activeTab === 'infra') {
       fetchInfraData()
@@ -446,7 +522,7 @@ export default function AdminPage() {
     if (isAdmin && activeTab === 'visitors') {
       fetchVisitorsData()
     }
-  }, [isAdmin, activeTab, fetchAds, fetchInfraData, fetchBehaviorData, fetchVisitorsData])
+  }, [isAdmin, activeTab, fetchAds, fetchAdvertisers, fetchInfraData, fetchBehaviorData, fetchVisitorsData])
 
   const checkAdmin = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -510,6 +586,23 @@ export default function AdminPage() {
       }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
+
+  const checkIsSuspectedSelfReferral = (merchantEmail: string, referredByCode: string) => {
+    if (!merchantEmail || !referredByCode) return false
+    
+    // Find the partner with this referral code
+    const partner = partners.find(p => p.referral_code.toUpperCase().trim() === referredByCode.toUpperCase().trim())
+    if (!partner || !partner.email) return false
+
+    // Get email prefixes (part before @, lowercase, alphanumeric only)
+    const partnerPrefix = partner.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+    const merchantPrefix = merchantEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+
+    // Match if exact same prefix, or if one prefix contains/matches the other
+    return partnerPrefix === merchantPrefix || 
+           partnerPrefix.startsWith(merchantPrefix) || 
+           merchantPrefix.startsWith(partnerPrefix)
+  }
 
   // Derived ad lists
   const pendingAds = ads.filter(a => a.status === 'pending_review')
@@ -766,6 +859,19 @@ export default function AdminPage() {
                                       {new Date(m.created_at).toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })}
                                     </span>
                                   </div>
+                                  {m.referred_by && (
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                                        <span>Referred by:</span>
+                                        <span className="font-mono text-violet-400 font-bold bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/20">{m.referred_by}</span>
+                                      </div>
+                                      {checkIsSuspectedSelfReferral(m.email, m.referred_by) && (
+                                        <span className="text-[8px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                          ⚠️ Suspected Self-Referral
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </td>
@@ -972,22 +1078,25 @@ export default function AdminPage() {
 
             {/* Sub-tabs */}
             <div className="flex items-center gap-2 p-1.5 bg-white/[0.02] border border-white/5 rounded-2xl w-max">
-              {(['active', 'pending', 'all'] as const).map(tab => (
+              {(['active', 'pending', 'all', 'advertisers'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setAdsSubTab(tab)}
                   className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${adsSubTab === tab ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                 >
-                  {tab === 'active' ? <CheckCircle size={12} /> : tab === 'pending' ? <Clock3 size={12} /> : <BarChart3 size={12} />}
-                  {tab === 'pending' ? 'Pending Review' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'active' ? <CheckCircle size={12} /> : tab === 'pending' ? <Clock3 size={12} /> : tab === 'advertisers' ? <Users size={12} /> : <BarChart3 size={12} />}
+                  {tab === 'pending' ? 'Pending Review' : tab === 'advertisers' ? 'Advertisers' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {tab === 'pending' && pendingAds.length > 0 && (
                     <span className="bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">{pendingAds.length}</span>
+                  )}
+                  {tab === 'advertisers' && advertisers.filter(a => a.status === 'pending').length > 0 && (
+                    <span className="bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">{advertisers.filter(a => a.status === 'pending').length}</span>
                   )}
                 </button>
               ))}
             </div>
 
-            {isAddingAd && (
+            {isAddingAd && adsSubTab !== 'advertisers' && (
               <form onSubmit={handleSaveAd} className="p-8 rounded-[40px] bg-white/[0.02] border border-white/10 shadow-2xl backdrop-blur-md animate-slide-up space-y-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-black text-white text-xl uppercase tracking-tighter">Create New Campaign</h3>
@@ -1056,226 +1165,334 @@ export default function AdminPage() {
               </form>
             )}
 
-            <div className={`transition-opacity duration-300 ${adsLoading && ads.length > 0 ? 'opacity-60 pointer-events-none' : ''}`}>
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
-                        <th className="py-5 px-6 font-black">Ad Campaign</th>
-                        <th className="py-5 px-6 font-black">CPV Bid</th>
-                        <th className="py-5 px-6 font-black">Category</th>
-                        <th className="py-5 px-6 font-black">Performance Stats</th>
-                        <th className="py-5 px-6 font-black">Status</th>
-                        <th className="py-5 px-6 font-black text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {adsLoading && ads.length === 0 ? (
-                        Array.from({ length: 4 }).map((_, idx) => (
-                          <tr key={idx} className="animate-pulse">
-                            <td className="py-4 px-6">
-                              <div className="flex items-center gap-4">
-                                <Skeleton className="w-10 h-16 rounded-lg" />
-                                <div className="space-y-2">
-                                  <Skeleton className="w-32 h-4" />
-                                  <Skeleton className="w-48 h-3" />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-6">
-                              <Skeleton className="w-16 h-4" />
-                            </td>
-                            <td className="py-4 px-6">
-                              <Skeleton className="w-16 h-5 rounded-lg" />
-                            </td>
-                            <td className="py-4 px-6">
-                              <div className="space-y-1">
-                                <Skeleton className="w-20 h-3" />
-                                <Skeleton className="w-20 h-3" />
-                                <Skeleton className="w-20 h-3" />
-                              </div>
-                            </td>
-                            <td className="py-4 px-6">
-                              <Skeleton className="w-16 h-5 rounded-lg" />
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <div className="flex justify-end gap-2">
-                                <Skeleton className="w-20 h-8 rounded-xl" />
-                                <Skeleton className="w-10 h-8 rounded-xl" />
-                                <Skeleton className="w-8 h-8 rounded-xl" />
-                              </div>
+            {adsSubTab === 'advertisers' ? (
+              <div className={`transition-opacity duration-300 ${advertisersLoading ? 'opacity-60 pointer-events-none' : ''}`}>
+                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                          <th className="py-5 px-6 font-black">Business Info</th>
+                          <th className="py-5 px-6 font-black">Contact</th>
+                          <th className="py-5 px-6 font-black">Products / Services</th>
+                          <th className="py-5 px-6 font-black">Wallet Balance</th>
+                          <th className="py-5 px-6 font-black">Status</th>
+                          <th className="py-5 px-6 font-black text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {advertisersLoading && advertisers.length === 0 ? (
+                          Array.from({ length: 4 }).map((_, idx) => (
+                            <tr key={idx} className="animate-pulse">
+                              <td className="py-4 px-6">
+                                <Skeleton className="w-32 h-4 mb-2" />
+                                <Skeleton className="w-48 h-3" />
+                              </td>
+                              <td className="py-4 px-6"><Skeleton className="w-24 h-4" /></td>
+                              <td className="py-4 px-6"><Skeleton className="w-48 h-4" /></td>
+                              <td className="py-4 px-6"><Skeleton className="w-16 h-4" /></td>
+                              <td className="py-4 px-6"><Skeleton className="w-16 h-5 rounded-lg" /></td>
+                              <td className="py-4 px-6 text-right"><Skeleton className="w-24 h-8 rounded-xl ml-auto" /></td>
+                            </tr>
+                          ))
+                        ) : advertisers.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-10 text-center text-slate-500 text-xs">
+                              No advertisers found.
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        displayedAds.map((ad) => (
-                          <tr key={ad.id} className="hover:bg-white/[0.02] transition-colors group">
-                            <td className="py-4 px-6">
-                              <div className="flex items-center gap-4">
-                                <div className="relative">
-                                  <div className="absolute -inset-1 blur-sm rounded-lg opacity-20 bg-indigo-500" />
-                                  <div className="relative w-10 h-16 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                    {ad.image_url ? (
-                                      <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-                                    ) : ad.video_url ? (
-                                      <div className="w-full h-full flex items-center justify-center bg-indigo-950/20">
-                                        <PlayCircle size={18} className="text-indigo-400" />
-                                      </div>
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                                        <Tv size={18} className="text-slate-600" />
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors truncate max-w-[200px]" title={ad.title}>
-                                    {ad.title}
-                                  </p>
-                                  {ad.description && (
-                                    <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]" title={ad.description}>
-                                      {ad.description}
-                                    </p>
-                                  )}
-                                  {ad.link_url && (
-                                    <a 
-                                      href={ad.link_url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="flex items-center gap-1 mt-1 text-[10px] text-indigo-400/80 hover:text-indigo-400 font-mono truncate max-w-[200px]"
-                                    >
-                                      {ad.cta_text || 'Link'} <ExternalLink size={8} />
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-6">
-                              {ad.cpv_bid ? (
-                                <span className="text-emerald-400 text-xs font-mono font-bold">RM {ad.cpv_bid.toFixed(3)}</span>
-                              ) : (
-                                <span className="text-slate-600 text-xs">-</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              {ad.category ? (
-                                <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg border border-white/10">
-                                  {ad.category}
-                                </span>
-                              ) : (
-                                <span className="text-slate-600 text-xs">-</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              <div className="flex flex-col gap-0.5 text-xs text-slate-400">
-                                <div>
-                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Views:</span>{' '}
-                                  <span className="font-mono text-white font-bold">{ad.impressions || 0}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Clicks:</span>{' '}
-                                  <span className="font-mono text-white font-bold">{ad.clicks || 0}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CTR:</span>{' '}
-                                  <span className="font-mono text-emerald-400 font-bold">{ad.ctr || '0.0'}%</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
-                                ad.status === 'active' 
-                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                  : ad.status === 'pending_review' 
-                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
-                                    : ad.status === 'paused' 
-                                      ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
-                                      : ad.status === 'rejected'
+                        ) : (
+                          advertisers.map((adv) => (
+                            <tr key={adv.id} className="hover:bg-white/[0.02] transition-colors group text-sm">
+                              <td className="py-4 px-6">
+                                <div className="font-bold text-white">{adv.business_name || 'No business name'}</div>
+                                <div className="text-xs text-slate-500 font-mono mt-0.5">{adv.email}</div>
+                              </td>
+                              <td className="py-4 px-6 text-slate-300 font-mono">
+                                {adv.phone || '-'}
+                              </td>
+                              <td className="py-4 px-6 text-slate-300 max-w-xs truncate" title={adv.advertised_products}>
+                                {adv.advertised_products || '-'}
+                              </td>
+                              <td className="py-4 px-6 text-emerald-400 font-mono font-bold">
+                                RM {(adv.wallet_balance || 0).toFixed(2)}
+                              </td>
+                              <td className="py-4 px-6">
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
+                                  adv.status === 'approved' 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                    : adv.status === 'pending' 
+                                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+                                      : adv.status === 'rejected'
                                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                         : 'bg-white/5 text-slate-400 border-white/10'
-                              }`}>
-                                {ad.status || 'unknown'}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewAd(ad)}
-                                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 font-black text-[9px] uppercase tracking-widest transition-all"
-                                  title="Preview Ad"
-                                >
-                                  <Eye size={11} />
-                                  Preview
-                                </button>
-                                
-                                {ad.status === 'pending_review' && (
-                                  <>
+                                }`}>
+                                  {adv.status || 'pending'}
+                                </span>
+                                {adv.status === 'rejected' && adv.rejection_reason && (
+                                  <div className="text-[10px] text-rose-400/80 mt-1 max-w-[200px] truncate" title={adv.rejection_reason}>
+                                    Sebab: {adv.rejection_reason}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-4 px-6 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  {adv.status !== 'approved' && (
                                     <button
                                       type="button"
-                                      onClick={() => handleApproveAd(ad.id)}
-                                      disabled={adsModerating === ad.id}
+                                      onClick={() => handleApproveAdvertiser(adv.id)}
+                                      disabled={moderatingAdvertiserId === adv.id}
                                       className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
-                                      title="Approve"
                                     >
-                                      {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                                      {moderatingAdvertiserId === adv.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
                                       Approve
                                     </button>
+                                  )}
+                                  {adv.status !== 'rejected' && (
                                     <button
                                       type="button"
-                                      onClick={() => handleRejectAd(ad.id)}
-                                      disabled={adsModerating === ad.id}
+                                      onClick={() => handleRejectAdvertiser(adv.id)}
+                                      disabled={moderatingAdvertiserId === adv.id}
                                       className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
-                                      title="Reject"
                                     >
-                                      {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
+                                      {moderatingAdvertiserId === adv.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
                                       Reject
                                     </button>
-                                  </>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() => toggleAdActive(ad.id, ad.is_active)}
-                                  className={`px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                                    ad.is_active 
-                                      ? 'bg-indigo-600 text-white hover:bg-indigo-500' 
-                                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                                  }`}
-                                  title={ad.is_active ? 'Turn OFF' : 'Turn ON'}
-                                >
-                                  {ad.is_active ? 'ON' : 'OFF'}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => deleteAd(ad.id)}
-                                  className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shrink-0"
-                                  title="Delete Ad"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {displayedAds.length === 0 && !adsLoading && (
-              <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
-                <Tv size={48} className="mx-auto text-slate-700 mb-4" />
-                <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">
-                  {adsSubTab === 'pending' 
-                    ? 'No pending ads. All caught up!' 
-                    : 'No campaigns found for this section.'}
-                </p>
-              </div>
+            ) : (
+              <>
+                <div className={`transition-opacity duration-300 ${adsLoading && ads.length > 0 ? 'opacity-60 pointer-events-none' : ''}`}>
+                  <div className="bg-white/[0.02] border border-white/5 rounded-[32px] overflow-hidden">
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500 bg-white/[0.01]">
+                            <th className="py-5 px-6 font-black">Ad Campaign</th>
+                            <th className="py-5 px-6 font-black">CPV Bid</th>
+                            <th className="py-5 px-6 font-black">Category</th>
+                            <th className="py-5 px-6 font-black">Performance Stats</th>
+                            <th className="py-5 px-6 font-black">Status</th>
+                            <th className="py-5 px-6 font-black text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {adsLoading && ads.length === 0 ? (
+                            Array.from({ length: 4 }).map((_, idx) => (
+                              <tr key={idx} className="animate-pulse">
+                                <td className="py-4 px-6">
+                                  <div className="flex items-center gap-4">
+                                    <Skeleton className="w-10 h-16 rounded-lg" />
+                                    <div className="space-y-2">
+                                      <Skeleton className="w-32 h-4" />
+                                      <Skeleton className="w-48 h-3" />
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <Skeleton className="w-16 h-4" />
+                                </td>
+                                <td className="py-4 px-6">
+                                  <Skeleton className="w-16 h-5 rounded-lg" />
+                                </td>
+                                <td className="py-4 px-6">
+                                  <div className="space-y-1">
+                                    <Skeleton className="w-20 h-3" />
+                                    <Skeleton className="w-20 h-3" />
+                                    <Skeleton className="w-20 h-3" />
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <Skeleton className="w-16 h-5 rounded-lg" />
+                                </td>
+                                <td className="py-4 px-6 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Skeleton className="w-20 h-8 rounded-xl" />
+                                    <Skeleton className="w-10 h-8 rounded-xl" />
+                                    <Skeleton className="w-8 h-8 rounded-xl" />
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            displayedAds.map((ad) => (
+                              <tr key={ad.id} className="hover:bg-white/[0.02] transition-colors group">
+                                <td className="py-4 px-6">
+                                  <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                      <div className="absolute -inset-1 blur-sm rounded-lg opacity-20 bg-indigo-500" />
+                                      <div className="relative w-10 h-16 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                        {ad.image_url ? (
+                                          <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
+                                        ) : ad.video_url ? (
+                                          <div className="w-full h-full flex items-center justify-center bg-indigo-950/20">
+                                            <PlayCircle size={18} className="text-indigo-400" />
+                                          </div>
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                            <Tv size={18} className="text-slate-600" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors truncate max-w-[200px]" title={ad.title}>
+                                        {ad.title}
+                                      </p>
+                                      {ad.description && (
+                                        <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]" title={ad.description}>
+                                          {ad.description}
+                                        </p>
+                                      )}
+                                      {ad.link_url && (
+                                        <a 
+                                          href={ad.link_url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="flex items-center gap-1 mt-1 text-[10px] text-indigo-400/80 hover:text-indigo-400 font-mono truncate max-w-[200px]"
+                                        >
+                                          {ad.cta_text || 'Link'} <ExternalLink size={8} />
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  {ad.cpv_bid ? (
+                                    <span className="text-emerald-400 text-xs font-mono font-bold">RM {ad.cpv_bid.toFixed(3)}</span>
+                                  ) : (
+                                    <span className="text-slate-600 text-xs">-</span>
+                                  )}
+                                </td>
+                                <td className="py-4 px-6">
+                                  {ad.category ? (
+                                    <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg border border-white/10">
+                                      {ad.category}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-600 text-xs">-</span>
+                                  )}
+                                </td>
+                                <td className="py-4 px-6">
+                                  <div className="flex flex-col gap-0.5 text-xs text-slate-400">
+                                    <div>
+                                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Views:</span>{' '}
+                                      <span className="font-mono text-white font-bold">{ad.impressions || 0}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Clicks:</span>{' '}
+                                      <span className="font-mono text-white font-bold">{ad.clicks || 0}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CTR:</span>{' '}
+                                      <span className="font-mono text-emerald-400 font-bold">{ad.ctr || '0.0'}%</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
+                                    ad.status === 'active' 
+                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                      : ad.status === 'pending_review' 
+                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+                                        : ad.status === 'paused' 
+                                          ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
+                                          : ad.status === 'rejected'
+                                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                            : 'bg-white/5 text-slate-400 border-white/10'
+                                  }`}>
+                                    {ad.status || 'unknown'}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewAd(ad)}
+                                      className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 font-black text-[9px] uppercase tracking-widest transition-all"
+                                      title="Preview Ad"
+                                    >
+                                      <Eye size={11} />
+                                      Preview
+                                    </button>
+                                    
+                                    {ad.status === 'pending_review' && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleApproveAd(ad.id)}
+                                          disabled={adsModerating === ad.id}
+                                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                          title="Approve"
+                                        >
+                                          {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                                          Approve
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRejectAd(ad.id)}
+                                          disabled={adsModerating === ad.id}
+                                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                          title="Reject"
+                                        >
+                                          {adsModerating === ad.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
+                                          Reject
+                                        </button>
+                                      </>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                                      className={`px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                                        ad.is_active 
+                                          ? 'bg-indigo-600 text-white hover:bg-indigo-500' 
+                                          : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                      }`}
+                                      title={ad.is_active ? 'Turn OFF' : 'Turn ON'}
+                                    >
+                                      {ad.is_active ? 'ON' : 'OFF'}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteAd(ad.id)}
+                                      className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shrink-0"
+                                      title="Delete Ad"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                
+                {displayedAds.length === 0 && !adsLoading && (
+                  <div className="text-center py-20 bg-white/[0.01] rounded-[40px] border border-dashed border-white/10">
+                    <Tv size={48} className="mx-auto text-slate-700 mb-4" />
+                    <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">
+                      {adsSubTab === 'pending' 
+                        ? 'No pending ads. All caught up!' 
+                        : 'No campaigns found for this section.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -2191,6 +2408,7 @@ export default function AdminPage() {
                           )}
                         </div>
                         <p className="text-sm font-black text-white">{partner.bank_account_name || partner.user_id}</p>
+                        {partner.email && <p className="text-xs text-slate-400 mt-0.5">{partner.email}</p>}
                         <p className="text-xs text-slate-500 mt-0.5">{partner.bank_name} · {partner.bank_account_no}</p>
                         {partner.ic_number && <p className="text-[10px] text-slate-600 mt-0.5">IC: {partner.ic_number}</p>}
                       </div>
@@ -2268,6 +2486,39 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Referred Merchants List */}
+                    {(() => {
+                      const refMerchants = partnerMerchants[partner.id] || []
+                      if (refMerchants.length === 0) return null
+                      return (
+                        <div className="pt-4 border-t border-white/5 space-y-2">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Referred Merchants ({refMerchants.length})</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {refMerchants.map((m: any) => {
+                              const isSelfReferral = checkIsSuspectedSelfReferral(m.email, partner.referral_code)
+                              return (
+                                <div key={m.id} className={`flex items-center justify-between p-3 rounded-xl border ${
+                                  isSelfReferral 
+                                    ? 'bg-rose-500/5 border-rose-500/20 text-rose-300' 
+                                    : 'bg-black/10 border-white/5 text-slate-300'
+                                }`}>
+                                  <div>
+                                    <p className="text-xs font-bold text-white">{m.name || 'Unnamed Store'}</p>
+                                    <p className="text-[10px] text-slate-500">{m.email || 'No Email'}</p>
+                                  </div>
+                                  {isSelfReferral && (
+                                    <span className="text-[8px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                                      ⚠️ Suspected Self-Referral
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })}

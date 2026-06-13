@@ -39,6 +39,10 @@ export default function PartnerDashboard() {
     }
 
     setPartner(partnerData)
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('beepme_own_referral_code', partnerData.referral_code.toUpperCase().trim())
+    }
 
     // Fetch referred merchants
     const { data: merchantData } = await supabase

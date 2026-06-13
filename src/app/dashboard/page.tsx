@@ -350,6 +350,9 @@ export default function DashboardPage() {
         .eq('user_id', user.id)
         .maybeSingle()
       setPartnerProfile(data)
+      if (data && typeof window !== 'undefined') {
+        localStorage.setItem('beepme_own_referral_code', data.referral_code.toUpperCase().trim())
+      }
     } catch (err) {
       console.error('Error fetching partner profile:', err)
     } finally {
@@ -363,8 +366,12 @@ export default function DashboardPage() {
 
   const fetchMerchant = useCallback(async () => {
     try {
+      // Read referral from localStorage if any, to pass to creation endpoint
+      const storedRef = typeof window !== 'undefined' ? localStorage.getItem('beepme_referred_by') : null
+      const url = storedRef ? `/api/merchant/me?ref=${encodeURIComponent(storedRef)}` : '/api/merchant/me'
+
       // Use server-side API route (service role) to bypass RLS completely
-      const res = await fetch('/api/merchant/me')
+      const res = await fetch(url)
       
       if (res.status === 401) {
         router.push('/login')
@@ -383,6 +390,11 @@ export default function DashboardPage() {
       if (!m) {
         setLoading(false)
         return
+      }
+
+      // Clear referral localStorage once merchant row is successfully loaded/created
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('beepme_referred_by')
       }
 
       // Get user email from Supabase auth
@@ -660,6 +672,7 @@ export default function DashboardPage() {
       .from('partners')
       .insert({
         user_id: user.id,
+        email: user.email,
         referral_code: cleanRef,
         bank_name: partnerBankName,
         bank_account_no: partnerBankAccountNo,

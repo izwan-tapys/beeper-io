@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       .from('partners')
       .insert({
         user_id: userId,
+        email: email.trim().toLowerCase(),
         referral_code: cleanRefCode,
         bank_name: bankName,
         bank_account_no: bankAccountNo,
