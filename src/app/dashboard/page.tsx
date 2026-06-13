@@ -108,6 +108,7 @@ export default function DashboardPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [isMfaChallenge, setIsMfaChallenge] = useState(false)
   const [mfaError, setMfaError] = useState('')
+  const [activeMfaFactor, setActiveMfaFactor] = useState<any>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [settingsThemeColor, setSettingsThemeColor] = useState('#6366f1')
   const [settingsState, setSettingsState] = useState('')
@@ -406,6 +407,15 @@ export default function DashboardPage() {
       const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
         setIsMfaChallenge(true)
+      }
+
+      // Check for active MFA factor
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors()
+      if (!factorsError && factorsData?.totp) {
+        const verifiedFactor = factorsData.totp.find((f: any) => f.status === 'verified')
+        setActiveMfaFactor(verifiedFactor || null)
+      } else {
+        setActiveMfaFactor(null)
       }
     } catch (err) {
       console.error('Unexpected error in fetchMerchant:', err)
@@ -741,6 +751,24 @@ export default function DashboardPage() {
       alert('2FA successfully enabled!')
       setMfaEnrollData(null)
       setMfaCode('')
+      fetchMerchant()
+    }
+  }
+
+  const disableMfa = async () => {
+    if (!activeMfaFactor) return
+    if (!confirm('Adakah anda pasti mahu mematikan 2FA? Langkah ini akan mengurangkan tahap keselamatan akaun anda.')) return
+    
+    setMfaError('')
+    const { error } = await supabase.auth.mfa.unenroll({
+      factorId: activeMfaFactor.id
+    })
+
+    if (error) {
+      setMfaError(error.message)
+    } else {
+      alert('2FA telah dimatikan.')
+      setActiveMfaFactor(null)
       fetchMerchant()
     }
   }
@@ -1719,7 +1747,29 @@ export default function DashboardPage() {
 
                 {openSection === 'security' && (
                   <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    {!mfaEnrollData ? (
+                    {activeMfaFactor ? (
+                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                            <ShieldCheck size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-white">Google Authenticator</p>
+                              <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Active</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 text-left">Your account is secured with 2FA.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={disableMfa}
+                          className="w-full py-3 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 font-bold text-xs transition-all"
+                        >
+                          Disable 2FA
+                        </button>
+                        {mfaError && <p className="text-rose-500 text-[10px] font-bold text-center mt-2">{mfaError}</p>}
+                      </div>
+                    ) : !mfaEnrollData ? (
                       <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
@@ -1750,7 +1800,7 @@ export default function DashboardPage() {
                           maxLength={6}
                           value={mfaCode}
                           onChange={(e) => setMfaCode(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xl text-center outline-none focus:border-indigo-500 transition-all tracking-widest"
+                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xl text-center outline-none focus:border-indigo-500 transition-all tracking-widest font-mono"
                         />
                         {mfaError && <p className="text-rose-500 text-[10px] font-bold">{mfaError}</p>}
                         <div className="flex gap-2">
