@@ -79,5 +79,6 @@ GRANT SELECT (
   subscription_status, expiry_date, theme_color, 
   upsell_video_url, upsell_image_url, upsell_title, 
   upsell_description, upsell_cta_text, upsell_link_url, 
-  state, category, created_at
+  state, category, created_at,
+  latitude, longitude
 ) ON TABLE merchants TO anon;

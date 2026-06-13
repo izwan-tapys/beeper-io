@@ -113,7 +113,7 @@ export default function DashboardPage() {
   const [settingsState, setSettingsState] = useState('')
   const [settingsCategory, setSettingsCategory] = useState('')
   const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
-  const [webhookUrl, setWebhookUrl] = useState('')
+
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
@@ -400,13 +400,7 @@ export default function DashboardPage() {
       setSettingsState(m.state || '')
       setSettingsCategory(m.category || '')
 
-      // Fetch webhook URL securely from backend API
-      fetch('/api/merchant/webhook-url')
-        .then(res => res.json())
-        .then(data => {
-          if (data.webhookUrl) setWebhookUrl(data.webhookUrl)
-        })
-        .catch(err => console.error('Failed to fetch webhook URL:', err))
+
 
       // Check for MFA Challenge
       const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -1587,14 +1581,7 @@ export default function DashboardPage() {
                         className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
                       />
                     </div>
-                    
-                    <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
-                      <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">Webhook Endpoint</p>
-                      <code className="block text-[10px] text-indigo-400/80 break-all p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 font-mono">
-                        {webhookUrl || `${baseUrl}/api/webhooks/loyverse?merchant_id=${merchant?.id}&token=...`}
-                      </code>
-                      <p className="text-[9px] text-slate-600">⚠️ Copy this full URL into your Loyverse webhook settings. The token secures this endpoint.</p>
-                    </div>
+
                   </div>
                 )}
               </section>
