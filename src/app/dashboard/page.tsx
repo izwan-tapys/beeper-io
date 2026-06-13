@@ -366,6 +366,16 @@ export default function DashboardPage() {
 
   const fetchMerchant = useCallback(async () => {
     try {
+      // Get user email from Supabase auth first, and check if admin
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserEmail(user.email || '')
+        if (user.email === 'izwan.tapys@gmail.com') {
+          router.push('/admin')
+          return
+        }
+      }
+
       // Read referral from localStorage if any, to pass to creation endpoint
       const storedRef = typeof window !== 'undefined' ? localStorage.getItem('beepme_referred_by') : null
       const url = storedRef ? `/api/merchant/me?ref=${encodeURIComponent(storedRef)}` : '/api/merchant/me'
@@ -396,12 +406,7 @@ export default function DashboardPage() {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('beepme_referred_by')
       }
-
-      // Get user email from Supabase auth
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserEmail(user.email || '')
-      }
+      
       fetchPartnerProfile()
 
       setMerchant(m)
