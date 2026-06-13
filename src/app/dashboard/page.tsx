@@ -713,6 +713,21 @@ export default function DashboardPage() {
 
   const enrollMfa = async () => {
     setMfaError('')
+    
+    try {
+      // Clean up any existing unverified factors first to avoid hitting limits
+      const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors()
+      if (!listError && factorsData?.all) {
+        for (const factor of factorsData.all) {
+          if (factor.status === 'unverified') {
+            await supabase.auth.mfa.unenroll({ factorId: factor.id })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error cleaning up unverified factors:', err)
+    }
+
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: 'totp'
     })
@@ -1786,6 +1801,7 @@ export default function DashboardPage() {
                         >
                           Enable 2FA
                         </button>
+                        {mfaError && <p className="text-rose-500 text-[10px] font-bold text-center mt-2">{mfaError}</p>}
                       </div>
                     ) : (
                       <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-6">
