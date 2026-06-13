@@ -1747,7 +1747,7 @@ export default function DashboardPage() {
                 )}
               </section>
 
-               {/* 4. Security */}
+              {/* 4. Security (Hidden for now)
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
                 <button 
                   type="button"
@@ -1828,6 +1828,7 @@ export default function DashboardPage() {
                   </div>
                 )}
               </section>
+              */}
 
               {/* Affiliate Program (Rakan Kongsi) */}
               <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
