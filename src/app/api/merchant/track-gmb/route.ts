@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { sendWhatsAppAlert } from '@/lib/whatsapp'
 
 const GMB_FREE_LIMIT = 30
 
@@ -17,7 +16,7 @@ export async function POST(request: Request) {
     // 1. Fetch merchant details (plan, phone, name, alert tracking columns)
     const { data: merchant, error: merchantError } = await supabase
       .from('merchants')
-      .select('id, name, phone, plan_type, subscription_status, expiry_date, gmb_alert_80_sent_month, gmb_alert_100_sent_month')
+      .select('id, name, phone, plan_type, subscription_status, expiry_date')
       .eq('id', merchant_id)
       .single()
 
@@ -55,7 +54,6 @@ export async function POST(request: Request) {
     // 5. For Free merchants: count clicks in current calendar month
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
     const { count, error: countError } = await supabase
       .from('ad_analytics')
@@ -71,34 +69,6 @@ export async function POST(request: Request) {
 
     const totalClicks = count ?? 0
     const isExceeded = totalClicks > GMB_FREE_LIMIT
-
-    // 6. Send WhatsApp alerts at 80% and 100% thresholds (once per month each)
-    if (merchant.phone) {
-      // 80% alert (24 clicks)
-      const threshold80 = Math.ceil(GMB_FREE_LIMIT * 0.8)
-      if (
-        totalClicks >= threshold80 &&
-        merchant.gmb_alert_80_sent_month !== currentMonthKey
-      ) {
-        await sendWhatsAppAlert(merchant.phone, merchant.name, totalClicks, '80')
-        await supabase
-          .from('merchants')
-          .update({ gmb_alert_80_sent_month: currentMonthKey })
-          .eq('id', merchant_id)
-      }
-
-      // 100% alert (30 clicks)
-      if (
-        totalClicks >= GMB_FREE_LIMIT &&
-        merchant.gmb_alert_100_sent_month !== currentMonthKey
-      ) {
-        await sendWhatsAppAlert(merchant.phone, merchant.name, totalClicks, '100')
-        await supabase
-          .from('merchants')
-          .update({ gmb_alert_100_sent_month: currentMonthKey })
-          .eq('id', merchant_id)
-      }
-    }
 
     return NextResponse.json({
       allowed: !isExceeded,

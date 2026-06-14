@@ -1,0 +1,34 @@
+# Dependency lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Build metadata and logs
+*.tsbuildinfo
+next-env.d.ts
+.next/
+.vercel/
+node_modules/
+graphify-out/
+
+# Database dumps / repetitive files (if not actively working on migrations)
+migrations.sql
+migrations/
+
+# Scratchpads and agent local files
+scratch/
+.agents/
+
+# Binary & static assets
+public/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.mp3
+*.mp4
