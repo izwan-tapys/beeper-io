@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import {
   Zap, Plus, Search, Phone, CheckCircle, QrCode,
   Power, PowerOff, X, Clock, Loader2, Settings, LogOut, Smartphone,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon, BarChart3
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
@@ -17,6 +17,7 @@ import { ComingSoonModal } from '@/components/dashboard/ComingSoonModal'
 import { MfaChallengeModal } from '@/components/dashboard/MfaChallengeModal'
 import { OnboardingModal } from '@/components/dashboard/OnboardingModal'
 import { SettingsModal } from '@/components/dashboard/SettingsModal'
+import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard'
 
 type Session = {
   id: string
@@ -78,7 +79,7 @@ export default function DashboardPage() {
   const [settingsInitialSection, setSettingsInitialSection] = useState<string | null>(null)
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
   const [userEmail, setUserEmail] = useState('')
-  const [activeTab, setActiveTab] = useState<'home' | 'promosi'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'promosi' | 'analytics'>('home')
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
@@ -656,10 +657,18 @@ export default function DashboardPage() {
               <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase tracking-widest border border-yellow-500/20 ml-1">PRO</span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
+              activeTab === 'analytics' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <BarChart3 size={16} /> {lang === 'bm' ? 'Analitis' : 'Analytics'}
+          </button>
         </div>
       </header>
 
-      {activeTab === 'home' ? (
+      {activeTab === 'home' && (
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Only show content if merchant data is loaded */}
         {!merchant ? (
@@ -932,7 +941,9 @@ export default function DashboardPage() {
           </>
         )}
       </main>
-      ) : (
+      )}
+
+      {activeTab === 'promosi' && (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <AdsBuilder
             merchant={merchant}
@@ -942,6 +953,16 @@ export default function DashboardPage() {
               setMerchant(updatedMerchant)
               fetchMerchant()
             }}
+          />
+        </main>
+      )}
+
+      {activeTab === 'analytics' && merchant && (
+        <main className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
+          <AnalyticsDashboard
+            supabase={supabase}
+            merchantId={merchant.id}
+            merchantPlan={merchant.plan_type}
           />
         </main>
       )}

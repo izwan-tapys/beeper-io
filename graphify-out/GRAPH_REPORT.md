@@ -1,11 +1,11 @@
 # Graph Report - Beeper  (2026-06-15)
 
 ## Corpus Check
-- 75 files · ~123,538 words
+- 76 files · ~125,210 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 243 nodes · 229 edges · 11 communities detected
+- 246 nodes · 232 edges · 12 communities detected
 - Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -21,6 +21,7 @@
 - [[_COMMUNITY_Community 9|Community 9]]
 - [[_COMMUNITY_Community 10|Community 10]]
 - [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `createClient()` - 22 edges
@@ -92,12 +93,18 @@ Nodes (4): getWebhookToken(), getSupabase(), POST(), GET()
 Cohesion: 0.83
 Nodes (3): parseBrowser(), parseOS(), trackPageView()
 
+### Community 12 - "Community 12"
+Cohesion: 1.0
+Nodes (2): fetchData(), getDateRange()
+
 ## Knowledge Gaps
 - **Thin community `Community 2`** (17 nodes): `callSession()`, `challengeMfa()`, `createSession()`, `doneSession()`, `getWaitTime()`, `goOffline()`, `goOnline()`, `handleLogout()`, `handleOpenQr()`, `handleUpgrade()`, `handleVisibilityChange()`, `openSettings()`, `pagerUrl()`, `requestWakeLock()`, `syncLoyverse()`, `toggleStore()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 5`** (12 nodes): `async()`, `checkIsSuspectedSelfReferral()`, `deleteAd()`, `handleApproveAd()`, `handleApproveAdvertiser()`, `handleRejectAd()`, `handleRejectAdvertiser()`, `handleSaveAd()`, `handleSaveLocation()`, `toggleAdActive()`, `updateMerchant()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 6`** (10 nodes): `disableMfa()`, `enrollMfa()`, `handleClose()`, `handleLogoUpload()`, `hasSettingsChanged()`, `registerAsPartner()`, `saveSettings()`, `toggleSection()`, `verifyMfa()`, `SettingsModal.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 12`** (3 nodes): `fetchData()`, `getDateRange()`, `AnalyticsDashboard.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
@@ -106,7 +113,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `createClient()` connect `Community 0` to `Community 10`, `Community 11`?**
   _High betweenness centrality (0.034) - this node is a cross-community bridge._
 - **Why does `trackPageView()` connect `Community 11` to `Community 0`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+  _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Why does `GET()` connect `Community 10` to `Community 0`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Are the 21 inferred relationships involving `createClient()` (e.g. with `run()` and `GET()`) actually correct?**
