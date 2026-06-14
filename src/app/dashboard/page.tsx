@@ -7,12 +7,16 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import {
-  Zap, Plus, Search, Phone, CheckCircle, QrCode, Smartphone, ArrowRight,
-  LogOut, Power, PowerOff, X, Clock, Loader2, Settings, ShieldCheck, Store, Infinity as InfinityIcon, Languages,
-  Megaphone, DollarSign
+  Zap, Plus, Search, Phone, CheckCircle, QrCode,
+  Power, PowerOff, X, Clock, Loader2, Settings, LogOut, Smartphone,
+  Infinity as InfinityIcon
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AdsBuilder } from '@/components/AdsBuilder'
+import { ComingSoonModal } from '@/components/dashboard/ComingSoonModal'
+import { MfaChallengeModal } from '@/components/dashboard/MfaChallengeModal'
+import { OnboardingModal } from '@/components/dashboard/OnboardingModal'
+import { SettingsModal } from '@/components/dashboard/SettingsModal'
 
 type Session = {
   id: string
@@ -71,57 +75,30 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [togglingStore, setTogglingStore] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settingsInitialSection, setSettingsInitialSection] = useState<string | null>(null)
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
-  const [settingsName, setSettingsName] = useState('')
-  const [settingsLogo, setSettingsLogo] = useState('')
-  const [settingsLoyverseToken, setSettingsLoyverseToken] = useState('')
-  const [settingsGmbUrl, setSettingsGmbUrl] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [activeTab, setActiveTab] = useState<'home' | 'promosi'>('home')
-  const [settingsUpsellTitle, setSettingsUpsellTitle] = useState('')
-  const [settingsUpsellLinkUrl, setSettingsUpsellLinkUrl] = useState('')
-  const [settingsUpsellVideoUrl, setSettingsUpsellVideoUrl] = useState('')
-  const [settingsUpsellImageUrl, setSettingsUpsellImageUrl] = useState('')
-  const [savingSettings, setSavingSettings] = useState(false)
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncCooldown, setSyncCooldown] = useState(0)
-  const [openSection, setOpenSection] = useState<string | null>(null)
   const [monthlyCount, setMonthlyCount] = useState(0)
   const [gmbClickCount, setGmbClickCount] = useState(0)
   const [isOnline, setIsOnline] = useState(true)
-  const [onboardingPhone, setOnboardingPhone] = useState('')
-  const [savingOnboarding, setSavingOnboarding] = useState(false)
-  
   // Partner / Affiliate states
   const [partnerProfile, setPartnerProfile] = useState<any>(null)
   const [fetchingPartner, setFetchingPartner] = useState(true)
-  const [partnerRefCode, setPartnerRefCode] = useState('')
-  const [partnerBankName, setPartnerBankName] = useState('')
-  const [partnerBankAccountNo, setPartnerBankAccountNo] = useState('')
-  const [partnerBankAccountName, setPartnerBankAccountName] = useState('')
-  const [partnerIcNumber, setPartnerIcNumber] = useState('')
-  const [partnerAddress, setPartnerAddress] = useState('')
-  const [mfaEnrollData, setMfaEnrollData] = useState<any>(null)
   const [mfaCode, setMfaCode] = useState('')
   const [isMfaChallenge, setIsMfaChallenge] = useState(false)
   const [mfaError, setMfaError] = useState('')
   const [activeMfaFactor, setActiveMfaFactor] = useState<any>(null)
-  const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [settingsThemeColor, setSettingsThemeColor] = useState('#6366f1')
-  const [settingsState, setSettingsState] = useState('')
-  const [settingsCategory, setSettingsCategory] = useState('')
   const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
 
   const qrSessionRef = useRef<Session | null>(null)
   const qrWasConfirmedRef = useRef<boolean>(false)
   const wakeLockRef = useRef<any>(null)
-
-  const toggleSection = (section: string) => {
-    setOpenSection(prev => prev === section ? null : section)
-  }
 
   const handleOpenQr = (session: any) => {
     qrWasConfirmedRef.current = session.is_confirmed || false
@@ -150,93 +127,13 @@ export default function DashboardPage() {
     qrSessionRef.current = qrSession
   }, [qrSession])
 
-  // Reset settings state when modal opens
-  useEffect(() => {
-    if (isSettingsOpen && merchant) {
-      setSettingsName(merchant.name || '')
-      setSettingsLogo(merchant.logo_url || '')
-      setSettingsLoyverseToken(merchant.loyverse_token || '')
-      setSettingsGmbUrl(merchant.gmb_url || '')
-      setSettingsUpsellTitle(merchant.upsell_title || '')
-      setSettingsUpsellLinkUrl(merchant.upsell_link_url || '')
-      setSettingsUpsellVideoUrl(merchant.upsell_video_url || '')
-      setSettingsUpsellImageUrl(merchant.upsell_image_url || '')
-      // Note: openSection is NOT reset here so it can be pre-set before opening
-    }
-  }, [isSettingsOpen, merchant])
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !merchant) return
-
-    setUploadingLogo(true)
-    try {
-      // 1. Create a canvas to resize and compress
-      const img = new Image()
-      const reader = new FileReader()
-
-      const compressedFile = await new Promise<Blob>((resolve, reject) => {
-        reader.onload = (event) => {
-          img.onload = () => {
-            const canvas = document.createElement('canvas')
-            const size = 512 // Standard logo size
-            canvas.width = size
-            canvas.height = size
-            
-            const ctx = canvas.getContext('2d')
-            if (!ctx) return reject(new Error('Failed to get canvas context'))
-
-            // Draw and crop to square (center)
-            const minSide = Math.min(img.width, img.height)
-            const sx = (img.width - minSide) / 2
-            const sy = (img.height - minSide) / 2
-            
-            ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size)
-            
-            canvas.toBlob((blob) => {
-              if (blob) resolve(blob)
-              else reject(new Error('Canvas to Blob failed'))
-            }, 'image/webp', 0.8)
-          }
-          img.src = event.target?.result as string
-        }
-        reader.readAsDataURL(file)
-      })
-
-      const fileName = `${merchant.id}/${Date.now()}.webp`
-      const filePath = `logos/${fileName}`
-
-      // 1. Upload the compressed WebP blob to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('merchant-logos')
-        .upload(filePath, compressedFile, { 
-          upsert: true,
-          contentType: 'image/webp'
-        })
-
-      if (uploadError) throw uploadError
-
-      // 2. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('merchant-logos')
-        .getPublicUrl(filePath)
-
-      // 3. Delete old logo if it exists ONLY AFTER successful upload
-      if (merchant.logo_url && merchant.logo_url !== publicUrl) {
-        const bucketMatch = merchant.logo_url.split('/merchant-logos/');
-        if (bucketMatch.length === 2) {
-          await supabase.storage.from('merchant-logos').remove([bucketMatch[1]]);
-        }
-      }
-
-      setSettingsLogo(publicUrl)
-    } catch (error: any) {
-      console.error('Error uploading logo:', error)
-      alert('Error uploading: ' + error.message)
-    } finally {
-      setUploadingLogo(false)
-    }
+  // openSettings helper â€” optionally jump to a specific section
+  const openSettings = (section?: string) => {
+    setSettingsInitialSection(section ?? null)
+    setIsSettingsOpen(true)
   }
+
+
 
   useEffect(() => {
     const requestWakeLock = async () => {
@@ -264,7 +161,7 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // ─── Online / Offline Detection ─────────────────────────────────────────────
+  // â”€â”€â”€ Online / Offline Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     const goOnline = () => setIsOnline(true)
     const goOffline = () => setIsOnline(false)
@@ -410,14 +307,6 @@ export default function DashboardPage() {
       fetchPartnerProfile()
 
       setMerchant(m)
-      setSettingsName(m.name || '')
-      setSettingsLogo(m.logo_url || '')
-      setSettingsLoyverseToken(m.loyverse_token || '')
-      setSettingsGmbUrl(m.gmb_url || '')
-      setSettingsThemeColor(m.theme_color || '#6366f1')
-      setSettingsState(m.state || '')
-      setSettingsCategory(m.category || '')
-
 
 
       // Check for MFA Challenge
@@ -574,237 +463,8 @@ export default function DashboardPage() {
 
 
 
-  const hasSettingsChanged = () => {
-    if (!merchant) return false
-    return (
-      settingsName !== (merchant.name || '') ||
-      settingsLogo !== (merchant.logo_url || '') ||
-      settingsLoyverseToken !== (merchant.loyverse_token || '') ||
-      settingsGmbUrl !== (merchant.gmb_url || '') ||
-      settingsThemeColor !== (merchant.theme_color || '#6366f1') ||
-      settingsState !== (merchant.state || '') ||
-      settingsCategory !== (merchant.category || '') ||
-      settingsUpsellTitle !== (merchant.upsell_title || '') ||
-      settingsUpsellLinkUrl !== (merchant.upsell_link_url || '') ||
-      settingsUpsellVideoUrl !== (merchant.upsell_video_url || '') ||
-      settingsUpsellImageUrl !== (merchant.upsell_image_url || '')
-    )
-  }
 
-  const closeSettings = () => {
-    if (hasSettingsChanged()) {
-      if (!confirm('You have unsaved changes. Are you sure you want to close?')) {
-        return
-      }
-    }
-    setIsSettingsOpen(false)
-  }
 
-  const saveSettings = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!merchant || !settingsName.trim()) return
-    setSavingSettings(true)
-    const { error } = await supabase
-      .from('merchants')
-      .update({ 
-        name: settingsName.trim(), 
-        logo_url: settingsLogo.trim() || null,
-        loyverse_token: settingsLoyverseToken.trim() || null,
-        gmb_url: settingsGmbUrl.trim() || null,
-        theme_color: settingsThemeColor,
-        state: settingsState || null,
-        category: settingsCategory || null,
-        upsell_title: settingsUpsellTitle.trim() || null,
-        upsell_link_url: settingsUpsellLinkUrl.trim() || null,
-        upsell_video_url: settingsUpsellVideoUrl.trim() || null,
-        upsell_image_url: settingsUpsellImageUrl.trim() || null
-      })
-      .eq('id', merchant.id)
-    
-    if (error) {
-      console.error('Error saving settings:', error)
-      alert('Gagal simpan: ' + error.message)
-    } else {
-      setMerchant({ 
-        ...merchant, 
-        name: settingsName.trim(), 
-        logo_url: settingsLogo.trim() || null,
-        loyverse_token: settingsLoyverseToken.trim() || null,
-        gmb_url: settingsGmbUrl.trim() || null,
-        theme_color: settingsThemeColor,
-        state: settingsState || null,
-        category: settingsCategory || null,
-        upsell_title: settingsUpsellTitle.trim() || null,
-        upsell_link_url: settingsUpsellLinkUrl.trim() || null,
-        upsell_video_url: settingsUpsellVideoUrl.trim() || null,
-        upsell_image_url: settingsUpsellImageUrl.trim() || null
-      })
-      setIsSettingsOpen(false)
-      fetchMerchant()
-    }
-    setSavingSettings(false)
-  }
-
-  const registerAsPartner = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!partnerRefCode.trim()) {
-      alert('Sila masukkan kod rujukan.')
-      return
-    }
-    setSavingSettings(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setSavingSettings(false)
-      return
-    }
-
-    const cleanRef = partnerRefCode.trim().toUpperCase()
-
-    // Check if referral code is already taken in partners table
-    const { data: existingRef } = await supabase
-      .from('partners')
-      .select('id')
-      .eq('referral_code', cleanRef)
-      .maybeSingle()
-
-    if (existingRef) {
-      alert(`Kod rujukan "${cleanRef}" telah digunakan. Sila pilih kod lain.`)
-      setSavingSettings(false)
-      return
-    }
-
-    const { error } = await supabase
-      .from('partners')
-      .insert({
-        user_id: user.id,
-        email: user.email,
-        referral_code: cleanRef,
-        bank_name: partnerBankName,
-        bank_account_no: partnerBankAccountNo,
-        bank_account_name: partnerBankAccountName,
-        ic_number: partnerIcNumber,
-        full_address: partnerAddress,
-        is_active: false // pending approval
-      })
-
-    if (error) {
-      alert('Gagal mendaftar: ' + error.message)
-    } else {
-      alert('Pendaftaran Rakan Kongsi berjaya! Permohonan anda sedang menunggu kelulusan Admin.')
-      await fetchPartnerProfile()
-    }
-    setSavingSettings(false)
-  }
-
-  const saveOnboarding = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!merchant || !onboardingPhone.trim()) return
-    
-    // Basic MY Phone Validation
-    const phoneRegex = /^(01)[0-46-9]-*[0-9]{7,8}$/
-    const cleanedPhone = onboardingPhone.replace(/-/g, '').trim()
-    
-    if (!phoneRegex.test(cleanedPhone)) {
-      alert('Please enter a valid Malaysian phone number (e.g. 0123456789)')
-      return
-    }
-
-    setSavingOnboarding(true)
-    const { error } = await supabase
-      .from('merchants')
-      .update({ phone: cleanedPhone })
-      .eq('id', merchant.id)
-
-    if (error) {
-      if (error.message.includes('unique')) {
-        alert('This phone number is already registered with another account. Please use a different number.')
-      } else {
-        alert('Failed to save: ' + error.message)
-      }
-    } else {
-      // Update local state with phone
-      // The UI will automatically switch based on the merchant object
-      setMerchant({ ...merchant, phone: cleanedPhone, is_verified: false })
-    }
-    setSavingOnboarding(false)
-  }
-
-  const enrollMfa = async () => {
-    setMfaError('')
-    
-    try {
-      // Clean up any existing unverified factors first to avoid hitting limits
-      const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors()
-      if (!listError && factorsData?.all) {
-        for (const factor of factorsData.all) {
-          if (factor.status === 'unverified') {
-            await supabase.auth.mfa.unenroll({ factorId: factor.id })
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error cleaning up unverified factors:', err)
-    }
-
-    const { data, error } = await supabase.auth.mfa.enroll({
-      factorType: 'totp'
-    })
-
-    if (error) {
-      setMfaError(error.message)
-      return
-    }
-
-    // Immediately challenge to get challengeId
-    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-      factorId: data.id
-    })
-
-    if (challengeError) {
-      setMfaError(challengeError.message)
-      return
-    }
-
-    setMfaEnrollData({ ...data, challengeId: challengeData.id })
-  }
-
-  const verifyMfa = async () => {
-    if (!mfaEnrollData || !mfaCode) return
-    setMfaError('')
-    
-    const { error } = await supabase.auth.mfa.verify({
-      factorId: mfaEnrollData.id,
-      challengeId: (mfaEnrollData as any).challengeId,
-      code: mfaCode
-    })
-
-    if (error) {
-      setMfaError(error.message)
-    } else {
-      alert('2FA successfully enabled!')
-      setMfaEnrollData(null)
-      setMfaCode('')
-      fetchMerchant()
-    }
-  }
-
-  const disableMfa = async () => {
-    if (!activeMfaFactor) return
-    if (!confirm('Adakah anda pasti mahu mematikan 2FA? Langkah ini akan mengurangkan tahap keselamatan akaun anda.')) return
-    
-    setMfaError('')
-    const { error } = await supabase.auth.mfa.unenroll({
-      factorId: activeMfaFactor.id
-    })
-
-    if (error) {
-      setMfaError(error.message)
-    } else {
-      alert('2FA telah dimatikan.')
-      setActiveMfaFactor(null)
-      fetchMerchant()
-    }
-  }
 
   const challengeMfa = async () => {
     const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
@@ -833,7 +493,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleUpgrade = async (plan: 'basic' | 'pro', price: number) => {
+  const handleUpgrade = () => {
     setIsComingSoonOpen(true)
   }
 
@@ -868,158 +528,38 @@ export default function DashboardPage() {
   return (
     <div className={`min-h-screen ${showOnboarding || isMfaChallenge || isComingSoonOpen ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
       {/* Coming Soon Modal */}
-      {isComingSoonOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
-          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center relative overflow-hidden animate-bounce-in">
-            <button 
-              onClick={() => setIsComingSoonOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
-              <Megaphone size={40} className="text-white animate-pulse" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-3">Akan Datang!</h2>
-            <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-6">Sistem Pembayaran Premium</h3>
-            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-              Pendaftaran Payment Gateway (Stripe & ToyyibPay) sedang diproses. Beepme akan boleh dilanggan sepenuhnya tidak lama lagi! Terima kasih atas kesabaran anda.
-            </p>
-            <button 
-              onClick={() => setIsComingSoonOpen(false)}
-              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
-            >
-              Baik, Terima Kasih
-            </button>
-          </div>
-        </div>
-      )}
+      <ComingSoonModal isOpen={isComingSoonOpen} onClose={() => setIsComingSoonOpen(false)} />
 
       {/* MFA Challenge Modal */}
       {isMfaChallenge && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80 animate-fade-in">
-          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 text-center animate-bounce-in">
-            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
-              <ShieldCheck size={40} className="text-white" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-2">2FA Required</h2>
-            <p className="text-slate-400 mb-8 text-sm">Enter the 6-digit code from your authenticator app to continue.</p>
-            
-            <input 
-              type="text"
-              placeholder="000000"
-              maxLength={6}
-              value={mfaCode}
-              onChange={(e) => setMfaCode(e.target.value)}
-              className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-3xl text-center outline-none focus:border-indigo-500 transition-all tracking-[0.5em] mb-6"
-            />
-
-            {mfaError && <p className="text-rose-500 text-xs font-bold mb-6">{mfaError}</p>}
-
-            <button 
-              onClick={challengeMfa}
-              className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20"
-            >
-              Verify & Login
-            </button>
-            <button onClick={handleLogout} className="mt-6 text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest">Logout</button>
-          </div>
-        </div>
+        <MfaChallengeModal
+          mfaCode={mfaCode}
+          setMfaCode={setMfaCode}
+          mfaError={mfaError}
+          onChallenge={challengeMfa}
+          onLogout={handleLogout}
+        />
       )}
 
       {/* Onboarding Modal (Forced) */}
       {showOnboarding && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 animate-fade-in">
-          <div className="w-full max-w-md bg-[#0a0b0f] border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl shadow-indigo-500/20 animate-bounce-in">
-            <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-600/40 mx-auto">
-              <Smartphone size={40} className="text-white" />
-            </div>
-            
-            <h2 className="text-3xl font-black text-white text-center mb-2">Welcome to Beepme!</h2>
-            
-            {!merchant?.phone ? (
-              <>
-                <p className="text-slate-400 text-center mb-10 text-sm leading-relaxed">
-                  To keep our community safe and fair, we require a valid phone number to get started.
-                </p>
-
-                <form onSubmit={saveOnboarding} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Phone Number</label>
-                    <input 
-                      type="tel"
-                      placeholder="e.g. 0123456789"
-                      value={onboardingPhone}
-                      onChange={(e) => setOnboardingPhone(e.target.value)}
-                      className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-lg"
-                      required
-                    />
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={savingOnboarding || !onboardingPhone.trim()}
-                    className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
-                  >
-                    {savingOnboarding ? <Loader2 className="animate-spin" /> : <ArrowRight />}
-                    Next Step
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className="text-center animate-fade-in">
-                <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-                  Last step! Please click the button below to send a verification message to our team via WhatsApp.
-                </p>
-                
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/10 mb-8">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Your Verified Phone</p>
-                  <p className="text-xl font-bold text-white tracking-widest">{merchant.phone}</p>
-                </div>
-
-                <div className="space-y-4">
-                  <a 
-                    href={`https://wa.me/60194696158?text=${encodeURIComponent(`Salam Beepme, sila sahkan akaun saya.\n\nStore: ${merchant.name}\nPhone: ${merchant.phone}\nID: ${merchant.id}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-5 rounded-2xl bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-lg transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3"
-                  >
-                    <Phone size={20} />
-                    Verify via WhatsApp
-                  </a>
-                  
-                  <div className="pt-4 flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold animate-pulse">
-                      <Clock size={14} />
-                      Waiting for Admin Approval...
-                    </div>
-                    <p className="text-[9px] text-slate-500 italic text-center">
-                      Once sent, we will approve your account within 10-15 minutes. <br/> You can refresh this page after a while.
-                    </p>
-                    <button onClick={() => window.location.reload()} className="text-[10px] text-slate-400 hover:text-white underline mt-2">Refresh Page</button>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <p className="mt-8 text-[9px] text-slate-600 text-center uppercase tracking-tighter">
-              By continuing, you agree to our terms and fair usage policy.
-            </p>
-          </div>
-        </div>
+        <OnboardingModal
+          merchant={merchant!}
+          onPhoneSaved={(updated) => setMerchant(updated as Merchant)}
+        />
       )}
 
-      {/* ─── Offline Alert Banner ──────────────────────────────────────────── */}
+      {/* â”€â”€â”€ Offline Alert Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 py-3 bg-rose-600/95 backdrop-blur-md border-b border-rose-500/50 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
           <p className="text-white text-xs font-black uppercase tracking-widest">
-            ⚠️ No Internet Connection — Real-time pager notifications paused. Reconnect to resume.
+            âš ï¸ No Internet Connection â€” Real-time pager notifications paused. Reconnect to resume.
           </p>
         </div>
       )}
 
-      {/* ─── Subscription Expired Overlay ────────────────────────────────────── */}
+      {/* â”€â”€â”€ Subscription Expired Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {isExpired && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-sm bg-[#0a0b0f] border border-rose-500/30 rounded-[32px] p-8 shadow-2xl shadow-rose-500/10 text-center animate-bounce-in">
@@ -1035,7 +575,7 @@ export default function DashboardPage() {
             </p>
             <p className="text-slate-500 text-xs mb-8">Renew your plan to continue issuing pagers and receiving orders.</p>
             <button
-              onClick={() => { setOpenSection('subscription'); setIsSettingsOpen(true) }}
+              onClick={() => openSettings('subscription')}
               className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
             >
               <Zap size={16} /> Renew Subscription
@@ -1086,7 +626,7 @@ export default function DashboardPage() {
             >
               {togglingStore ? <Loader2 size={18} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={18} /> : <Power size={18} />}
             </button>
-            <button id="settings-btn" onClick={() => setIsSettingsOpen(true)} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Settings">
+            <button id="settings-btn" onClick={() => openSettings()} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Settings">
               <Settings size={20} />
             </button>
             <button id="logout-btn" onClick={handleLogout} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Logout">
@@ -1143,8 +683,7 @@ export default function DashboardPage() {
                   onSubmit={(e) => { 
                     e.preventDefault(); 
                     if (isOverQuota) {
-                      setOpenSection('subscription');
-                      setIsSettingsOpen(true);
+                      openSettings('subscription');
                       return;
                     }
                     createSession(); 
@@ -1218,7 +757,7 @@ export default function DashboardPage() {
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        ⭐ Google Review Clicks
+                        â­ Google Review Clicks
                       </span>
                       <span
                         className="text-[10px] font-bold uppercase tracking-widest"
@@ -1243,11 +782,11 @@ export default function DashboardPage() {
                       >
                         <p className="text-[10px] font-bold leading-snug" style={{ color: isOver ? '#f87171' : '#fbbf24' }}>
                           {isOver
-                            ? '⛔ Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
-                            : `⚠️ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
+                            ? 'â›” Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
+                            : `âš ï¸ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
                         </p>
                         <button
-                          onClick={() => { setOpenSection('subscription'); setIsSettingsOpen(true) }}
+                          onClick={() => openSettings('subscription')}
                           className="shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider text-white transition-all active:scale-95"
                           style={{ background: isOver ? '#ef4444' : '#f59e0b' }}
                         >
@@ -1334,7 +873,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-3">
                               <p className="font-black text-white text-2xl sm:text-3xl">#{session.receipt_number}</p>
                               <span className="hidden xs:inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">
-                                {session.status === 'called' ? '🔔 Called' : '⏳ Prep'}
+                                {session.status === 'called' ? 'ðŸ”” Called' : 'â³ Prep'}
                               </span>
                             </div>
 
@@ -1395,14 +934,14 @@ export default function DashboardPage() {
       </main>
       ) : (
         <main className="max-w-5xl mx-auto px-4 py-6">
-          <AdsBuilder 
-            merchant={merchant} 
+          <AdsBuilder
+            merchant={merchant}
             isPremiumActive={isPremiumActive}
-            onUpgrade={() => handleUpgrade('pro', 99)}
+            onUpgrade={handleUpgrade}
             onUpdate={(updatedMerchant) => {
               setMerchant(updatedMerchant)
-              fetchMerchant() // Refresh to sync
-            }} 
+              fetchMerchant()
+            }}
           />
         </main>
       )}
@@ -1426,677 +965,26 @@ export default function DashboardPage() {
       )}
 
       {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col rounded-3xl border animate-bounce-in shadow-2xl" style={{ background: '#0f1117', borderColor: 'var(--card-border)' }}>
-            {/* Header */}
-            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                  <Settings size={20} className="text-indigo-400" />
-                </div>
-                <h2 className="text-xl font-bold text-white">Settings</h2>
-              </div>
-              <button 
-                type="button"
-                onClick={closeSettings} 
-                className="text-slate-500 hover:text-white transition-colors p-2 -mr-2"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={saveSettings} className="flex-1 flex flex-col overflow-hidden">
-              {/* Content (Scrollable) */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {/* 1. Store Profile */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('profile')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Store Profile</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'profile' ? 'rotate-90' : ''}`} />
-                </button>
-                
-                {openSection === 'profile' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Registered Email</label>
-                      <input
-                        type="text"
-                        value={userEmail}
-                        readOnly
-                        disabled
-                        className="w-full p-3.5 rounded-xl bg-[#050608] border border-white/5 text-slate-400 outline-none text-sm cursor-not-allowed"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Store Name</label>
-                      <input
-                        type="text"
-                        value={settingsName}
-                        onChange={(e) => setSettingsName(e.target.value)}
-                        placeholder="Nama Kedai"
-                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Negeri (State)</label>
-                        <select
-                          value={settingsState}
-                          onChange={(e) => setSettingsState(e.target.value)}
-                          className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm cursor-pointer"
-                        >
-                          <option value="">Pilih Negeri...</option>
-                          {MALAYSIAN_STATES.map((st) => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Kategori Restoran</label>
-                        <select
-                          value={settingsCategory}
-                          onChange={(e) => setSettingsCategory(e.target.value)}
-                          className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm cursor-pointer"
-                        >
-                          <option value="">Pilih Kategori...</option>
-                          {MERCHANT_CATEGORIES.map((cat) => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Logo Kedai</label>
-                      <div className="flex items-center gap-4 p-4 rounded-xl bg-[#0a0b0f] border border-white/10">
-                        <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                          {settingsLogo ? (
-                            <img src={settingsLogo} alt="Logo Preview" className="w-full h-full object-cover" />
-                          ) : (
-                            <Store size={24} className="text-slate-700" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            id="logo-upload"
-                            className="hidden"
-                            disabled={uploadingLogo}
-                          />
-                          <label 
-                            htmlFor="logo-upload"
-                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${
-                              uploadingLogo ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500'
-                            }`}
-                          >
-                            {uploadingLogo ? <Loader2 size={12} className="animate-spin" /> : 'Pilih Gambar'}
-                          </label>
-                          <p className="text-[9px] text-slate-600 mt-2">PNG, JPG up to 2MB. 1:1 ratio recommended.</p>
-                        </div>
-                        {settingsLogo && (
-                          <button 
-                            type="button"
-                            onClick={() => setSettingsLogo('')}
-                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
-                          >
-                            <X size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {/* 2. Custom Branding */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('branding')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Custom Branding</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'branding' ? 'rotate-90' : ''}`} />
-                </button>
-                
-                {openSection === 'branding' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="space-y-3">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Pager Theme Color</label>
-                      <div className="flex items-center gap-4">
-                        <div 
-                          className="w-12 h-12 rounded-xl border border-white/10 shadow-lg shrink-0" 
-                          style={{ backgroundColor: settingsThemeColor }}
-                        />
-                        <div className="flex-1 grid grid-cols-5 gap-2">
-                          {['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'].map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => setSettingsThemeColor(color)}
-                              className={`h-8 rounded-lg border transition-all ${settingsThemeColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <input 
-                        type="color" 
-                        value={settingsThemeColor}
-                        onChange={(e) => setSettingsThemeColor(e.target.value)}
-                        className="w-full h-10 rounded-xl bg-[#0a0b0f] border border-white/10 p-1 cursor-pointer"
-                      />
-                      <p className="text-[9px] text-slate-600">Pilih warna mengikut tema kedai anda.</p>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-
-              {/* 2. Integrations */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('integrations')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Integrations</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'integrations' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'integrations' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Loyverse Access Token</label>
-                      <input
-                        type="password"
-                        value={settingsLoyverseToken}
-                        onChange={(e) => setSettingsLoyverseToken(e.target.value)}
-                        placeholder="Personal Access Token..."
-                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm font-mono"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">GMB Review URL</label>
-                      <input
-                        type="text"
-                        value={settingsGmbUrl}
-                        onChange={(e) => setSettingsGmbUrl(e.target.value)}
-                        placeholder="https://g.page/..."
-                        className="w-full p-3.5 rounded-xl bg-[#0a0b0f] border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-sm"
-                      />
-                    </div>
-
-                  </div>
-                )}
-              </section>
-
-              {/* 3. Subscription */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('subscription')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Subscription Plan</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'subscription' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'subscription' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    {/* Current Plan Status */}
-                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${isPremiumActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
-                          <span className="text-white font-bold uppercase text-sm">
-                            Beepme {isPremiumActive ? 'Premium' : 'Free'}
-                          </span>
-                        </div>
-                        {merchant?.expiry_date && isPremiumActive && (
-                          <span className="text-[10px] text-slate-500 mt-1">Active until {new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                        )}
-                        {merchant?.expiry_date && !isPremiumActive && (
-                          <span className="text-[10px] text-rose-500 mt-1">Expired on {new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                        )}
-                      </div>
-                      {isPremiumActive && (
-                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 uppercase tracking-widest">Active</span>
-                      )}
-                    </div>
-
-                    {/* Plan Selector */}
-                    <div className="grid grid-cols-1 gap-3">
-                      {/* Free Plan Card */}
-                      <div className={`p-4 rounded-2xl border transition-all ${!isPremiumActive ? 'bg-white/[0.05] border-white/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-white font-bold text-sm">Always Free</h3>
-                            <p className="text-[10px] text-slate-500">Essential paging system</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-white font-bold text-sm">RM0</span>
-                            <p className="text-[8px] text-slate-500 uppercase font-bold">/forever</p>
-                          </div>
-                        </div>
-                        <ul className="space-y-1.5 mb-2">
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> Unlimited Orders
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> Digital Pager UI (Ad-Supported)
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-slate-500" /> Loyverse POS Integration
-                          </li>
-                        </ul>
-                        {!isPremiumActive && (
-                          <div className="mt-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Current Plan</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Premium Plan Card */}
-                      <div className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${isPremiumActive ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
-                        <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[8px] font-black px-2 py-1 uppercase rounded-bl-lg">Premium</div>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-white font-bold text-sm">Beepme Premium</h3>
-                            <p className="text-[10px] text-slate-500">For premium brand experience</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-white font-bold text-sm">RM49</span>
-                            <p className="text-[8px] text-slate-500 uppercase font-bold">/month</p>
-                          </div>
-                        </div>
-                        <ul className="space-y-1.5 mb-4">
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> 100% Ad-Free waiting page
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> Custom branding, logo & colors
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> Custom Upsell Promotion (Video/Image)
-                          </li>
-                          <li className="flex items-center gap-2 text-[10px] text-slate-400">
-                            <CheckCircle size={10} className="text-indigo-500" /> WhatsApp Admin Approval
-                          </li>
-                        </ul>
-                        {!isPremiumActive ? (
-                          <button 
-                            type="button"
-                            onClick={() => handleUpgrade('pro', 39)}
-                            disabled={savingSettings}
-                            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-                          >
-                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                            Upgrade to Premium (RM49)
-                          </button>
-                        ) : (
-                          <div className="mt-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-center">
-                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Active Plan</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <p className="text-[9px] text-slate-600 italic px-1 text-center">*Secure checkout via Stripe. Card & FPX supported.</p>
-                  </div>
-                )}
-              </section>
-
-              {/* 4. Security (Hidden for now)
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('security')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Security (2FA)</span>
-                  </div>
-                  <ShieldCheck size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'security' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'security' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    {activeMfaFactor ? (
-                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                            <ShieldCheck size={20} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-bold text-white">Google Authenticator</p>
-                              <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Active</span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 text-left">Your account is secured with 2FA.</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={disableMfa}
-                          className="w-full py-3 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 font-bold text-xs transition-all"
-                        >
-                          Disable 2FA
-                        </button>
-                        {mfaError && <p className="text-rose-500 text-[10px] font-bold text-center mt-2">{mfaError}</p>}
-                      </div>
-                    ) : !mfaEnrollData ? (
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                            <ShieldCheck size={20} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-white">Google Authenticator</p>
-                            <p className="text-[10px] text-slate-500 text-left">Protect your account with an extra layer of security.</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={enrollMfa}
-                          className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
-                        >
-                          Enable 2FA
-                        </button>
-                        {mfaError && <p className="text-rose-500 text-[10px] font-bold text-center mt-2">{mfaError}</p>}
-                      </div>
-                    ) : (
-                      <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 text-center space-y-6">
-                        <p className="text-xs font-bold text-white">Scan this QR Code</p>
-                        <div className="bg-white p-4 rounded-2xl inline-block">
-                          <QRCodeSVG value={mfaEnrollData.totp.qr_code} size={160} />
-                        </div>
-                        <p className="text-[10px] text-slate-400">Scan with Google Authenticator or Authy, then enter the code below:</p>
-                        <input 
-                          type="text"
-                          placeholder="000000"
-                          maxLength={6}
-                          value={mfaCode}
-                          onChange={(e) => setMfaCode(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xl text-center outline-none focus:border-indigo-500 transition-all tracking-widest font-mono"
-                        />
-                        {mfaError && <p className="text-rose-500 text-[10px] font-bold">{mfaError}</p>}
-                        <div className="flex gap-2">
-                          <button onClick={() => setMfaEnrollData(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-slate-400 text-xs font-bold">Cancel</button>
-                          <button onClick={verifyMfa} className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg shadow-indigo-600/20">Verify & Activate</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-              */}
-
-              {/* Affiliate Program (Rakan Kongsi) */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('affiliate')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Affiliate Program (Rakan Kongsi)</span>
-                  </div>
-                  <DollarSign size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'affiliate' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'affiliate' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in text-left">
-                    {fetchingPartner ? (
-                      <div className="text-center py-4 text-xs text-slate-500 animate-pulse">Memuatkan data partner...</div>
-                    ) : partnerProfile ? (
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status Akaun</span>
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                              partnerProfile.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}>
-                              {partnerProfile.is_active ? 'Aktif' : 'Menunggu Kelulusan (Pending)'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-400">
-                            {partnerProfile.is_active 
-                              ? 'Akaun anda aktif! Anda boleh mula berkongsi pautan rujukan untuk menjana komisen 30%.'
-                              : 'Permohonan anda telah diterima dan sedang menunggu pengaktifan daripada Admin.'
-                            }
-                          </p>
-                        </div>
-
-                        {partnerProfile.is_active ? (
-                          <div className="space-y-3">
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Pautan Rujukan Anda</label>
-                              <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-indigo-300 font-mono text-xs truncate select-all">
-                                {baseUrl}/login?ref={partnerProfile.referral_code}
-                              </div>
-                            </div>
-                            <a 
-                              href="/partner/dashboard"
-                              target="_blank"
-                              className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
-                            >
-                              <DollarSign size={16} />
-                              Buka Dashboard Rakan Kongsi
-                            </a>
-                          </div>
-                        ) : (() => {
-                          const waMessage = encodeURIComponent(
-                            `Salam Admin Beepme.pro! Saya baru mendaftar akaun Partner dengan e-mel: ${userEmail} dan memohon kod rujukan: ${partnerProfile.referral_code}. Sila bantu approve akaun saya.`
-                          )
-                          const waUrl = `https://wa.me/60194696158?text=${waMessage}`
-                          return (
-                            <a 
-                              href={waUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm transition-all active:scale-95"
-                            >
-                              Hubungi Admin via WhatsApp
-                            </a>
-                          )
-                        })()}
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                          Jana <strong>30% komisen berulang</strong> setiap bulan dengan merujuk pemilik restoran F&B lain ke Beepme.pro! Isi butiran di bawah untuk mendaftar sebagai Rakan Kongsi.
-                        </p>
-                        
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Kod Rujukan Diminta (Referral Code)</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Cth: MYCODE, TIKTOKPOS"
-                              value={partnerRefCode}
-                              onChange={(e) => setPartnerRefCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs font-mono uppercase"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nama Bank</label>
-                              <input
-                                type="text"
-                                required
-                                placeholder="Cth: Maybank"
-                                value={partnerBankName}
-                                onChange={(e) => setPartnerBankName(e.target.value)}
-                                className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">No. Akaun Bank</label>
-                              <input
-                                type="text"
-                                required
-                                placeholder="Cth: 1640123456"
-                                value={partnerBankAccountNo}
-                                onChange={(e) => setPartnerBankAccountNo(e.target.value)}
-                                className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nama Pemilik Akaun Bank</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Nama penuh di akaun bank"
-                              value={partnerBankAccountName}
-                              onChange={(e) => setPartnerBankAccountName(e.target.value)}
-                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">No. Kad Pengenalan (IC)</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Cth: 900101141234"
-                              value={partnerIcNumber}
-                              onChange={(e) => setPartnerIcNumber(e.target.value)}
-                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Alamat Penuh</label>
-                            <textarea
-                              rows={2}
-                              placeholder="Alamat surat menyurat"
-                              value={partnerAddress}
-                              onChange={(e) => setPartnerAddress(e.target.value)}
-                              className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 transition-all text-xs resize-none"
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={registerAsPartner}
-                            disabled={savingSettings}
-                            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer"
-                          >
-                            {savingSettings ? <Loader2 size={12} className="animate-spin" /> : <DollarSign size={12} />}
-                            Daftar Rakan Kongsi
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              {/* 5. Ad Network */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('advertiser')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Ad Network / Ads Manager</span>
-                  </div>
-                  <Megaphone size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'advertiser' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'advertiser' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <p className="text-xs text-slate-400 leading-relaxed text-left">
-                      Reach diners at the point of hunger. Switch to the Advertiser Portal to create, top-up, and monitor your ad campaigns across Beepme pager devices.
-                    </p>
-                    <button 
-                      type="button"
-                      onClick={() => router.push('/ads-manager')}
-                      className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
-                    >
-                      <Megaphone size={16} />
-                      Go to Ads Manager
-                    </button>
-                  </div>
-                )}
-              </section>
-
-              {/* 6. Account */}
-              <section className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-                <button 
-                  type="button"
-                  onClick={() => toggleSection('account')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Account Control</span>
-                  </div>
-                  <Settings size={14} className={`text-slate-600 transition-transform duration-300 ${openSection === 'account' ? 'rotate-90' : ''}`} />
-                </button>
-
-                {openSection === 'account' && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
-                    <button 
-                      onClick={handleLogout} 
-                      type="button"
-                      className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 font-bold text-sm hover:bg-rose-500/10 transition-all active:scale-95"
-                    >
-                      <LogOut size={16} />
-                      Sign Out from Beepme
-                    </button>
-                  </div>
-                )}
-              </section>
-            </div>
-
-              {/* Footer Buttons */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-3">
-                <button 
-                  onClick={closeSettings} 
-                  type="button"
-                  className="flex-1 py-3.5 rounded-2xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  disabled={savingSettings || !hasSettingsChanged()} 
-                  className={`flex-[2] py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
-                    savingSettings || !hasSettingsChanged() 
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
-                  }`}
-                >
-                  {savingSettings && <Loader2 size={16} className="animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {merchant && (
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          initialSection={settingsInitialSection}
+          merchant={merchant}
+          userEmail={userEmail}
+          partnerProfile={partnerProfile}
+          fetchingPartner={fetchingPartner}
+          activeMfaFactor={activeMfaFactor}
+          baseUrl={baseUrl}
+          isPremiumActive={isPremiumActive}
+          onClose={() => setIsSettingsOpen(false)}
+          onSaved={(updated) => setMerchant(updated)}
+          onUpgrade={handleUpgrade}
+          onLogout={handleLogout}
+          fetchMerchant={fetchMerchant}
+          fetchPartnerProfile={fetchPartnerProfile}
+        />
       )}
     </div>
   )
 }
+
