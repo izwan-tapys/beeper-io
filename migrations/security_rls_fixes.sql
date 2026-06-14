@@ -75,7 +75,7 @@ WITH CHECK (true);
 -- Restrict anonymous users from reading sensitive columns (email, phone, loyverse_token)
 REVOKE SELECT ON TABLE merchants FROM anon;
 GRANT SELECT (
-  id, name, is_open, logo_url, gmb_url, plan_type, 
+  id, user_id, name, is_open, logo_url, gmb_url, plan_type, 
   subscription_status, expiry_date, theme_color, 
   upsell_video_url, upsell_image_url, upsell_title, 
   upsell_description, upsell_cta_text, upsell_link_url, 
