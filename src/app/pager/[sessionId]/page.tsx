@@ -116,13 +116,32 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   useEffect(() => { setIsDescExpanded(false) }, [currentAdIndex])
 
-  // ── Get/create client_uuid ─────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      let uuid = localStorage.getItem('beepme_client_uuid')
+      let uuid = null
+      try {
+        uuid = localStorage.getItem('beepme_client_uuid')
+      } catch (e) {
+        console.warn('localStorage is blocked:', e)
+      }
+
       if (!uuid) {
-        uuid = crypto.randomUUID()
-        localStorage.setItem('beepme_client_uuid', uuid)
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+          uuid = crypto.randomUUID()
+        } else {
+          // Standard RFC4122 compliant fallback UUID generator
+          uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0
+            const v = c === 'x' ? r : (r & 0x3) | 0x8
+            return v.toString(16)
+          })
+        }
+
+        try {
+          localStorage.setItem('beepme_client_uuid', uuid)
+        } catch (e) {
+          console.warn('Failed to save client_uuid to localStorage:', e)
+        }
       }
       setClientUuid(uuid)
     }
