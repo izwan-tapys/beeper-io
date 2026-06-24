@@ -79,6 +79,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   const [isAudioReady, setIsAudioReady] = useState(false)
   const [showInstructions, setShowInstructions] = useState(true)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [isIos, setIsIos] = useState(false)
 
   // ── Google Review quota state (free plan: 30 clicks/month) ─────────────────
   const [isGmbQuotaExceeded, setIsGmbQuotaExceeded] = useState(false)
@@ -144,6 +145,11 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         }
       }
       setClientUuid(uuid)
+
+      // Detect iOS / iPadOS
+      const userAgent = window.navigator.userAgent.toLowerCase()
+      const ios = /iphone|ipad|ipod/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
+      setIsIos(ios)
     }
   }, [])
 
@@ -509,16 +515,9 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         await supabase.from('sessions').update({ client_uuid: clientUuid }).eq('id', sessionId)
       }
 
-      // Resolve location
+      // Resolve location (Disabled client GPS to reduce friction. Using merchant location as fallback)
       const tryGetLocation = (): Promise<{ lat: number; lng: number } | null> =>
-        new Promise((resolve) => {
-          if (!navigator.geolocation) { resolve(null); return }
-          navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => resolve(null),
-            { timeout: 5000, maximumAge: 60000 }
-          )
-        })
+        Promise.resolve(null)
 
       let resolvedLocation: { lat: number; lng: number } | null = await tryGetLocation()
       if (!resolvedLocation && merchantData?.latitude != null && merchantData?.longitude != null) {
@@ -1274,6 +1273,14 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                       <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0"><AlertTriangle size={12} className="text-white" /></div>
                       <span className="text-[10px] font-bold text-white uppercase tracking-wide">Matikan &quot;Silent Mode&quot;</span>
                     </li>
+                    {isIos && (
+                      <li className="flex items-start gap-3 bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
+                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5"><AlertTriangle size={12} className="text-amber-500" /></div>
+                        <span className="text-[10px] font-bold text-amber-200 uppercase tracking-wide leading-snug">
+                          {lang === 'bm' ? 'Biarkan Skrin Aktif & Tab Terbuka' : 'Keep Screen On & Tab Open'}
+                        </span>
+                      </li>
+                    )}
                   </ul>
                   <button
                     onClick={() => {
@@ -1342,8 +1349,22 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                     <div className="space-y-4 text-left mb-8">
                       <div className="flex items-start gap-3 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
                         <Smartphone size={18} className="text-indigo-400 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-indigo-200 leading-snug">Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.</p>
+                        <p className="text-[11px] text-indigo-200 leading-snug">
+                          {isIos 
+                            ? (lang === 'bm' ? 'Telefon ini akan berbunyi apabila pesanan sedia (Sila aktifkan bunyi).' : 'This phone will ring when your order is ready (Please enable sound).')
+                            : (lang === 'bm' ? 'Telefon ini akan bergetar dan mengeluarkan bunyi apabila pesanan sedia.' : 'This phone will vibrate and make a sound when your order is ready.')}
+                        </p>
                       </div>
+                      {isIos && (
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                          <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-amber-200 leading-snug">
+                            {lang === 'bm' 
+                              ? 'Pengguna iPhone: Jangan kunci skrin atau tutup tab pelayar ini agar panggilan real-time tidak terganggu.' 
+                              : 'iPhone Users: Do not lock your screen or close this browser tab to ensure real-time alerts work.'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={handleConfirm}
