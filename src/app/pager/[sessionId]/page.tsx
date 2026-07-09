@@ -57,6 +57,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
     currentAdIndex,
     setCurrentAdIndex,
     isFlashing,
+    initAudio,
     playChime,
     triggerAlert,
     stopAlert,
@@ -82,12 +83,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
 
   // ── Actions & Helpers ──────────────────────────────────────────────────────
   const handleConfirm = async () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      await ctx.resume()
-    } catch (e) {
-      console.warn('Silent audio init:', e)
-    }
+    await initAudio()
 
     const { error } = await supabase
       .from('sessions')
@@ -356,7 +352,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
               isGhostActive={isGhostActive()}
               onTestBeep={() => {
                 trackPagerEvent({ supabase, eventType: 'test_beep_clicked', sessionId, merchantId, clientUuid })
-                playChime()
+                initAudio()
               }}
               onShowWarning={() => setShowInstructions(true)}
               onScanQr={() => {
@@ -399,6 +395,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
                     onClick={() => {
                       setShowInstructions(false)
                       trackPagerEvent({ supabase, eventType: 'warning_dismissed', sessionId, merchantId, clientUuid })
+                      initAudio()
                     }}
                     className="w-full py-4 rounded-xl font-black text-[#111] text-xs uppercase tracking-widest bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-transform"
                   >

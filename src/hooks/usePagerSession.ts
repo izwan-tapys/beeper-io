@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { trackPagerEvent } from '@/lib/pager-analytics'
 import type { SessionRecord, PagerStatus } from '@/types'
@@ -116,6 +116,37 @@ export function usePagerSession(sessionId: string) {
       osc.stop(ctx.currentTime + i * 0.1 + 0.4)
     })
   }, [volume])
+
+  // Audio Context initialization to bypass iOS/Safari autplay block
+  const initAudio = useCallback(async () => {
+    try {
+      if (audioCtxRef.current) {
+        if (audioCtxRef.current.state === 'suspended') {
+          await audioCtxRef.current.resume()
+        }
+        setIsAudioReady(true)
+        playChime()
+        return
+      }
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      if (ctx.state === 'suspended') {
+        await ctx.resume()
+      }
+      audioCtxRef.current = ctx
+
+      // Play a short silent buffer to unlock audio context
+      const buffer = ctx.createBuffer(1, 1, 22050)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(ctx.destination)
+      source.start()
+
+      setIsAudioReady(true)
+      playChime()
+    } catch (e) {
+      console.error('Audio init error:', e)
+    }
+  }, [playChime])
 
   const triggerAlert = useCallback((triggeredSessionId: string) => {
     if (alertIntervalRef.current) return
@@ -518,6 +549,7 @@ export function usePagerSession(sessionId: string) {
     isFlashing,
     isAudioReady,
     setIsAudioReady,
+    initAudio,
     playChime,
     triggerAlert,
     stopAlert,
@@ -526,4 +558,3 @@ export function usePagerSession(sessionId: string) {
     getSessionsList,
   }
 }
-
