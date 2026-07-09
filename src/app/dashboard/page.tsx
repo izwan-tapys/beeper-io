@@ -1,112 +1,97 @@
-'use client'
+﻿'use client'
 
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { QRCodeSVG } from 'qrcode.react'
-import {
-  Zap, Plus, Search, Phone, CheckCircle, QrCode,
-  Power, PowerOff, X, Clock, Loader2, Settings, LogOut, Smartphone,
-  Infinity as InfinityIcon, BarChart3
-} from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { Loader2 } from 'lucide-react'
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+import { useDashboardData } from '@/hooks/useDashboardData'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useWakeLock } from '@/hooks/useWakeLock'
+
+// ─── Components ───────────────────────────────────────────────────────────────
 import { AdsBuilder } from '@/components/AdsBuilder'
 import { ComingSoonModal } from '@/components/dashboard/ComingSoonModal'
 import { MfaChallengeModal } from '@/components/dashboard/MfaChallengeModal'
 import { OnboardingModal } from '@/components/dashboard/OnboardingModal'
 import { SettingsModal } from '@/components/dashboard/SettingsModal'
 import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard'
+import { SubscriptionExpiredOverlay } from '@/components/dashboard/SubscriptionExpiredOverlay'
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
+import { IssuePagerWidget } from '@/components/dashboard/IssuePagerWidget'
+import { ActivePagersList } from '@/components/dashboard/ActivePagersList'
+import { QrModal } from '@/components/dashboard/QrModal'
 
-type Session = {
-  id: string
-  receipt_number: string
-  status: 'waiting' | 'called' | 'completed' | 'archived'
-  is_confirmed: boolean
-  created_at: string
-}
-
-type Merchant = {
-  id: string
-  name: string
-  is_open: boolean
-  logo_url: string | null
-  loyverse_token: string | null
-  gmb_url: string | null
-  phone: string | null
-  is_verified: boolean
-  plan_type: 'free' | 'basic' | 'pro'
-  subscription_status: 'active' | 'expired' | 'trial'
-  expiry_date: string | null
-  theme_color: string | null
-  upsell_video_url: string | null
-  upsell_image_url: string | null
-  upsell_title: string | null
-  upsell_description: string | null
-  upsell_cta_text: string | null
-  upsell_link_url: string | null
-  state: string | null
-  category: string | null
-}
-
-const MALAYSIAN_STATES = [
-  'Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Pahang', 'Negeri Sembilan',
-  'Melaka', 'Kedah', 'Kelantan', 'Terengganu', 'Perlis', 'Sabah', 'Sarawak', 'Labuan', 'Putrajaya'
-]
-
-const MERCHANT_CATEGORIES = [
-  'Fast Food', 'Casual Dining', 'Cafe & Coffee', 'Fine Dining', 'Seafood',
-  'Nasi Kandar', 'Mamak', 'Hawker & Street Food', 'Bakery & Desserts',
-  'Other F&B', 'Retail', 'Bank & Finance', 'Entertainment', 'Health & Wellness', 'Other'
-]
-
-const supabase = createClient()
+// ─── Types ────────────────────────────────────────────────────────────────────
+import type { Session, Merchant } from '@/types'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const lang: 'bm' | 'en' = 'en' as 'bm' | 'en'
+  const lang: 'bm' | 'en' = 'en'
 
-  const [merchant, setMerchant] = useState<Merchant | null>(null)
-  const [sessions, setSessions] = useState<Session[]>([])
+  // ── Hooks ──────────────────────────────────────────────────────────────────
+  useWakeLock()
+  const { isOnline } = useOnlineStatus()
+  const {
+    supabase,
+    merchant,
+    setMerchant,
+    sessions,
+    loading,
+    userEmail,
+    monthlyCount,
+    gmbClickCount,
+    partnerProfile,
+    fetchingPartner,
+    isMfaChallenge,
+    setIsMfaChallenge,
+    activeMfaFactor,
+    qrSessionRef,
+    fetchMerchant,
+    fetchSessions,
+    fetchPartnerProfile,
+  } = useDashboardData()
+
+  // ── Local UI State ─────────────────────────────────────────────────────────
   const [receiptInput, setReceiptInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [qrSession, setQrSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [togglingStore, setTogglingStore] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settingsInitialSection, setSettingsInitialSection] = useState<string | null>(null)
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false)
-  const [userEmail, setUserEmail] = useState('')
   const [activeTab, setActiveTab] = useState<'home' | 'promosi' | 'analytics'>('home')
   const [baseUrl, setBaseUrl] = useState('')
   const [now, setNow] = useState(Date.now())
   const [latestReceipts, setLatestReceipts] = useState<any[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncCooldown, setSyncCooldown] = useState(0)
-  const [monthlyCount, setMonthlyCount] = useState(0)
-  const [gmbClickCount, setGmbClickCount] = useState(0)
-  const [isOnline, setIsOnline] = useState(true)
-  // Partner / Affiliate states
-  const [partnerProfile, setPartnerProfile] = useState<any>(null)
-  const [fetchingPartner, setFetchingPartner] = useState(true)
   const [mfaCode, setMfaCode] = useState('')
-  const [isMfaChallenge, setIsMfaChallenge] = useState(false)
   const [mfaError, setMfaError] = useState('')
-  const [activeMfaFactor, setActiveMfaFactor] = useState<any>(null)
   const [cooldowns, setCooldowns] = useState<Record<string, boolean>>({})
 
-  const qrSessionRef = useRef<Session | null>(null)
-  const qrWasConfirmedRef = useRef<boolean>(false)
-  const wakeLockRef = useRef<any>(null)
+  // ── Derived constants ──────────────────────────────────────────────────────
+  useEffect(() => { setBaseUrl(window.location.origin) }, [])
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
+  useEffect(() => {
+    if (syncCooldown > 0) {
+      const timer = setTimeout(() => setSyncCooldown(syncCooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [syncCooldown])
 
-  const handleOpenQr = (session: any) => {
+  // ── QR Modal auto-close when confirmed ─────────────────────────────────────
+  const qrWasConfirmedRef = useRef<boolean>(false)
+  const handleOpenQr = (session: Session) => {
     qrWasConfirmedRef.current = session.is_confirmed || false
     setQrSession(session)
   }
-
-  // Auto-close QR Modal when customer confirms (only if it wasn't confirmed when opened)
   useEffect(() => {
     if (qrSession) {
       const activeSession = sessions.find(s => s.id === qrSession.id)
@@ -115,245 +100,112 @@ export default function DashboardPage() {
       }
     }
   }, [sessions, qrSession])
-
-  // Track initial confirmation state when modal opens
   useEffect(() => {
-    if (qrSession) {
-      qrWasConfirmedRef.current = qrSession.is_confirmed || false
-    }
+    if (qrSession) qrWasConfirmedRef.current = qrSession.is_confirmed || false
   }, [qrSession])
-
-  // Keep qrSessionRef updated for the realtime subscription callback
   useEffect(() => {
     qrSessionRef.current = qrSession
-  }, [qrSession])
+  }, [qrSession, qrSessionRef])
 
-  // openSettings helper — optionally jump to a specific section
+  // ── Derived computed values ────────────────────────────────────────────────
+  const isPremiumActive = merchant?.plan_type === 'pro' &&
+    merchant?.subscription_status === 'active' &&
+    (!!merchant?.expiry_date && new Date(merchant.expiry_date) > new Date())
+
+  const isExpired = merchant
+    ? merchant.plan_type !== 'free' &&
+      (merchant.subscription_status !== 'active' ||
+        (!!merchant.expiry_date && new Date(merchant.expiry_date) < new Date()))
+    : false
+
+  const isOverQuota = false
+  const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
+  const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const openSettings = (section?: string) => {
     setSettingsInitialSection(section ?? null)
     setIsSettingsOpen(true)
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
+  const handleUpgrade = () => setIsComingSoonOpen(true)
 
-  useEffect(() => {
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
-        }
-      } catch (err) {
-        console.error('Wake Lock error:', err)
-      }
-    }
-
-    requestWakeLock()
-
-    const handleVisibilityChange = () => {
-      if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
-        requestWakeLock()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      if (wakeLockRef.current) wakeLockRef.current.release()
-    }
-  }, [])
-
-  // ─── Online / Offline Detection ─────────────────────────────────────────────
-  useEffect(() => {
-    const goOnline = () => setIsOnline(true)
-    const goOffline = () => setIsOnline(false)
-    window.addEventListener('online', goOnline)
-    window.addEventListener('offline', goOffline)
-    return () => {
-      window.removeEventListener('online', goOnline)
-      window.removeEventListener('offline', goOffline)
-    }
-  }, [])
-
-  // Live timer tick
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    setBaseUrl(window.location.origin)
-  }, [])
-
-  // Sync Cooldown Timer
-  useEffect(() => {
-    if (syncCooldown > 0) {
-      const timer = setTimeout(() => setSyncCooldown(syncCooldown - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [syncCooldown])
-
-  const fetchSessions = useCallback(async () => {
-    if (!merchant) return
-    const { data } = await supabase
+  // ── Session Actions ────────────────────────────────────────────────────────
+  const createSession = async (rNum?: string) => {
+    const finalReceiptNumber = rNum || receiptInput.trim()
+    if (!merchant || !finalReceiptNumber) return
+    setCreating(true)
+    const { data, error } = await supabase
       .from('sessions')
-      .select('*')
-      .eq('merchant_id', merchant.id)
-      .in('status', ['waiting', 'called'])
-      .order('created_at', { ascending: true })
-    setSessions(data || [])
-    setLoading(false)
-  }, [merchant])
-
-  const fetchMonthlyCount = useCallback(async () => {
-    if (!merchant) return
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
-    const { count, error } = await supabase
-      .from('sessions')
-      .select('*', { count: 'exact', head: true })
-      .eq('merchant_id', merchant.id)
-      .gte('created_at', startOfMonth.toISOString())
-
-    if (!error && count !== null) {
-      setMonthlyCount(count)
+      .insert({ merchant_id: merchant.id, receipt_number: finalReceiptNumber, status: 'waiting' })
+      .select()
+      .single()
+    if (error) {
+      alert('Gagal buat pager: ' + error.message)
+    } else if (data) {
+      setReceiptInput('')
+      setQrSession(data)
+      fetchSessions(merchant.id)
     }
+    setCreating(false)
+  }
 
-    // Fetch GMB click count for free-plan merchants
-    const isMerchantPro =
-      merchant.plan_type === 'pro' &&
-      merchant.subscription_status === 'active' &&
-      !!merchant.expiry_date &&
-      new Date(merchant.expiry_date) > new Date()
+  const callSession = async (id: string) => {
+    if (cooldowns[id]) return
+    setCooldowns(prev => ({ ...prev, [id]: true }))
+    setTimeout(() => setCooldowns(prev => ({ ...prev, [id]: false })), 10000)
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'called', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      alert('Gagal panggil: ' + error.message)
+      setCooldowns(prev => ({ ...prev, [id]: false }))
+    } else {
+      fetchSessions(merchant!.id)
+    }
+  }
 
-    if (!isMerchantPro && merchant.gmb_url) {
-      const { count: gmbCount } = await supabase
-        .from('ad_analytics')
-        .select('id', { count: 'exact', head: true })
+  const doneSession = async (id: string) => {
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      alert('Gagal set selesai: ' + error.message)
+    } else {
+      fetchSessions(merchant!.id)
+    }
+  }
+
+  const toggleStore = async () => {
+    if (!merchant) return
+    setTogglingStore(true)
+    if (merchant.is_open) {
+      await supabase
+        .from('sessions')
+        .update({ status: 'archived' })
         .eq('merchant_id', merchant.id)
-        .eq('event_type', 'gmb_click')
-        .gte('created_at', startOfMonth.toISOString())
-      setGmbClickCount(gmbCount ?? 0)
+        .in('status', ['waiting', 'called', 'completed'])
     }
-  }, [merchant])
-
-  const fetchPartnerProfile = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase
-        .from('partners')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      setPartnerProfile(data)
-      if (data && typeof window !== 'undefined') {
-        localStorage.setItem('beepme_own_referral_code', data.referral_code.toUpperCase().trim())
-      }
-    } catch (err) {
-      console.error('Error fetching partner profile:', err)
-    } finally {
-      setFetchingPartner(false)
+    const newState = !merchant.is_open
+    const { error } = await supabase
+      .from('merchants')
+      .update({ is_open: newState })
+      .eq('id', merchant.id)
+    if (error) {
+      alert('Failed to update store status. Please try again.')
+    } else {
+      setMerchant({ ...merchant, is_open: newState })
+      if (newState) fetchSessions(merchant.id)
     }
-  }, [])
-
-  useEffect(() => {
-    fetchMonthlyCount()
-  }, [fetchMonthlyCount, sessions])
-
-  const fetchMerchant = useCallback(async () => {
-    try {
-      // Get user email from Supabase auth first, and check if admin
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserEmail(user.email || '')
-        if (user.email === 'izwan.tapys@gmail.com') {
-          router.push('/admin')
-          return
-        }
-      }
-
-      // Read referral from localStorage if any, to pass to creation endpoint
-      const storedRef = typeof window !== 'undefined' ? localStorage.getItem('beepme_referred_by') : null
-      const url = storedRef ? `/api/merchant/me?ref=${encodeURIComponent(storedRef)}` : '/api/merchant/me'
-
-      // Use server-side API route (service role) to bypass RLS completely
-      const res = await fetch(url)
-      
-      if (res.status === 401) {
-        router.push('/login')
-        return
-      }
-
-      if (!res.ok) {
-        console.error('fetchMerchant API error:', res.status, await res.text())
-        setLoading(false)
-        return
-      }
-
-      const json = await res.json()
-      const m = json.merchant
-
-      if (!m) {
-        setLoading(false)
-        return
-      }
-
-      // Clear referral localStorage once merchant row is successfully loaded/created
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('beepme_referred_by')
-      }
-      
-      fetchPartnerProfile()
-
-      setMerchant(m)
-
-
-      // Check for MFA Challenge
-      const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-      if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
-        setIsMfaChallenge(true)
-      }
-
-      // Check for active MFA factor
-      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors()
-      if (!factorsError && factorsData?.totp) {
-        const verifiedFactor = factorsData.totp.find((f: any) => f.status === 'verified')
-        setActiveMfaFactor(verifiedFactor || null)
-      } else {
-        setActiveMfaFactor(null)
-      }
-    } catch (err) {
-      console.error('Unexpected error in fetchMerchant:', err)
-      setLoading(false)
-    }
-  }, [router])
-
-  useEffect(() => { fetchMerchant() }, [fetchMerchant])
-  useEffect(() => { if (merchant) fetchSessions() }, [merchant, fetchSessions])
-
-  // Realtime subscription for dashboard
-  useEffect(() => {
-    if (!merchant) return
-    const channel = supabase
-      .channel('dashboard-sessions')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'sessions' }, 
-        (payload: any) => {
-          const record = payload.new || payload.old
-          if (record && record.merchant_id === merchant.id) {
-            fetchSessions()
-            // AUTO-CLOSE QR MODAL IF CONFIRMED
-            if (payload.eventType === 'UPDATE' && qrSessionRef.current?.id === record.id && record.is_confirmed) {
-              setQrSession(null)
-            }
-          }
-        }
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [merchant, fetchSessions])
+    setTogglingStore(false)
+  }
 
   const syncLoyverse = async () => {
     if (!merchant) return
@@ -363,7 +215,7 @@ export default function DashboardPage() {
       const data = await res.json()
       if (data.receipts) {
         setLatestReceipts(data.receipts)
-        setSyncCooldown(2) // 2 saat cooldown (Loyverse limit: 1 req/sec)
+        setSyncCooldown(2)
       } else if (data.error) {
         alert('Sync Error: ' + data.error)
       }
@@ -374,117 +226,15 @@ export default function DashboardPage() {
     }
   }
 
-  const createSession = async (rNum?: string) => {
-    const finalReceiptNumber = rNum || receiptInput.trim()
-    if (!merchant || !finalReceiptNumber) return
-
-    // No monthly limits for Always Free or Premium plan
-
-    setCreating(true)
-    
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert({ 
-        merchant_id: merchant.id, 
-        receipt_number: finalReceiptNumber, 
-        status: 'waiting' 
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create session error:', error)
-      alert('Gagal buat pager: ' + error.message)
-    } else if (data) {
-      setReceiptInput('')
-      setQrSession(data)
-      fetchSessions()
-    }
-    setCreating(false)
-  }
-
-  const callSession = async (id: string) => {
-    if (cooldowns[id]) return
-
-    // Set cooldown
-    setCooldowns(prev => ({ ...prev, [id]: true }))
-    setTimeout(() => {
-      setCooldowns(prev => ({ ...prev, [id]: false }))
-    }, 10000)
-
-    const { error } = await supabase.from('sessions').update({ status: 'called', updated_at: new Date().toISOString() }).eq('id', id)
-    if (error) {
-      console.error('Call session error:', error)
-      alert('Gagal panggil: ' + error.message)
-      setCooldowns(prev => ({ ...prev, [id]: false })) // release cooldown on error
-    } else {
-      fetchSessions()
-    }
-  }
-
-  const getWaitTime = (createdAt: string) => {
-    const start = new Date(createdAt).getTime()
-    const seconds = Math.floor((now - start) / 1000)
-    if (seconds < 0) return '0:00'
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const doneSession = async (id: string) => {
-    const { error } = await supabase.from('sessions').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', id)
-    if (error) {
-      console.error('Done session error:', error)
-      alert('Gagal set selesai: ' + error.message)
-    } else {
-      fetchSessions()
-    }
-  }
-
-  const toggleStore = async () => {
-    if (!merchant) return
-    setTogglingStore(true)
-    if (merchant.is_open) {
-      // Close: archive all active sessions
-      await supabase.from('sessions').update({ status: 'archived' }).eq('merchant_id', merchant.id).in('status', ['waiting', 'called', 'completed'])
-    }
-    const newState = !merchant.is_open
-    const { error: updateError } = await supabase.from('merchants').update({ is_open: newState }).eq('id', merchant.id)
-    
-    if (updateError) {
-      console.error('Error toggling store:', updateError)
-      alert('Failed to update store status. Please try again.')
-    } else {
-      setMerchant({ ...merchant, is_open: newState })
-      if (newState) fetchSessions()
-      else setSessions([])
-    }
-    setTogglingStore(false)
-  }
-
-
-
-
-
-
   const challengeMfa = async () => {
     const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
     if (factorsError || !factors.totp[0]) return
-
     const factorId = factors.totp[0].id
     const { data, error } = await supabase.auth.mfa.challenge({ factorId })
-    
-    if (error) {
-      setMfaError(error.message)
-      return
-    }
-
+    if (error) { setMfaError(error.message); return }
     const { error: verifyError } = await supabase.auth.mfa.verify({
-      factorId,
-      challengeId: data.id,
-      code: mfaCode
+      factorId, challengeId: data.id, code: mfaCode,
     })
-
     if (verifyError) {
       setMfaError(verifyError.message)
     } else {
@@ -494,44 +244,15 @@ export default function DashboardPage() {
     }
   }
 
-  const handleUpgrade = () => {
-    setIsComingSoonOpen(true)
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
-  const filteredSessions = sessions.filter(s =>
-    s.receipt_number.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const isPremiumActive = merchant?.plan_type === 'pro' &&
-    merchant?.subscription_status === 'active' &&
-    (!!merchant?.expiry_date && new Date(merchant.expiry_date) > new Date())
-
-  const quota = Infinity
-
-  // Subscription expiry: free plan never expires; paid plans expire on expiry_date
-  const isExpired = merchant
-    ? merchant.plan_type !== 'free' &&
-      (merchant.subscription_status !== 'active' ||
-        (!!merchant.expiry_date && new Date(merchant.expiry_date) < new Date()))
-    : false
-
-  const isOverQuota = false
-
-  const pagerUrl = (sessionId: string) => `${baseUrl}/pager/${sessionId}`
-
-  const showOnboarding = merchant && (!merchant.phone || !merchant.is_verified)
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen ${showOnboarding || isMfaChallenge || isComingSoonOpen ? 'overflow-hidden' : ''}`} style={{ background: 'var(--background)' }}>
-      {/* Coming Soon Modal */}
+    <div
+      className={`min-h-screen ${showOnboarding || isMfaChallenge || isComingSoonOpen ? 'overflow-hidden' : ''}`}
+      style={{ background: 'var(--background)' }}
+    >
+      {/* Modals */}
       <ComingSoonModal isOpen={isComingSoonOpen} onClose={() => setIsComingSoonOpen(false)} />
 
-      {/* MFA Challenge Modal */}
       {isMfaChallenge && (
         <MfaChallengeModal
           mfaCode={mfaCode}
@@ -542,7 +263,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Onboarding Modal (Forced) */}
       {showOnboarding && (
         <OnboardingModal
           merchant={merchant!}
@@ -550,7 +270,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* ─── Offline Alert Banner ────────────────────────────────────────────── */}
+      {/* Offline Banner */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 py-3 bg-rose-600/95 backdrop-blur-md border-b border-rose-500/50 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
@@ -560,389 +280,85 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ─── Subscription Expired Overlay ────────────────────────────────────── */}
-      {isExpired && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-sm bg-[#0a0b0f] border border-rose-500/30 rounded-[32px] p-8 shadow-2xl shadow-rose-500/10 text-center animate-bounce-in">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6">
-              <Zap size={32} className="text-rose-400" />
-            </div>
-            <h2 className="text-2xl font-black text-white mb-2">Subscription Expired</h2>
-            <p className="text-slate-400 text-sm mb-2">
-              Your <span className="text-white font-bold capitalize">{merchant?.plan_type}</span> plan expired on{' '}
-              <span className="text-rose-400 font-bold">
-                {merchant?.expiry_date ? new Date(merchant.expiry_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
-              </span>.
-            </p>
-            <p className="text-slate-500 text-xs mb-8">Renew your plan to continue issuing pagers and receiving orders.</p>
-            <button
-              onClick={() => openSettings('subscription')}
-              className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
-            >
-              <Zap size={16} /> Renew Subscription
-            </button>
-            <button
-              onClick={handleLogout}
-              className="mt-4 text-slate-600 hover:text-white text-xs font-bold uppercase tracking-widest"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
+      {/* Subscription Expired Overlay */}
+      {isExpired && merchant && (
+        <SubscriptionExpiredOverlay
+          merchant={merchant}
+          onRenew={() => openSettings('subscription')}
+          onLogout={handleLogout}
+        />
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b" style={{ background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', borderColor: 'var(--card-border)' }}>
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo size={32} showText={false} />
-            <div className="flex flex-col justify-center flex-1 min-w-0 ml-1">
-              <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Beepme</span>
-              {merchant && (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-sm sm:text-base font-bold text-white truncate leading-none">
-                    {merchant.name}
-                  </h1>
-                  {merchant.plan_type === 'pro' && (
-                    <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[9px] font-black uppercase tracking-widest border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
-                      PRO
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              id="store-toggle-btn"
-              onClick={toggleStore}
-              disabled={togglingStore}
-              className="p-2.5 rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center"
-              style={{
-                background: merchant?.is_open ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-                color: merchant?.is_open ? '#4ade80' : '#818cf8',
-                border: `1px solid ${merchant?.is_open ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
-              }}
-              title={merchant?.is_open ? 'Close Store' : 'Open Store'}
-            >
-              {togglingStore ? <Loader2 size={18} className="animate-spin" /> : merchant?.is_open ? <PowerOff size={18} /> : <Power size={18} />}
-            </button>
-            <button id="settings-btn" onClick={() => openSettings()} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Settings">
-              <Settings size={20} />
-            </button>
-            <button id="logout-btn" onClick={handleLogout} className="p-2.5 rounded-xl transition-colors hover:bg-white/5 active:bg-white/10" style={{ color: 'var(--muted-foreground)' }} title="Logout">
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
+      <DashboardHeader
+        merchant={merchant}
+        togglingStore={togglingStore}
+        activeTab={activeTab}
+        lang={lang}
+        onToggleStore={toggleStore}
+        onOpenSettings={openSettings}
+        onLogout={handleLogout}
+        onTabChange={setActiveTab}
+      />
 
-        {/* Tab Navigation */}
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center gap-6 overflow-x-auto no-scrollbar border-t" style={{ borderColor: 'var(--card-border)' }}>
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
-              activeTab === 'home' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <Smartphone size={16} /> {lang === 'bm' ? 'Pesanan' : 'Home / Orders'}
-          </button>
-          <button
-            onClick={() => setActiveTab('promosi')}
-            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
-              activeTab === 'promosi' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <Zap size={16} /> {lang === 'bm' ? 'Promosi' : 'Promotion'}
-            {merchant?.plan_type === 'pro' && (
-              <span className="px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase tracking-widest border border-yellow-500/20 ml-1">PRO</span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`h-full flex items-center gap-2 text-sm font-bold border-b-2 transition-all px-2 whitespace-nowrap ${
-              activeTab === 'analytics' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <BarChart3 size={16} /> {lang === 'bm' ? 'Analitis' : 'Analytics'}
-          </button>
-        </div>
-      </header>
-
+      {/* ── Tab: Home / Orders ─────────────────────────────────────────────── */}
       {activeTab === 'home' && (
-      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {/* Only show content if merchant data is loaded */}
-        {!merchant ? (
-          <div className="flex flex-col items-center justify-center py-32">
-            <Loader2 size={32} className="animate-spin text-indigo-500 mb-4" />
-            <p className="text-slate-500 animate-pulse text-sm">Synchronizing dashboard...</p>
-          </div>
-        ) : !merchant.is_open ? (
-          <div className="text-center py-24 animate-fade-in">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-              <Power size={32} style={{ color: 'var(--muted)' }} />
+        <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+          {!merchant ? (
+            <div className="flex flex-col items-center justify-center py-32">
+              <Loader2 size={32} className="animate-spin text-indigo-500 mb-4" />
+              <p className="text-slate-500 animate-pulse text-sm">Synchronizing dashboard...</p>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Store is Closed</h2>
-            <p style={{ color: 'var(--muted-foreground)' }}>Click &quot;Open Store&quot; to start accepting orders.</p>
-          </div>
-        ) : (
-          <>
-            <div className="rounded-2xl p-6 border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-              <h2 className="text-lg font-semibold text-white mb-4">Issue New Pager</h2>
-                <form 
-                  onSubmit={(e) => { 
-                    e.preventDefault(); 
-                    if (isOverQuota) {
-                      openSettings('subscription');
-                      return;
-                    }
-                    createSession(); 
-                  }} 
-                  className="flex flex-col sm:flex-row gap-3"
-                >
-                  <input
-                    id="receipt-input"
-                    type="text"
-                    value={receiptInput}
-                    onChange={(e) => setReceiptInput(e.target.value)}
-                    placeholder={isOverQuota ? "Quota Reached" : "Enter receipt / order number"}
-                    disabled={isOverQuota}
-                    className="w-full sm:flex-1 px-4 py-3 rounded-xl text-white outline-none"
-                    style={{ background: '#0a0b0f', border: '1px solid var(--card-border)' }}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      id="create-session-btn"
-                      type="submit"
-                      disabled={creating || (!isOverQuota && !receiptInput.trim())}
-                      className="flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                      style={{ 
-                        background: isOverQuota ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
-                        opacity: creating ? 0.7 : 1,
-                        boxShadow: isOverQuota ? '0 0 15px rgba(245, 158, 11, 0.3)' : 'none'
-                      }}
-                    >
-                      {creating ? <Loader2 size={16} className="animate-spin" /> : isOverQuota ? <Zap size={18} /> : <Plus size={18} />}
-                      <span>{isOverQuota ? 'Upgrade Plan' : 'Issue'}</span>
-                    </button>
-                  <button
-                    type="button"
-                    onClick={syncLoyverse}
-                    disabled={isSyncing || syncCooldown > 0 || !merchant?.loyverse_token}
-                    className="px-5 py-3 rounded-xl border flex items-center justify-center transition-all min-w-[50px] sm:min-w-0"
-                    style={{ 
-                      background: 'rgba(234,179,8,0.1)', 
-                      borderColor: (merchant?.loyverse_token && syncCooldown === 0) ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.05)',
-                      color: (merchant?.loyverse_token && syncCooldown === 0) ? '#eab308' : '#475569'
-                    }}
-                    title={syncCooldown > 0 ? `Cooldown: ${syncCooldown}s` : "Sync with Loyverse"}
-                  >
-                    {isSyncing ? <Loader2 size={18} className="animate-spin" /> : syncCooldown > 0 ? <span className="text-xs font-bold">{syncCooldown}</span> : <Zap size={18} />}
-                  </button>
-                </div>
-              </form>
-
-              {/* Monthly Usage Counter */}
-              <div className="mt-4 pt-4 border-t border-white/5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    Monthly Orders Processed
-                  </span>
-                  <span className="text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-1">
-                    {monthlyCount} / <InfinityIcon size={14} className="text-indigo-400 font-black inline" />
-                  </span>
-                </div>
+          ) : !merchant.is_open ? (
+            <div className="text-center py-24 animate-fade-in">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                <span className="text-3xl" style={{ color: 'var(--muted)' }}>⏻</span>
               </div>
-
-              {/* Google Review Quota Widget (Free Plan Only) */}
-              {!isPremiumActive && merchant?.gmb_url && (() => {
-                const GMB_LIMIT = 30
-                const pct = Math.min(100, Math.round((gmbClickCount / GMB_LIMIT) * 100))
-                const isNear = pct >= 80
-                const isOver = gmbClickCount >= GMB_LIMIT
-                const barColor = isOver ? '#ef4444' : isNear ? '#f59e0b' : '#6366f1'
-                return (
-                  <div className={`mt-3 pt-3 border-t border-white/5 space-y-2 ${
-                    isOver ? 'animate-pulse' : ''
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        ⭐ Google Review Clicks
-                      </span>
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-widest"
-                        style={{ color: barColor }}
-                      >
-                        {gmbClickCount} / {GMB_LIMIT}
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: barColor }}
-                      />
-                    </div>
-                    {isNear && (
-                      <div
-                        className="flex items-center justify-between gap-3 p-3 rounded-xl border"
-                        style={{
-                          background: isOver ? 'rgba(239,68,68,0.05)' : 'rgba(245,158,11,0.05)',
-                          borderColor: isOver ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold leading-snug" style={{ color: isOver ? '#f87171' : '#fbbf24' }}>
-                          {isOver
-                            ? '⛔ Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
-                            : `⚠️ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
-                        </p>
-                        <button
-                          onClick={() => openSettings('subscription')}
-                          className="shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider text-white transition-all active:scale-95"
-                          style={{ background: isOver ? '#ef4444' : '#f59e0b' }}
-                        >
-                          Upgrade
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
-
-              {/* Latest Receipts List */}
-              {latestReceipts.length > 0 && (
-                <div className="mt-4 p-4 rounded-2xl animate-fade-in" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.1)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Latest from Loyverse</h4>
-                    <button onClick={() => setLatestReceipts([])} className="text-slate-500 hover:text-white"><X size={14}/></button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                    {latestReceipts.slice(0, 6).map((r, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setReceiptInput(r.receipt_number)
-                          createSession(r.receipt_number)
-                          setLatestReceipts([])
-                        }}
-                        className="p-3 rounded-xl bg-black border border-white/5 hover:border-indigo-500/50 transition-all text-center group"
-                      >
-                        <p className="text-xs text-slate-400 group-hover:text-indigo-400 font-mono">#{r.receipt_number}</p>
-                        <p className="text-[10px] font-bold text-white mt-1">RM{r.total}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <h2 className="text-2xl font-bold text-white mb-2">Store is Closed</h2>
+              <p style={{ color: 'var(--muted-foreground)' }}>Click &quot;Open Store&quot; to start accepting orders.</p>
             </div>
+          ) : (
+            <>
+              <IssuePagerWidget
+                merchant={merchant}
+                isPremiumActive={isPremiumActive}
+                isOverQuota={isOverQuota}
+                receiptInput={receiptInput}
+                creating={creating}
+                isSyncing={isSyncing}
+                syncCooldown={syncCooldown}
+                monthlyCount={monthlyCount}
+                gmbClickCount={gmbClickCount}
+                latestReceipts={latestReceipts}
+                onReceiptChange={setReceiptInput}
+                onSubmit={createSession}
+                onSync={syncLoyverse}
+                onSelectReceipt={(receiptNumber) => {
+                  setReceiptInput(receiptNumber)
+                  createSession(receiptNumber)
+                  setLatestReceipts([])
+                }}
+                onOpenSettings={openSettings}
+                onClearReceipts={() => setLatestReceipts([])}
+              />
 
-            <div className="rounded-2xl border overflow-hidden" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-              <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--card-border)' }}>
-                <Search size={16} style={{ color: 'var(--muted)' }} />
-                <input
-                  id="search-input"
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search order number..."
-                  className="flex-1 bg-transparent text-white outline-none text-sm"
-                />
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 size={24} className="animate-spin" />
-                </div>
-              ) : filteredSessions.length === 0 ? (
-                <div className="text-center py-16">
-                  <Clock size={32} className="mx-auto mb-3" style={{ color: 'var(--muted)' }} />
-                  <p style={{ color: 'var(--muted-foreground)' }}>No active pagers.</p>
-                </div>
-              ) : (
-                <div className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
-                  {filteredSessions.map((session) => (
-                    <div key={session.id} className="flex flex-col p-5 hover:bg-white/[0.02] animate-slide-up transition-all border-b border-white/[0.02]" style={{ borderColor: 'var(--card-border)' }}>
-                      {/* Top Section: Connection Status, Order Info, and Timer */}
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="w-2 h-2 rounded-full shrink-0 mt-3 md:mt-3.5" style={{ background: session.status === 'called' ? 'var(--success)' : 'var(--accent)', boxShadow: `0 0 8px ${session.status === 'called' ? 'var(--success)' : 'var(--accent)'}` }} />
-                        
-                        <div className="flex-1 flex flex-col">
-                          {/* Connection Status Badge */}
-                          <div className="flex mb-1.5">
-                            {!session.is_confirmed ? (
-                              <span className="bg-yellow-500/90 text-black text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black animate-pulse">
-                                WAITING FOR CUSTOMER
-                              </span>
-                            ) : (
-                              <span className="bg-green-500 text-black text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black">
-                                CUSTOMER WAITING
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <p className="font-black text-white text-2xl sm:text-3xl">#{session.receipt_number}</p>
-                              <span className="hidden xs:inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">
-                                {session.status === 'called' ? '🔔 Called' : '⏳ Prep'}
-                              </span>
-                            </div>
-
-                            {/* Timer on the same line as Order Number for Mobile */}
-                            {session.status === 'waiting' && (
-                              <div className="flex flex-col items-end shrink-0">
-                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Wait Time</span>
-                                <span className="text-xl sm:text-2xl font-mono text-indigo-400 font-bold tabular-nums">
-                                  {getWaitTime(session.created_at)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <p className="text-[10px] font-medium text-slate-600 mt-1 uppercase tracking-tighter">
-                            Issued at {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Bottom Section: Action Buttons (Full width on mobile) */}
-                      <div className="flex items-center gap-2 md:w-auto md:ml-6">
-                        <button
-                          id={`qr-btn-${session.id}`}
-                          onClick={() => handleOpenQr(session)}
-                          className="p-3 rounded-xl transition-all active:scale-95 shrink-0"
-                          style={{ color: 'var(--muted-foreground)', background: '#0a0b0f', border: '1px solid var(--card-border)' }}
-                          title="Show QR Code"
-                        >
-                          <QrCode size={18} />
-                        </button>
-                        <button
-                          onClick={() => callSession(session.id)}
-                          disabled={!session.is_confirmed || cooldowns[session.id]}
-                          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-20 disabled:grayscale whitespace-nowrap ${cooldowns[session.id] ? 'animate-pulse' : ''}`}
-                          style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
-                        >
-                          <Phone size={16} />
-                          {cooldowns[session.id] ? 'WAIT...' : (session.status === 'called' ? 'RECALL' : 'CALL')}
-                        </button>
-                        <button
-                          onClick={() => doneSession(session.id)}
-                          disabled={!session.is_confirmed}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-20 disabled:grayscale whitespace-nowrap"
-                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
-                        >
-                          <CheckCircle size={16} />
-                          DONE
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </main>
+              <ActivePagersList
+                sessions={sessions}
+                loading={loading}
+                searchQuery={searchQuery}
+                now={now}
+                cooldowns={cooldowns}
+                onSearchChange={setSearchQuery}
+                onCall={callSession}
+                onDone={doneSession}
+                onOpenQr={handleOpenQr}
+              />
+            </>
+          )}
+        </main>
       )}
 
+      {/* ── Tab: Promosi ───────────────────────────────────────────────────── */}
       {activeTab === 'promosi' && (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <AdsBuilder
@@ -957,6 +373,7 @@ export default function DashboardPage() {
         </main>
       )}
 
+      {/* ── Tab: Analytics ─────────────────────────────────────────────────── */}
       {activeTab === 'analytics' && merchant && (
         <main className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
           <AnalyticsDashboard
@@ -969,20 +386,11 @@ export default function DashboardPage() {
 
       {/* QR Modal */}
       {qrSession && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-sm rounded-3xl p-6 sm:p-8 border text-center animate-bounce-in" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-white text-lg">Order #{qrSession.receipt_number}</h3>
-              <button onClick={() => setQrSession(null)} className="p-1 rounded-lg" style={{ color: 'var(--muted-foreground)' }}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="bg-white p-4 rounded-xl inline-block mb-4">
-              <QRCodeSVG value={pagerUrl(qrSession.id)} size={200} level="H" />
-            </div>
-            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Ask customer to scan QR</p>
-          </div>
-        </div>
+        <QrModal
+          session={qrSession}
+          pagerUrl={pagerUrl}
+          onClose={() => setQrSession(null)}
+        />
       )}
 
       {/* Settings Modal */}
@@ -1008,4 +416,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
