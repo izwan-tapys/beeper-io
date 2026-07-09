@@ -1,12 +1,12 @@
-# Graph Report - Beeper  (2026-06-15)
+# Graph Report - Beeper  (2026-07-09)
 
 ## Corpus Check
-- 76 files · ~125,210 words
+- 90 files · ~126,392 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 246 nodes · 232 edges · 12 communities detected
-- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
+- 242 nodes · 210 edges · 12 communities detected
+- Extraction: 83% EXTRACTED · 17% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -25,27 +25,27 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `createClient()` - 22 edges
-2. `trackPagerEvent()` - 9 edges
-3. `createServiceClient()` - 7 edges
-4. `trackPageView()` - 4 edges
-5. `nextStep()` - 3 edges
+2. `createServiceClient()` - 7 edges
+3. `trackPagerEvent()` - 6 edges
+4. `DashboardPage()` - 4 edges
+5. `trackPageView()` - 4 edges
 6. `nextStep()` - 3 edges
-7. `GET()` - 3 edges
-8. `PATCH()` - 3 edges
-9. `GET()` - 3 edges
-10. `PATCH()` - 3 edges
+7. `nextStep()` - 3 edges
+8. `GET()` - 3 edges
+9. `PATCH()` - 3 edges
+10. `GET()` - 3 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `run()` --calls--> `createClient()`  [INFERRED]
-  scratch\check_sate_baba.js → src\lib\supabase\server.ts
+  C:\Users\skyxi\Desktop\Beeper\scratch\check_sate_baba.js → C:\Users\skyxi\Desktop\Beeper\src\lib\supabase\server.ts
 - `GET()` --calls--> `createClient()`  [INFERRED]
-  src\app\api\admin\infra-usage\route.ts → src\lib\supabase\server.ts
+  C:\Users\skyxi\Desktop\Beeper\src\app\api\admin\infra-usage\route.ts → C:\Users\skyxi\Desktop\Beeper\src\lib\supabase\server.ts
 - `POST()` --calls--> `createClient()`  [INFERRED]
-  src\app\api\ads\charge-view\route.ts → src\lib\supabase\server.ts
+  C:\Users\skyxi\Desktop\Beeper\src\app\api\ads\charge-view\route.ts → C:\Users\skyxi\Desktop\Beeper\src\lib\supabase\server.ts
 - `POST()` --calls--> `createClient()`  [INFERRED]
-  src\app\api\ads\track\route.ts → src\lib\supabase\server.ts
+  src\app\api\ads\track\route.ts → C:\Users\skyxi\Desktop\Beeper\src\lib\supabase\server.ts
 - `POST()` --calls--> `createClient()`  [INFERRED]
-  src\app\api\ads\update\route.ts → src\lib\supabase\server.ts
+  C:\Users\skyxi\Desktop\Beeper\src\app\api\ads\update\route.ts → C:\Users\skyxi\Desktop\Beeper\src\lib\supabase\server.ts
 
 ## Communities
 
@@ -54,28 +54,28 @@ Cohesion: 0.07
 Nodes (20): GET(), PATCH(), GET(), POST(), POST(), GET(), GET(), GET() (+12 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.12
-Nodes (13): parseBrowser(), parseOS(), trackPagerEvent(), acquireWakeLock(), handleConfirm(), handleDismissAlarm(), handleOffline(), handleOnline() (+5 more)
+Cohesion: 0.16
+Nodes (7): handleSubmit(), initMap(), loadLeaflet(), nextStep(), validateStep1(), validateStep2(), validateStep3()
 
 ### Community 2 - "Community 2"
-Cohesion: 0.12
-Nodes (2): handleVisibilityChange(), requestWakeLock()
+Cohesion: 0.16
+Nodes (7): handleSubmit(), initMap(), loadLeaflet(), nextStep(), validateStep1(), validateStep2(), validateStep3()
 
 ### Community 3 - "Community 3"
-Cohesion: 0.16
-Nodes (7): handleSubmit(), initMap(), loadLeaflet(), nextStep(), validateStep1(), validateStep2(), validateStep3()
+Cohesion: 0.18
+Nodes (7): parseBrowser(), parseOS(), trackPagerEvent(), handleConfirm(), handleDismissAlarm(), handleQrScan(), showToast()
 
 ### Community 4 - "Community 4"
-Cohesion: 0.16
-Nodes (7): handleSubmit(), initMap(), loadLeaflet(), nextStep(), validateStep1(), validateStep2(), validateStep3()
-
-### Community 5 - "Community 5"
 Cohesion: 0.18
 Nodes (2): handleSaveLocation(), updateMerchant()
 
-### Community 6 - "Community 6"
+### Community 5 - "Community 5"
 Cohesion: 0.22
 Nodes (2): handleClose(), hasSettingsChanged()
+
+### Community 6 - "Community 6"
+Cohesion: 0.25
+Nodes (4): DashboardPage(), useDashboardData(), useOnlineStatus(), useWakeLock()
 
 ### Community 7 - "Community 7"
 Cohesion: 0.36
@@ -98,29 +98,27 @@ Cohesion: 1.0
 Nodes (2): fetchData(), getDateRange()
 
 ## Knowledge Gaps
-- **Thin community `Community 2`** (17 nodes): `callSession()`, `challengeMfa()`, `createSession()`, `doneSession()`, `getWaitTime()`, `goOffline()`, `goOnline()`, `handleLogout()`, `handleOpenQr()`, `handleUpgrade()`, `handleVisibilityChange()`, `openSettings()`, `pagerUrl()`, `requestWakeLock()`, `syncLoyverse()`, `toggleStore()`, `page.tsx`
+- **Thin community `Community 4`** (12 nodes): `async()`, `checkIsSuspectedSelfReferral()`, `deleteAd()`, `handleApproveAd()`, `handleApproveAdvertiser()`, `handleRejectAd()`, `handleRejectAdvertiser()`, `handleSaveAd()`, `handleSaveLocation()`, `toggleAdActive()`, `updateMerchant()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 5`** (12 nodes): `async()`, `checkIsSuspectedSelfReferral()`, `deleteAd()`, `handleApproveAd()`, `handleApproveAdvertiser()`, `handleRejectAd()`, `handleRejectAdvertiser()`, `handleSaveAd()`, `handleSaveLocation()`, `toggleAdActive()`, `updateMerchant()`, `page.tsx`
+- **Thin community `Community 5`** (10 nodes): `SettingsModal.tsx`, `disableMfa()`, `enrollMfa()`, `handleClose()`, `handleLogoUpload()`, `hasSettingsChanged()`, `registerAsPartner()`, `saveSettings()`, `toggleSection()`, `verifyMfa()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 6`** (10 nodes): `disableMfa()`, `enrollMfa()`, `handleClose()`, `handleLogoUpload()`, `hasSettingsChanged()`, `registerAsPartner()`, `saveSettings()`, `toggleSection()`, `verifyMfa()`, `SettingsModal.tsx`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 12`** (3 nodes): `fetchData()`, `getDateRange()`, `AnalyticsDashboard.tsx`
+- **Thin community `Community 12`** (3 nodes): `AnalyticsDashboard.tsx`, `fetchData()`, `getDateRange()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `createClient()` connect `Community 0` to `Community 10`, `Community 11`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Why does `trackPageView()` connect `Community 11` to `Community 0`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **Why does `GET()` connect `Community 10` to `Community 0`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Are the 21 inferred relationships involving `createClient()` (e.g. with `run()` and `GET()`) actually correct?**
   _`createClient()` has 21 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 6 inferred relationships involving `trackPagerEvent()` (e.g. with `handleVisibilityChange()` and `handleOnline()`) actually correct?**
-  _`trackPagerEvent()` has 6 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 6 inferred relationships involving `createServiceClient()` (e.g. with `GET()` and `PATCH()`) actually correct?**
   _`createServiceClient()` has 6 INFERRED edges - model-reasoned connections that need verification._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
+- **Are the 3 inferred relationships involving `trackPagerEvent()` (e.g. with `handleConfirm()` and `handleQrScan()`) actually correct?**
+  _`trackPagerEvent()` has 3 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 3 inferred relationships involving `DashboardPage()` (e.g. with `useWakeLock()` and `useOnlineStatus()`) actually correct?**
+  _`DashboardPage()` has 3 INFERRED edges - model-reasoned connections that need verification._
