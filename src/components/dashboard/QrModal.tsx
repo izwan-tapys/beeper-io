@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 /**
  * QrModal
@@ -37,12 +37,30 @@ export function QrModal({ session, pagerUrl, onClose }: Props) {
             <X size={18} />
           </button>
         </div>
-        <div className="bg-white p-4 rounded-xl inline-block mb-4">
+        <div className="bg-white p-4 rounded-2xl inline-block mb-4">
           <QRCodeSVG value={pagerUrl(session.id)} size={200} level="H" />
         </div>
-        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-          Ask customer to scan QR
-        </p>
+        <div className="mt-2 text-left border-t border-white/10 pt-4 space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 text-center">
+            Arahan Imbas QR / QR Scan Instructions
+          </p>
+          <div className="flex gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5">
+            <span className="text-lg shrink-0 mt-0.5">📸</span>
+            <div className="text-xs">
+              <p className="font-bold text-white leading-tight">1. Buka Kamera Telefon</p>
+              <p className="text-slate-400 text-[10px] mt-0.5">Atau sebarang aplikasi imbas QR / Google Lens</p>
+              <p className="text-indigo-400 text-[9px] font-bold mt-1 uppercase tracking-widest leading-none">Open Phone Camera / Google Lens</p>
+            </div>
+          </div>
+          <div className="flex gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5">
+            <span className="text-lg shrink-0 mt-0.5">🔗</span>
+            <div className="text-xs">
+              <p className="font-bold text-white leading-tight">2. Imbas & Ketik Link</p>
+              <p className="text-slate-400 text-[10px] mt-0.5">Halakan pada QR dan klik pautan yang muncul untuk aktifkan pager</p>
+              <p className="text-indigo-400 text-[9px] font-bold mt-1 uppercase tracking-widest leading-none">Scan & Tap link to activate pager</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
