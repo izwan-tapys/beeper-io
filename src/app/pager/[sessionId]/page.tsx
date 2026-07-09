@@ -266,7 +266,7 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
   }
 
   if (status === 'completed') {
-    const completedSessionsWithGmb = getSessionsList()
+    const rawCompleted = getSessionsList()
       .filter((s) => ['completed', 'archived'].includes(s.status))
       .map((s) => {
         const m = Array.isArray(s.merchants) ? s.merchants[0] : s.merchants
@@ -277,6 +277,17 @@ export default function PagerPage({ params }: { params: Promise<{ sessionId: str
         }
       })
       .filter((s) => !!s.gmbUrl)
+
+    // Deduplicate by gmbUrl / merchantName so same merchant rating link shows only once
+    const completedSessionsWithGmb: typeof rawCompleted = []
+    const seenGmb = new Set<string>()
+    for (const item of rawCompleted) {
+      const key = item.gmbUrl || item.merchantName
+      if (!seenGmb.has(key)) {
+        seenGmb.add(key)
+        completedSessionsWithGmb.push(item)
+      }
+    }
 
     return (
       <CompletedScreen
