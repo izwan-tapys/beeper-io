@@ -18,6 +18,8 @@ const ALLOWED_MERCHANT_FIELDS = [
   'subscription_status',
   'expiry_date',
   'is_active',
+  'is_verified',
+  'last_bill_code',
   'gmb_url',
   'logo_url',
   'theme_color',
