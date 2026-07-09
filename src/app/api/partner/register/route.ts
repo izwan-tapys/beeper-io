@@ -21,6 +21,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Sila isi semua maklumat wajib.' }, { status: 400 })
     }
 
+    // VULN-G Fix: Validate input formats to prevent garbage data from entering the database
+    // and to reduce attack surface from malformed inputs.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json({ error: 'Format emel tidak sah.' }, { status: 400 })
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json({ error: 'Kata laluan mestilah sekurang-kurangnya 8 aksara.' }, { status: 400 })
+    }
+
+    // IC Malaysia: exactly 12 digits (e.g., 900101-01-1234 stripped of dashes)
+    const cleanIc = icNumber.replace(/-/g, '')
+    if (!/^\d{12}$/.test(cleanIc)) {
+      return NextResponse.json({ error: 'Nombor IC mestilah 12 digit angka (tanpa sempang).' }, { status: 400 })
+    }
+
+    // Bank account: 5–20 digits only
+    if (!/^\d{5,20}$/.test(bankAccountNo.trim())) {
+      return NextResponse.json({ error: 'Nombor akaun bank mestilah antara 5 hingga 20 digit angka sahaja.' }, { status: 400 })
+    }
+
+    // Referral code: 3–10 alphanumeric characters
+    if (!/^[A-Z0-9]{3,10}$/.test(referralCode.trim().toUpperCase())) {
+      return NextResponse.json({ error: 'Kod rujukan mestilah 3-10 aksara (huruf dan nombor sahaja).' }, { status: 400 })
+    }
+
     const cleanRefCode = referralCode.trim().toUpperCase()
 
     // Initialize Supabase Admin client

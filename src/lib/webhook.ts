@@ -22,6 +22,8 @@ export function getWebhookToken(merchantId: string): string {
     .createHmac('sha256', secret)
     .update(merchantId)
     .digest('hex')
-    .substring(0, 24) // 24 hex chars = 96 bits of entropy, easy to embed in URLs
+    .substring(0, 32) // VULN-H Fix: 32 hex chars = 128 bits of entropy (increased from 24 for stronger security)
+                      // ⚠️ Changing this value invalidates all existing merchant webhook URLs.
+                      //    Merchants must regenerate their webhook URL from the Settings page.
 }
 

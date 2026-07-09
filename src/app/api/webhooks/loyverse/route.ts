@@ -65,6 +65,22 @@ export async function POST(request: Request) {
       const receiptNumber = body.receipt_number
       console.log('[Loyverse Webhook] Processing Receipt #', receiptNumber)
 
+      // VULN-F Fix: Rate limit session creation to prevent flood attacks via leaked webhook URLs.
+      // If someone obtains the webhook URL (e.g., from a merchant who shared it accidentally),
+      // they cannot create unlimited bogus sessions to disrupt operations.
+      const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
+      const { count: recentCount } = await supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('merchant_id', merchantId)
+        .gte('created_at', oneMinuteAgo)
+
+      const RATE_LIMIT_PER_MINUTE = 20
+      if ((recentCount ?? 0) >= RATE_LIMIT_PER_MINUTE) {
+        console.warn(`[Loyverse Webhook] Rate limit exceeded for merchant: ${merchantId} (${recentCount} sessions in last 60s)`)
+        return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .insert({

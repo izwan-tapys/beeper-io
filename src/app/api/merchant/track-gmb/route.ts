@@ -11,7 +11,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing merchant_id' }, { status: 400 })
     }
 
+    // VULN-C Fix: Require a valid session_id to prevent unauthenticated abuse.
+    // Without this, anyone on the internet could spam GMB click events and exhaust
+    // a free merchant's 30-click monthly quota in seconds.
+    if (!session_id) {
+      return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
+    }
+
     const supabase = await createClient()
+
+    // VULN-C Fix: Verify that the session_id actually belongs to this merchant.
+    // This prevents cross-merchant abuse where an attacker uses a real session_id
+    // from merchant A to exhaust the quota of merchant B.
+    const { data: sessionRow, error: sessionError } = await supabase
+      .from('sessions')
+      .select('id, merchant_id')
+      .eq('id', session_id)
+      .eq('merchant_id', merchant_id)
+      .maybeSingle()
+
+    if (sessionError || !sessionRow) {
+      return NextResponse.json({ error: 'Invalid session_id for this merchant' }, { status: 403 })
+    }
 
     // 1. Fetch merchant details (plan, phone, name, alert tracking columns)
     const { data: merchant, error: merchantError } = await supabase

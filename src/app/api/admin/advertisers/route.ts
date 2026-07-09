@@ -1,7 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'izwan.tapys@gmail.com'
+// VULN-E Fix: Do not fall back to hardcoded email. Require ADMIN_EMAIL to be explicitly set.
+if (!process.env.ADMIN_EMAIL) {
+  console.error('[Security] ADMIN_EMAIL environment variable is not configured. Admin API will reject all requests.')
+}
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+
+// VULN-B Fix: Whitelist of fields that are allowed to be updated via the admin PATCH endpoint.
+// Prevents mass assignment — e.g., an attacker cannot arbitrarily set wallet_balance to any value.
+const ALLOWED_ADVERTISER_FIELDS = [
+  'is_approved',
+  'is_active',
+  'wallet_balance',
+  'notes',
+]
 
 export async function GET() {
   try {
@@ -57,6 +70,11 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    // VULN-E Fix: Reject if ADMIN_EMAIL is not configured
+    if (!ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Admin API is not configured on this server.' }, { status: 503 })
+    }
+
     // Auth check
     const authClient = await createClient()
     const { data: { user } } = await authClient.auth.getUser()
@@ -69,10 +87,19 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Missing id or updates' }, { status: 400 })
     }
 
+    // VULN-B Fix: Filter updates to only allowed fields to prevent mass assignment
+    const safeUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([key]) => ALLOWED_ADVERTISER_FIELDS.includes(key))
+    )
+
+    if (Object.keys(safeUpdates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update.' }, { status: 400 })
+    }
+
     const service = createServiceClient()
     const { data, error } = await service
       .from('advertiser_profiles')
-      .update(updates)
+      .update(safeUpdates)
       .eq('id', id)
       .select()
       .single()

@@ -11,6 +11,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
     }
 
+    // VULN-D Fix: session_id is required for impression events.
+    // Without this, impression events (which trigger wallet deductions) could be
+    // sent without any link to a real customer session.
+    if (event_type === 'impression' && !session_id) {
+      return NextResponse.json({ error: 'session_id is required for impression events' }, { status: 400 })
+    }
+
     // Initialize Supabase admin client using Service Role Key to bypass RLS for tracking operations
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
