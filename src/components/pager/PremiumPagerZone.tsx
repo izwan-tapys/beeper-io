@@ -308,7 +308,7 @@ function MultiPagerCard({
             color: '#818cf8',
           }}
         >
-          {sessions.length} {lang === 'bm' ? 'Gerai' : 'Stalls'}
+          {sessions.length} {lang === 'bm' ? 'Pesanan' : 'Orders'}
         </span>
       </div>
 

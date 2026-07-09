@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React from 'react'
 import { Loader2 } from 'lucide-react'
@@ -155,7 +155,7 @@ export function AdBanner({
           {isMultiSession && (
             <div className="absolute top-2 left-2 z-20">
               <span className="text-[8px] text-white font-black uppercase tracking-widest bg-indigo-600/80 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                {activeStallsCount} {lang === 'bm' ? 'Gerai' : 'Stalls'}
+                {activeStallsCount} {lang === 'bm' ? 'Pesanan' : 'Orders'}
               </span>
             </div>
           )}
