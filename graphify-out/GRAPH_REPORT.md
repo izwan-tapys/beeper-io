@@ -1,12 +1,12 @@
 # Graph Report - Beeper  (2026-07-09)
 
 ## Corpus Check
-- 90 files · ~126,622 words
+- 95 files · ~153,380 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 242 nodes · 210 edges · 12 communities detected
-- Extraction: 83% EXTRACTED · 17% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
+- 251 nodes · 214 edges · 12 communities detected
+- Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -74,12 +74,12 @@ Cohesion: 0.22
 Nodes (2): handleClose(), hasSettingsChanged()
 
 ### Community 6 - "Community 6"
-Cohesion: 0.25
-Nodes (4): DashboardPage(), useDashboardData(), useOnlineStatus(), useWakeLock()
-
-### Community 7 - "Community 7"
 Cohesion: 0.36
 Nodes (4): createImage(), getCroppedImg(), handleConfirmCrop(), handleValueChange()
+
+### Community 7 - "Community 7"
+Cohesion: 0.25
+Nodes (4): DashboardPage(), useDashboardData(), useOnlineStatus(), useWakeLock()
 
 ### Community 9 - "Community 9"
 Cohesion: 0.43
@@ -109,9 +109,9 @@ Nodes (2): fetchData(), getDateRange()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `createClient()` connect `Community 0` to `Community 10`, `Community 11`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
 - **Why does `trackPageView()` connect `Community 11` to `Community 0`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+  _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Why does `GET()` connect `Community 10` to `Community 0`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Are the 21 inferred relationships involving `createClient()` (e.g. with `run()` and `GET()`) actually correct?**

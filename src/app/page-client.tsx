@@ -225,6 +225,7 @@ export default function LandingPageClient() {
                <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
                <Link href="/partner/terms" className="hover:text-white transition-colors">Terms</Link>
                <Link href="/partner" className="hover:text-white transition-colors">Partner Program</Link>
+               <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
                <a href="mailto:support@beepme.pro" className="hover:text-white transition-colors">Support</a>
             </div>
           </div>

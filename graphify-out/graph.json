@@ -9,7 +9,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\eslint.config.mjs",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_eslint_config_mjs",
-      "community": 48,
+      "community": 52,
       "norm_label": "eslint.config.mjs"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\next-env.d.ts",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_next_env_d_ts",
-      "community": 49,
+      "community": 53,
       "norm_label": "next-env.d.ts"
     },
     {
@@ -27,7 +27,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\next.config.mjs",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_next_config_mjs",
-      "community": 50,
+      "community": 54,
       "norm_label": "next.config.mjs"
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\patch-alarm-page.js",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_patch_alarm_page_js",
-      "community": 51,
+      "community": 55,
       "norm_label": "patch-alarm-page.js"
     },
     {
@@ -45,7 +45,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\patch-dynamic-island.js",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_patch_dynamic_island_js",
-      "community": 52,
+      "community": 56,
       "norm_label": "patch-dynamic-island.js"
     },
     {
@@ -54,7 +54,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\patch-layout-tiktok.js",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_patch_layout_tiktok_js",
-      "community": 53,
+      "community": 57,
       "norm_label": "patch-layout-tiktok.js"
     },
     {
@@ -63,7 +63,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\patch-layout.js",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_patch_layout_js",
-      "community": 54,
+      "community": 58,
       "norm_label": "patch-layout.js"
     },
     {
@@ -72,7 +72,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\patch-swipe.js",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_patch_swipe_js",
-      "community": 55,
+      "community": 59,
       "norm_label": "patch-swipe.js"
     },
     {
@@ -81,7 +81,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\postcss.config.mjs",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_postcss_config_mjs",
-      "community": 56,
+      "community": 60,
       "norm_label": "postcss.config.mjs"
     },
     {
@@ -393,38 +393,92 @@
     {
       "label": "layout.tsx",
       "file_type": "code",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\layout.tsx",
+      "source_file": "src\\app\\layout.tsx",
       "source_location": "L1",
-      "id": "c_users_skyxi_desktop_beeper_src_app_layout_tsx",
+      "id": "src_app_layout_tsx",
       "community": 31,
       "norm_label": "layout.tsx"
     },
     {
       "label": "RootLayout()",
       "file_type": "code",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\layout.tsx",
-      "source_location": "L30",
+      "source_file": "src\\app\\layout.tsx",
+      "source_location": "L67",
       "id": "app_layout_rootlayout",
       "community": 31,
       "norm_label": "rootlayout()"
     },
     {
-      "label": "page.tsx",
+      "label": "page-client.tsx",
       "file_type": "code",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\page.tsx",
+      "source_file": "src\\app\\page-client.tsx",
       "source_location": "L1",
-      "id": "c_users_skyxi_desktop_beeper_src_app_page_tsx",
+      "id": "src_app_page_client_tsx",
       "community": 32,
-      "norm_label": "page.tsx"
+      "norm_label": "page-client.tsx"
     },
     {
       "label": "handlePriceScroll()",
       "file_type": "code",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\page.tsx",
+      "source_file": "src\\app\\page-client.tsx",
       "source_location": "L17",
-      "id": "app_page_handlepricescroll",
+      "id": "app_page_client_handlepricescroll",
       "community": 32,
       "norm_label": "handlepricescroll()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_page_tsx",
+      "community": 33,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "Page()",
+      "file_type": "code",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L46",
+      "id": "app_page_page",
+      "community": 33,
+      "norm_label": "page()"
+    },
+    {
+      "label": "robots.ts",
+      "file_type": "code",
+      "source_file": "src\\app\\robots.ts",
+      "source_location": "L1",
+      "id": "src_app_robots_ts",
+      "community": 34,
+      "norm_label": "robots.ts"
+    },
+    {
+      "label": "robots()",
+      "file_type": "code",
+      "source_file": "src\\app\\robots.ts",
+      "source_location": "L3",
+      "id": "app_robots_robots",
+      "community": 34,
+      "norm_label": "robots()"
+    },
+    {
+      "label": "sitemap.ts",
+      "file_type": "code",
+      "source_file": "src\\app\\sitemap.ts",
+      "source_location": "L1",
+      "id": "src_app_sitemap_ts",
+      "community": 35,
+      "norm_label": "sitemap.ts"
+    },
+    {
+      "label": "sitemap()",
+      "file_type": "code",
+      "source_file": "src\\app\\sitemap.ts",
+      "source_location": "L3",
+      "id": "app_sitemap_sitemap",
+      "community": 35,
+      "norm_label": "sitemap()"
     },
     {
       "label": "page.tsx",
@@ -540,7 +594,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\ads-manager\\layout.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_ads_manager_layout_tsx",
-      "community": 33,
+      "community": 36,
       "norm_label": "layout.tsx"
     },
     {
@@ -549,7 +603,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\ads-manager\\layout.tsx",
       "source_location": "L7",
       "id": "ads_manager_layout_adsmanagerlayout",
-      "community": 33,
+      "community": 36,
       "norm_label": "adsmanagerlayout()"
     },
     {
@@ -1239,10 +1293,37 @@
     {
       "label": "page.tsx",
       "file_type": "code",
+      "source_file": "src\\app\\blog\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_blog_page_tsx",
+      "community": 61,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src\\app\\blog\\coaster-pager-restoran-rosak\\page.tsx",
+      "source_location": "L1",
+      "id": "src_app_blog_coaster_pager_restoran_rosak_page_tsx",
+      "community": 37,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "BlogPost()",
+      "file_type": "code",
+      "source_file": "src\\app\\blog\\coaster-pager-restoran-rosak\\page.tsx",
+      "source_location": "L15",
+      "id": "coaster_pager_restoran_rosak_page_blogpost",
+      "community": 37,
+      "norm_label": "blogpost()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
       "source_file": "src\\app\\dashboard\\page.tsx",
       "source_location": "L1",
       "id": "src_app_dashboard_page_tsx",
-      "community": 6,
+      "community": 7,
       "norm_label": "page.tsx"
     },
     {
@@ -1251,7 +1332,7 @@
       "source_file": "src\\app\\dashboard\\page.tsx",
       "source_location": "L30",
       "id": "dashboard_page_dashboardpage",
-      "community": 6,
+      "community": 7,
       "norm_label": "dashboardpage()"
     },
     {
@@ -1422,7 +1503,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_partner_page_tsx",
-      "community": 34,
+      "community": 38,
       "norm_label": "page.tsx"
     },
     {
@@ -1431,7 +1512,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\page.tsx",
       "source_location": "L28",
       "id": "partner_page_copyurl",
-      "community": 34,
+      "community": 38,
       "norm_label": "copyurl()"
     },
     {
@@ -1440,7 +1521,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\dashboard\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_partner_dashboard_page_tsx",
-      "community": 35,
+      "community": 39,
       "norm_label": "page.tsx"
     },
     {
@@ -1449,7 +1530,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\dashboard\\page.tsx",
       "source_location": "L14",
       "id": "dashboard_page_partnerdashboard",
-      "community": 35,
+      "community": 39,
       "norm_label": "partnerdashboard()"
     },
     {
@@ -1458,7 +1539,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\register\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_partner_register_page_tsx",
-      "community": 36,
+      "community": 40,
       "norm_label": "page.tsx"
     },
     {
@@ -1467,7 +1548,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\register\\page.tsx",
       "source_location": "L27",
       "id": "register_page_handlesubmit",
-      "community": 36,
+      "community": 40,
       "norm_label": "handlesubmit()"
     },
     {
@@ -1476,7 +1557,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\partner\\terms\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_partner_terms_page_tsx",
-      "community": 57,
+      "community": 62,
       "norm_label": "page.tsx"
     },
     {
@@ -1485,7 +1566,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\privacy\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_privacy_page_tsx",
-      "community": 58,
+      "community": 63,
       "norm_label": "page.tsx"
     },
     {
@@ -1494,7 +1575,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\promo-poster\\page.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_app_promo_poster_page_tsx",
-      "community": 59,
+      "community": 64,
       "norm_label": "page.tsx"
     },
     {
@@ -1503,7 +1584,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_adsbuilder_tsx",
-      "community": 7,
+      "community": 6,
       "norm_label": "adsbuilder.tsx"
     },
     {
@@ -1512,7 +1593,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L10",
       "id": "components_adsbuilder_createimage",
-      "community": 7,
+      "community": 6,
       "norm_label": "createimage()"
     },
     {
@@ -1521,7 +1602,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L19",
       "id": "components_adsbuilder_getcroppedimg",
-      "community": 7,
+      "community": 6,
       "norm_label": "getcroppedimg()"
     },
     {
@@ -1530,7 +1611,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L120",
       "id": "components_adsbuilder_fetchmerchantdata",
-      "community": 7,
+      "community": 6,
       "norm_label": "fetchmerchantdata()"
     },
     {
@@ -1539,7 +1620,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L167",
       "id": "components_adsbuilder_handlevaluechange",
-      "community": 7,
+      "community": 6,
       "norm_label": "handlevaluechange()"
     },
     {
@@ -1548,7 +1629,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L190",
       "id": "components_adsbuilder_handlefilechange",
-      "community": 7,
+      "community": 6,
       "norm_label": "handlefilechange()"
     },
     {
@@ -1557,7 +1638,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L201",
       "id": "components_adsbuilder_handleconfirmcrop",
-      "community": 7,
+      "community": 6,
       "norm_label": "handleconfirmcrop()"
     },
     {
@@ -1566,7 +1647,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\AdsBuilder.tsx",
       "source_location": "L265",
       "id": "components_adsbuilder_handlesave",
-      "community": 7,
+      "community": 6,
       "norm_label": "handlesave()"
     },
     {
@@ -1575,7 +1656,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\Logo.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_logo_tsx",
-      "community": 37,
+      "community": 41,
       "norm_label": "logo.tsx"
     },
     {
@@ -1584,7 +1665,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\Logo.tsx",
       "source_location": "L13",
       "id": "components_logo_logo",
-      "community": 37,
+      "community": 41,
       "norm_label": "logo()"
     },
     {
@@ -1593,7 +1674,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\PageViewTracker.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_pageviewtracker_tsx",
-      "community": 38,
+      "community": 42,
       "norm_label": "pageviewtracker.tsx"
     },
     {
@@ -1602,7 +1683,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\PageViewTracker.tsx",
       "source_location": "L7",
       "id": "components_pageviewtracker_pageviewtracker",
-      "community": 38,
+      "community": 42,
       "norm_label": "pageviewtracker()"
     },
     {
@@ -1611,7 +1692,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\ReferralTracker.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_referraltracker_tsx",
-      "community": 39,
+      "community": 43,
       "norm_label": "referraltracker.tsx"
     },
     {
@@ -1620,7 +1701,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\ReferralTracker.tsx",
       "source_location": "L6",
       "id": "components_referraltracker_referraltracker",
-      "community": 39,
+      "community": 43,
       "norm_label": "referraltracker()"
     },
     {
@@ -1629,7 +1710,7 @@
       "source_file": "src\\components\\dashboard\\ActivePagersList.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_activepagerslist_tsx",
-      "community": 40,
+      "community": 44,
       "norm_label": "activepagerslist.tsx"
     },
     {
@@ -1638,7 +1719,7 @@
       "source_file": "src\\components\\dashboard\\ActivePagersList.tsx",
       "source_location": "L26",
       "id": "dashboard_activepagerslist_getwaittime",
-      "community": 40,
+      "community": 44,
       "norm_label": "getwaittime()"
     },
     {
@@ -1674,7 +1755,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\ComingSoonModal.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_dashboard_comingsoonmodal_tsx",
-      "community": 41,
+      "community": 45,
       "norm_label": "comingsoonmodal.tsx"
     },
     {
@@ -1683,7 +1764,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\ComingSoonModal.tsx",
       "source_location": "L10",
       "id": "dashboard_comingsoonmodal_comingsoonmodal",
-      "community": 41,
+      "community": 45,
       "norm_label": "comingsoonmodal()"
     },
     {
@@ -1692,7 +1773,7 @@
       "source_file": "src\\components\\dashboard\\DashboardHeader.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_dashboardheader_tsx",
-      "community": 60,
+      "community": 65,
       "norm_label": "dashboardheader.tsx"
     },
     {
@@ -1701,7 +1782,7 @@
       "source_file": "src\\components\\dashboard\\IssuePagerWidget.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_issuepagerwidget_tsx",
-      "community": 61,
+      "community": 66,
       "norm_label": "issuepagerwidget.tsx"
     },
     {
@@ -1710,7 +1791,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\MfaChallengeModal.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_dashboard_mfachallengemodal_tsx",
-      "community": 42,
+      "community": 46,
       "norm_label": "mfachallengemodal.tsx"
     },
     {
@@ -1719,7 +1800,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\MfaChallengeModal.tsx",
       "source_location": "L13",
       "id": "dashboard_mfachallengemodal_mfachallengemodal",
-      "community": 42,
+      "community": 46,
       "norm_label": "mfachallengemodal()"
     },
     {
@@ -1728,7 +1809,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\OnboardingModal.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_dashboard_onboardingmodal_tsx",
-      "community": 43,
+      "community": 47,
       "norm_label": "onboardingmodal.tsx"
     },
     {
@@ -1737,7 +1818,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\dashboard\\OnboardingModal.tsx",
       "source_location": "L26",
       "id": "dashboard_onboardingmodal_saveonboarding",
-      "community": 43,
+      "community": 47,
       "norm_label": "saveonboarding()"
     },
     {
@@ -1746,7 +1827,7 @@
       "source_file": "src\\components\\dashboard\\QrModal.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_qrmodal_tsx",
-      "community": 62,
+      "community": 67,
       "norm_label": "qrmodal.tsx"
     },
     {
@@ -1845,7 +1926,7 @@
       "source_file": "src\\components\\dashboard\\SubscriptionExpiredOverlay.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_subscriptionexpiredoverlay_tsx",
-      "community": 44,
+      "community": 48,
       "norm_label": "subscriptionexpiredoverlay.tsx"
     },
     {
@@ -1854,7 +1935,7 @@
       "source_file": "src\\components\\dashboard\\SubscriptionExpiredOverlay.tsx",
       "source_location": "L18",
       "id": "dashboard_subscriptionexpiredoverlay_subscriptionexpiredoverlay",
-      "community": 44,
+      "community": 48,
       "norm_label": "subscriptionexpiredoverlay()"
     },
     {
@@ -1863,7 +1944,7 @@
       "source_file": "src\\components\\pager\\AdBanner.tsx",
       "source_location": "L1",
       "id": "src_components_pager_adbanner_tsx",
-      "community": 63,
+      "community": 68,
       "norm_label": "adbanner.tsx"
     },
     {
@@ -1872,7 +1953,7 @@
       "source_file": "src\\components\\pager\\CalledScreen.tsx",
       "source_location": "L1",
       "id": "src_components_pager_calledscreen_tsx",
-      "community": 64,
+      "community": 69,
       "norm_label": "calledscreen.tsx"
     },
     {
@@ -1881,7 +1962,7 @@
       "source_file": "src\\components\\pager\\CompletedScreen.tsx",
       "source_location": "L1",
       "id": "src_components_pager_completedscreen_tsx",
-      "community": 65,
+      "community": 70,
       "norm_label": "completedscreen.tsx"
     },
     {
@@ -1917,7 +1998,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\pager\\QrScannerModal.tsx",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_components_pager_qrscannermodal_tsx",
-      "community": 45,
+      "community": 49,
       "norm_label": "qrscannermodal.tsx"
     },
     {
@@ -1926,7 +2007,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\components\\pager\\QrScannerModal.tsx",
       "source_location": "L11",
       "id": "pager_qrscannermodal_qrscannermodal",
-      "community": 45,
+      "community": 49,
       "norm_label": "qrscannermodal()"
     },
     {
@@ -1962,7 +2043,7 @@
       "source_file": "src\\hooks\\useDashboardData.ts",
       "source_location": "L1",
       "id": "src_hooks_usedashboarddata_ts",
-      "community": 6,
+      "community": 7,
       "norm_label": "usedashboarddata.ts"
     },
     {
@@ -1971,7 +2052,7 @@
       "source_file": "src\\hooks\\useDashboardData.ts",
       "source_location": "L13",
       "id": "hooks_usedashboarddata_usedashboarddata",
-      "community": 6,
+      "community": 7,
       "norm_label": "usedashboarddata()"
     },
     {
@@ -1980,7 +2061,7 @@
       "source_file": "src\\hooks\\useOnlineStatus.ts",
       "source_location": "L1",
       "id": "src_hooks_useonlinestatus_ts",
-      "community": 6,
+      "community": 7,
       "norm_label": "useonlinestatus.ts"
     },
     {
@@ -1989,7 +2070,7 @@
       "source_file": "src\\hooks\\useOnlineStatus.ts",
       "source_location": "L8",
       "id": "hooks_useonlinestatus_useonlinestatus",
-      "community": 6,
+      "community": 7,
       "norm_label": "useonlinestatus()"
     },
     {
@@ -1998,7 +2079,7 @@
       "source_file": "src\\hooks\\usePagerSession.ts",
       "source_location": "L1",
       "id": "src_hooks_usepagersession_ts",
-      "community": 46,
+      "community": 50,
       "norm_label": "usepagersession.ts"
     },
     {
@@ -2007,7 +2088,7 @@
       "source_file": "src\\hooks\\usePagerSession.ts",
       "source_location": "L12",
       "id": "hooks_usepagersession_usepagersession",
-      "community": 46,
+      "community": 50,
       "norm_label": "usepagersession()"
     },
     {
@@ -2016,7 +2097,7 @@
       "source_file": "src\\hooks\\useWakeLock.ts",
       "source_location": "L1",
       "id": "src_hooks_usewakelock_ts",
-      "community": 6,
+      "community": 7,
       "norm_label": "usewakelock.ts"
     },
     {
@@ -2025,7 +2106,7 @@
       "source_file": "src\\hooks\\useWakeLock.ts",
       "source_location": "L8",
       "id": "hooks_usewakelock_usewakelock",
-      "community": 6,
+      "community": 7,
       "norm_label": "usewakelock()"
     },
     {
@@ -2034,7 +2115,7 @@
       "source_file": "src\\lib\\constants.ts",
       "source_location": "L1",
       "id": "src_lib_constants_ts",
-      "community": 66,
+      "community": 71,
       "norm_label": "constants.ts"
     },
     {
@@ -2133,7 +2214,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\lib\\supabase\\client.ts",
       "source_location": "L1",
       "id": "c_users_skyxi_desktop_beeper_src_lib_supabase_client_ts",
-      "community": 47,
+      "community": 51,
       "norm_label": "client.ts"
     },
     {
@@ -2142,7 +2223,7 @@
       "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\lib\\supabase\\client.ts",
       "source_location": "L3",
       "id": "supabase_client_createclient",
-      "community": 47,
+      "community": 51,
       "norm_label": "createclient()"
     },
     {
@@ -2178,7 +2259,7 @@
       "source_file": "src\\types\\index.ts",
       "source_location": "L1",
       "id": "src_types_index_ts",
-      "community": 67,
+      "community": 72,
       "norm_label": "index.ts"
     }
   ],
@@ -2402,25 +2483,61 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\layout.tsx",
-      "source_location": "L30",
+      "source_file": "src\\app\\layout.tsx",
+      "source_location": "L67",
       "weight": 1.0,
-      "_src": "c_users_skyxi_desktop_beeper_src_app_layout_tsx",
+      "_src": "src_app_layout_tsx",
       "_tgt": "app_layout_rootlayout",
-      "source": "c_users_skyxi_desktop_beeper_src_app_layout_tsx",
+      "source": "src_app_layout_tsx",
       "target": "app_layout_rootlayout",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "C:\\Users\\skyxi\\Desktop\\Beeper\\src\\app\\page.tsx",
+      "source_file": "src\\app\\page-client.tsx",
       "source_location": "L17",
       "weight": 1.0,
-      "_src": "c_users_skyxi_desktop_beeper_src_app_page_tsx",
-      "_tgt": "app_page_handlepricescroll",
-      "source": "c_users_skyxi_desktop_beeper_src_app_page_tsx",
-      "target": "app_page_handlepricescroll",
+      "_src": "src_app_page_client_tsx",
+      "_tgt": "app_page_client_handlepricescroll",
+      "source": "src_app_page_client_tsx",
+      "target": "app_page_client_handlepricescroll",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\page.tsx",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_src": "src_app_page_tsx",
+      "_tgt": "app_page_page",
+      "source": "src_app_page_tsx",
+      "target": "app_page_page",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\robots.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "src_app_robots_ts",
+      "_tgt": "app_robots_robots",
+      "source": "src_app_robots_ts",
+      "target": "app_robots_robots",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\sitemap.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "src_app_sitemap_ts",
+      "_tgt": "app_sitemap_sitemap",
+      "source": "src_app_sitemap_ts",
+      "target": "app_sitemap_sitemap",
       "confidence_score": 1.0
     },
     {
@@ -3682,6 +3799,18 @@
       "_tgt": "supabase_server_createclient",
       "source": "callback_route_get",
       "target": "supabase_server_createclient"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src\\app\\blog\\coaster-pager-restoran-rosak\\page.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_src": "src_app_blog_coaster_pager_restoran_rosak_page_tsx",
+      "_tgt": "coaster_pager_restoran_rosak_page_blogpost",
+      "source": "src_app_blog_coaster_pager_restoran_rosak_page_tsx",
+      "target": "coaster_pager_restoran_rosak_page_blogpost",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
