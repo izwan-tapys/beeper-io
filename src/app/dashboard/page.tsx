@@ -128,7 +128,7 @@ export default function DashboardPage() {
     qrSessionRef.current = qrSession
   }, [qrSession])
 
-  // openSettings helper â€” optionally jump to a specific section
+  // openSettings helper — optionally jump to a specific section
   const openSettings = (section?: string) => {
     setSettingsInitialSection(section ?? null)
     setIsSettingsOpen(true)
@@ -162,7 +162,7 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // â”€â”€â”€ Online / Offline Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Online / Offline Detection ─────────────────────────────────────────────
   useEffect(() => {
     const goOnline = () => setIsOnline(true)
     const goOffline = () => setIsOnline(false)
@@ -550,17 +550,17 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* â”€â”€â”€ Offline Alert Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Offline Alert Banner ────────────────────────────────────────────── */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 py-3 bg-rose-600/95 backdrop-blur-md border-b border-rose-500/50 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
           <p className="text-white text-xs font-black uppercase tracking-widest">
-            âš ï¸ No Internet Connection â€” Real-time pager notifications paused. Reconnect to resume.
+            ⚠️ No Internet Connection — Real-time pager notifications paused. Reconnect to resume.
           </p>
         </div>
       )}
 
-      {/* â”€â”€â”€ Subscription Expired Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Subscription Expired Overlay ────────────────────────────────────── */}
       {isExpired && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-sm bg-[#0a0b0f] border border-rose-500/30 rounded-[32px] p-8 shadow-2xl shadow-rose-500/10 text-center animate-bounce-in">
@@ -766,7 +766,7 @@ export default function DashboardPage() {
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        â­ Google Review Clicks
+                        ⭐ Google Review Clicks
                       </span>
                       <span
                         className="text-[10px] font-bold uppercase tracking-widest"
@@ -791,8 +791,8 @@ export default function DashboardPage() {
                       >
                         <p className="text-[10px] font-bold leading-snug" style={{ color: isOver ? '#f87171' : '#fbbf24' }}>
                           {isOver
-                            ? 'â›” Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
-                            : `âš ï¸ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
+                            ? '⛔ Google Review had habis bulan ini. Naik taraf ke Pro untuk ulasan tanpa had!'
+                            : `⚠️ ${GMB_LIMIT - gmbClickCount} klik lagi sebelum had habis bulan ini.`}
                         </p>
                         <button
                           onClick={() => openSettings('subscription')}
@@ -882,7 +882,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-3">
                               <p className="font-black text-white text-2xl sm:text-3xl">#{session.receipt_number}</p>
                               <span className="hidden xs:inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">
-                                {session.status === 'called' ? 'ðŸ”” Called' : 'â³ Prep'}
+                                {session.status === 'called' ? '🔔 Called' : '⏳ Prep'}
                               </span>
                             </div>
 
