@@ -10,6 +10,28 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://beepme.pro/blog/coaster-pager-restoran-rosak",
   },
+  openGraph: {
+    title: "Coaster Pager Restoran Selalu Rosak & Hilang? Cara Ganti Secara Percuma | Beepme",
+    description: "Bandingkan kos coaster pager restoran fizikal vs sistem QR pager maya Beepme.pro. Ketahui cara mengurangkan kos perkakasan F&B di Malaysia kepada RM0.",
+    url: "https://beepme.pro/blog/coaster-pager-restoran-rosak",
+    siteName: "Beepme",
+    images: [
+      {
+        url: "https://beepme.pro/pager-comparison.png",
+        width: 1024,
+        height: 1024,
+        alt: "Perbandingan coaster pager fizikal vs virtual QR pager Beepme",
+      },
+    ],
+    locale: "en_MY",
+    type: "article",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Coaster Pager Restoran Selalu Rosak & Hilang? Cara Ganti Secara Percuma | Beepme",
+    description: "Bandingkan kos coaster pager restoran fizikal vs sistem QR pager maya Beepme.pro. Ketahui cara mengurangkan kos perkakasan F&B di Malaysia kepada RM0.",
+    images: ["https://beepme.pro/pager-comparison.png"],
+  },
 }
 
 export default function BlogPost() {

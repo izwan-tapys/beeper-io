@@ -10,6 +10,28 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://beepme.pro/blog",
   },
+  openGraph: {
+    title: "Blog & Panduan Pengurusan Restoran F&B Malaysia | Beepme",
+    description: "Ketahui tips moden untuk mengurangkan kos operasi F&B, mempercepat sistem giliran makanan, dan alternatif terbaik kepada coaster pager fizikal di Malaysia.",
+    url: "https://beepme.pro/blog",
+    siteName: "Beepme",
+    images: [
+      {
+        url: "https://beepme.pro/pager-comparison.png",
+        width: 1024,
+        height: 1024,
+        alt: "Beepme Blog & Resources",
+      },
+    ],
+    locale: "en_MY",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog & Panduan Pengurusan Restoran F&B Malaysia | Beepme",
+    description: "Ketahui tips moden untuk mengurangkan kos operasi F&B, mempercepat sistem giliran makanan, dan alternatif terbaik kepada coaster pager fizikal di Malaysia.",
+    images: ["https://beepme.pro/pager-comparison.png"],
+  },
 }
 
 export default function BlogArchive() {

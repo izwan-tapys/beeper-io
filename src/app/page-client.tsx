@@ -876,7 +876,7 @@ export default function LandingPageClient() {
             </Link>
             
             <a 
-              href="https://wa.me/60123456789?text=Saya%20berminat%20tahu%20lebih%20lanjut%20tentang%20Beepme.pro" 
+              href="https://wa.me/60193626188?text=Saya%20berminat%20tahu%20lebih%20lanjut%20tentang%20Beepme.pro" 
               target="_blank" 
               rel="noreferrer"
               className="px-10 py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-emerald-600/10"
@@ -907,7 +907,7 @@ export default function LandingPageClient() {
 
       {/* Floating WhatsApp Help Widget */}
       <a 
-        href="https://wa.me/60123456789?text=Saya%20berminat%20tahu%20lebih%20lanjut%20tentang%20Beepme.pro" 
+        href="https://wa.me/60193626188?text=Saya%20berminat%20tahu%20lebih%20lanjut%20tentang%20Beepme.pro" 
         target="_blank" 
         rel="noreferrer"
         className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 group"
