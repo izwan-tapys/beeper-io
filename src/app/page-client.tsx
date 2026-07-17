@@ -575,13 +575,13 @@ export default function LandingPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <StepCard 
               step="01"
-              title="Cetak & Tampal QR"
-              desc="Daftar akaun Beepme, muat turun template poster QR unik kedai anda, cetak dan tampal di kaunter pembayaran atau meja makan."
+              title="Jana Pager di Dashboard"
+              desc="Masukkan nombor resit/pesanan di dashboard Beepme anda (atau ia dijana secara automatik daripada integrasi POS) untuk menghasilkan kod QR unik."
             />
             <StepCard 
               step="02"
-              title="Pelanggan Imbas QR"
-              desc="Pelanggan mengimbas QR menggunakan telefon mereka selepas membuat pesanan. Telefon mereka kini menjadi pager maya kedai."
+              title="Tunjuk & Imbas QR"
+              desc="Tunjukkan kod QR pada skrin peranti/tablet kaunter atau cetak pada resit. Pelanggan hanya perlu imbas untuk mengaktifkan pager maya."
             />
             <StepCard 
               step="03"
