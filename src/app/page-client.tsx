@@ -757,7 +757,7 @@ export default function LandingPageClient() {
             </div>
 
             {/* Premium Plan */}
-            <div className="p-8 rounded-[36px] bg-gradient-to-b from-orange-500/5 to-transparent border border-orange-500/30 flex flex-col justify-between space-y-8 relative overflow-hidden shadow-2xl shadow-orange-500/5">
+            <div className="p-8 rounded-[36px] bg-gradient-to-b from-orange-500/5 to-transparent border border-orange-500/30 flex flex-col justify-between space-y-8 relative shadow-2xl shadow-orange-500/5">
               <div className="absolute top-0 right-8 -translate-y-1/2 bg-orange-500 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
                 Paling Popular
               </div>
