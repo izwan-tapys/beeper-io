@@ -899,6 +899,7 @@ export default function LandingPageClient() {
              <Link href="/privacy" className="hover:text-white transition-colors">Polisi Privasi</Link>
              <Link href="/partner/terms" className="hover:text-white transition-colors">Terma & Syarat</Link>
              <Link href="/partner" className="hover:text-white transition-colors">Program Affiliate</Link>
+             <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
              <a href="mailto:support@beepme.pro" className="hover:text-white transition-colors">Bantuan</a>
           </div>
         </footer>
