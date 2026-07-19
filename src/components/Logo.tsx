@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import Image from 'next/image'
 
 interface LogoProps {
   className?: string
@@ -20,7 +20,13 @@ export function Logo({
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div style={{ width: size, height: size }} className="relative flex-shrink-0 overflow-hidden rounded-xl shadow-2xl border border-white/10 group">
-        <img src="/logo.png" alt="Beepme Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <Image 
+          src="/logo.webp" 
+          alt="Beepme Logo" 
+          width={size} 
+          height={size} 
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+        />
       </div>
       {showText && (
         <span className={`text-2xl font-black tracking-tighter uppercase italic ${textColor}`}>
