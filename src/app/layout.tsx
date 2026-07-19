@@ -4,14 +4,14 @@ import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-inter",
 });
 
 const vt323 = VT323({
   weight: "400",
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-vt323",
 });
 
@@ -93,7 +93,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="preconnect" href="https://jphehgkvuurrahlzqdqt.supabase.co" crossOrigin="" />
       </head>
-      <body className={`${inter.variable} ${vt323.variable} antialiased`}>
+      <body className={`${inter.className} ${vt323.variable} antialiased`}>
         <LanguageProvider>
           {children}
         </LanguageProvider>
