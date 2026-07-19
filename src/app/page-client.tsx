@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { 
   Zap, CheckCircle2, Smartphone, Store, 
   ArrowRight, ShieldCheck, 
@@ -12,17 +13,21 @@ import {
 import { Logo } from '@/components/Logo'
 import { motion, AnimatePresence } from 'framer-motion'
 
+const SavingsCalculator = dynamic(() => import('@/components/SavingsCalculator'), {
+  ssr: false,
+})
+
+const FaqAccordion = dynamic(() => import('@/components/FaqAccordion'), {
+  ssr: false,
+})
+
 export default function LandingPageClient() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [activeFaq, setActiveFaq] = useState<number | null>(null)
   
   // Interactive Phone Demo States
   const [phoneState, setPhoneState] = useState<'waiting' | 'called' | 'claimed'>('waiting')
   const [isPhoneShaking, setIsPhoneShaking] = useState(false)
   const [orderNumber, setOrderNumber] = useState('124')
-  
-  // Savings Calculator States
-  const [pagerCount, setPagerCount] = useState(15)
 
   // Web Audio Beep Synth
   const playBeep = () => {
@@ -100,10 +105,7 @@ export default function LandingPageClient() {
     }
   }, [])
 
-  // Math for Savings
-  const physicalCost = (pagerCount * 250) + 600
-  const beepmeCost = 0
-  const savings = physicalCost - beepmeCost
+
 
   const faqs = [
     {
@@ -155,7 +157,7 @@ export default function LandingPageClient() {
             <Link href="#langkah" className="hover:text-white transition-colors">Cara Guna</Link>
             <Link href="#kalkulator" className="hover:text-white transition-colors">Kalkulator</Link>
             <Link href="#harga" className="hover:text-white transition-colors">Harga</Link>
-            <Link href="/partner" className="text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1">
+            <Link href="/partner" className="text-orange-300 hover:text-orange-300 transition-colors flex items-center gap-1">
               <Sparkles size={12} />
               Partner Program
             </Link>
@@ -184,7 +186,7 @@ export default function LandingPageClient() {
             <Link href="#langkah" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2 border-b border-white/5">Cara Guna</Link>
             <Link href="#kalkulator" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2 border-b border-white/5">Kalkulator Penjimatan</Link>
             <Link href="#harga" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2 border-b border-white/5">Harga</Link>
-            <Link href="/partner" onClick={() => setIsMenuOpen(false)} className="text-orange-400 hover:text-orange-300 py-2 border-b border-white/5">Partner Program</Link>
+            <Link href="/partner" onClick={() => setIsMenuOpen(false)} className="text-orange-300 hover:text-orange-300 py-2 border-b border-white/5">Partner Program</Link>
             <div className="flex gap-4 pt-2">
               <Link href="/login" className="flex-1 py-3 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold">
                 Log Masuk
@@ -203,7 +205,7 @@ export default function LandingPageClient() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Hero */}
           <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-black uppercase tracking-widest mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-black uppercase tracking-widest mb-2">
               <Zap size={14} className="fill-orange-400" />
               Tiada Lagi Pager Fizikal Mahal
             </div>
@@ -303,7 +305,7 @@ export default function LandingPageClient() {
                     <div className="space-y-4">
                       {/* Logo and Cafe Mock name */}
                       <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 mb-2">
+                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-300 mb-2">
                           <Store size={24} />
                         </div>
                         <div className="font-bold text-sm text-white">Restoran Nasi Lemak Ong</div>
@@ -327,7 +329,7 @@ export default function LandingPageClient() {
                       </div>
                       
                       <div className="pt-2">
-                        <span className="text-[8px] uppercase tracking-widest font-bold px-2 py-1 rounded-md bg-white/5 text-slate-400 border border-white/5">
+                        <span className="text-[8px] uppercase tracking-widest font-bold px-2 py-1 rounded-md bg-white/5 text-slate-300 border border-white/5">
                           Screen Wake-Lock Active
                         </span>
                       </div>
@@ -503,64 +505,7 @@ export default function LandingPageClient() {
             </p>
           </div>
 
-          <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md space-y-8">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <label htmlFor="pager-slider" className="text-sm font-bold text-slate-300">
-                  Anggaran Bilangan Pager Fizikal Diperlukan:
-                </label>
-                <span className="text-2xl font-black text-orange-400">{pagerCount} Pager</span>
-              </div>
-              
-              {/* Slider Input */}
-              <input 
-                id="pager-slider"
-                type="range" 
-                min="5" 
-                max="50" 
-                value={pagerCount} 
-                onChange={(e) => setPagerCount(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500" 
-                aria-label="Bilangan Pager Fizikal"
-              />
-              
-              <div className="flex justify-between text-xs text-slate-400 font-bold">
-                <span>5 Pager</span>
-                <span>25 Pager</span>
-                <span>50 Pager</span>
-              </div>
-            </div>
-
-            {/* Calculations Output */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
-              <div className="space-y-2">
-                <p className="text-xs text-slate-400 font-bold uppercase">Harga Set Pager Fizikal:</p>
-                <p className="text-2xl font-black text-red-500">
-                  RM {physicalCost.toLocaleString()}
-                  <span className="text-xs text-slate-400 font-medium block">
-                    (Anggaran RM250/pager + RM600 Transmitter base)
-                  </span>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs text-slate-400 font-bold uppercase">Harga Beepme.pro:</p>
-                <p className="text-2xl font-black text-green-400">
-                  RM 0 <span className="text-xs text-slate-400 font-medium">/ Selamanya Percuma</span>
-                  <span className="text-xs text-slate-400 font-medium block">
-                    (Atau upgrade ke Premium serendah RM49/bulan)
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 text-center space-y-1">
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Anda Menjimatkan Kos Setup Sebanyak:</p>
-              <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
-                RM {savings.toLocaleString()}
-              </p>
-            </div>
-          </div>
+          <SavingsCalculator />
         </div>
       </section>
 
@@ -767,7 +712,7 @@ export default function LandingPageClient() {
 
               <div className="space-y-6">
                 <div>
-                  <p className="text-xs font-black uppercase text-orange-400 tracking-wider">Premium Station</p>
+                  <p className="text-xs font-black uppercase text-orange-300 tracking-wider">Premium Station</p>
                   <h4 className="text-2xl font-black text-white mt-1">Tanpa Sebarang Iklan</h4>
                 </div>
 
@@ -823,40 +768,7 @@ export default function LandingPageClient() {
             </p>
           </div>
 
-          <div className="space-y-4">
-            {faqs.map((faq, idx) => (
-              <div 
-                key={idx} 
-                className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all cursor-pointer"
-                onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-              >
-                <div className="flex justify-between items-center gap-4">
-                  <div className="text-left">
-                    <h4 className="font-bold text-white text-sm sm:text-base">{faq.q_bm}</h4>
-                    <p className="text-[10px] text-slate-400 italic font-medium mt-0.5">{faq.q_en}</p>
-                  </div>
-                  <div className="text-slate-400 flex-shrink-0">
-                    {activeFaq === idx ? <Minus size={18} /> : <Plus size={18} />}
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {activeFaq === idx && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden mt-4 pt-4 border-t border-white/5 text-left text-xs sm:text-sm text-slate-400 space-y-2 leading-relaxed"
-                    >
-                      <p>{faq.a_bm}</p>
-                      <p className="text-slate-400 italic">{faq.a_en}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
+          <FaqAccordion faqs={faqs} />
         </div>
       </section>
 
