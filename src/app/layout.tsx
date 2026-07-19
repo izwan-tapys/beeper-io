@@ -56,6 +56,9 @@ export const metadata: Metadata = {
     description: "Replace expensive physical pagers with a free, contactless QR-code virtual pager system.",
     images: ["https://beepme.pro/mockup.png"],
   },
+  verification: {
+    google: "YAXKSHGrEKiewnsOObaAn6QRfxeMGLGe6gSabICeQ7c",
+  },
 };
 
 import { LanguageProvider } from "@/contexts/LanguageContext";
