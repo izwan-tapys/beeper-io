@@ -189,7 +189,7 @@ export default function LandingPageClient() {
               <Link href="/login" className="flex-1 py-3 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold">
                 Log Masuk
               </Link>
-              <Link href="/login" className="flex-1 py-3 text-center rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-500/20">
+              <Link href="/login" className="flex-1 py-3 text-center rounded-xl bg-orange-700 text-white font-bold shadow-lg shadow-orange-700/20">
                 Daftar Percuma
               </Link>
             </div>
@@ -198,7 +198,8 @@ export default function LandingPageClient() {
       </AnimatePresence>
 
       {/* 1. HERO SECTION */}
-      <section className="pt-32 pb-20 px-6 relative z-10">
+      <main>
+        <section className="pt-32 pb-20 px-6 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Hero */}
           <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
@@ -219,7 +220,7 @@ export default function LandingPageClient() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link href="/login" className="inline-flex px-8 py-4 rounded-xl bg-orange-600 text-white font-black text-base hover:bg-orange-500 shadow-xl shadow-orange-600/30 transition-all items-center justify-center gap-2 active:scale-95">
+              <Link href="/login" className="inline-flex px-8 py-4 rounded-xl bg-orange-700 text-white font-black text-base hover:bg-orange-600 shadow-xl shadow-orange-700/30 transition-all items-center justify-center gap-2 active:scale-95">
                 Mula Percuma Sekarang
                 <ArrowRight size={18} />
               </Link>
@@ -231,7 +232,7 @@ export default function LandingPageClient() {
 
             {/* Trusted By Badges */}
             <div className="pt-6 border-t border-white/5 space-y-3">
-              <p className="text-xs uppercase tracking-widest font-bold text-slate-500">Sesuai digunakan oleh:</p>
+              <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Sesuai digunakan oleh:</p>
               <div className="flex flex-wrap justify-center lg:justify-start gap-3">
                 {['Mamak', 'Kopitiam', 'Hipster Cafe', 'Medan Selera', 'Food Truck', 'Restoran'].map((tag, idx) => (
                   <span key={idx} className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/5 text-[11px] font-bold text-slate-400">
@@ -258,8 +259,8 @@ export default function LandingPageClient() {
                   disabled={phoneState === 'called'}
                   className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     phoneState === 'called' 
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                      : 'bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/20 active:scale-95'
+                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
+                      : 'bg-orange-700 hover:bg-orange-600 text-white shadow-lg shadow-orange-700/20 active:scale-95'
                   }`}
                 >
                   <Zap size={14} className="fill-white" />
@@ -305,14 +306,14 @@ export default function LandingPageClient() {
                         <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 mb-2">
                           <Store size={24} />
                         </div>
-                        <h4 className="font-bold text-sm text-white">Restoran Nasi Lemak Ong</h4>
-                        <p className="text-[10px] text-slate-500">Kuala Lumpur</p>
+                        <div className="font-bold text-sm text-white">Restoran Nasi Lemak Ong</div>
+                        <p className="text-[10px] text-slate-400">Kuala Lumpur</p>
                       </div>
 
                       {/* Receipt Display */}
                       <div className="py-4 px-6 rounded-2xl bg-white/[0.03] border border-white/5">
                         <p className="text-xs text-slate-400">Nombor Giliran Anda</p>
-                        <h3 className="text-3xl font-black text-white mt-1">#{orderNumber}</h3>
+                        <div className="text-3xl font-black text-white mt-1">#{orderNumber}</div>
                       </div>
 
                       {/* Status indicator */}
@@ -326,7 +327,7 @@ export default function LandingPageClient() {
                       </div>
                       
                       <div className="pt-2">
-                        <span className="text-[8px] uppercase tracking-widest font-bold px-2 py-1 rounded-md bg-white/5 text-slate-500 border border-white/5">
+                        <span className="text-[8px] uppercase tracking-widest font-bold px-2 py-1 rounded-md bg-white/5 text-slate-400 border border-white/5">
                           Screen Wake-Lock Active
                         </span>
                       </div>
@@ -347,9 +348,9 @@ export default function LandingPageClient() {
                       </div>
                       
                       <div className="space-y-2">
-                        <h3 className="text-3xl font-black tracking-tight text-white animate-pulse">
+                        <div className="text-3xl font-black tracking-tight text-white animate-pulse">
                           PESANAN SEDIA!
-                        </h3>
+                        </div>
                         <p className="text-sm font-bold text-white/90">
                           Sila ambil makanan anda di kaunter sekarang.
                         </p>
@@ -375,7 +376,7 @@ export default function LandingPageClient() {
                       </div>
 
                       <div className="space-y-1">
-                        <h4 className="font-bold text-sm text-white">Terima Kasih!</h4>
+                        <div className="font-bold text-sm text-white">Terima Kasih!</div>
                         <p className="text-xs text-slate-400">Harap anda berpuas hati dengan makanan kami.</p>
                       </div>
 
@@ -400,7 +401,7 @@ export default function LandingPageClient() {
 
                       <button 
                         onClick={handleResetDemo}
-                        className="text-[10px] text-slate-500 hover:text-slate-400 underline"
+                        className="text-[10px] text-slate-400 hover:text-slate-400 underline"
                       >
                         Reset & Cuba Sekali Lagi
                       </button>
@@ -505,7 +506,7 @@ export default function LandingPageClient() {
           <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md space-y-8">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-bold text-slate-300">
+                <label htmlFor="pager-slider" className="text-sm font-bold text-slate-300">
                   Anggaran Bilangan Pager Fizikal Diperlukan:
                 </label>
                 <span className="text-2xl font-black text-orange-400">{pagerCount} Pager</span>
@@ -513,15 +514,17 @@ export default function LandingPageClient() {
               
               {/* Slider Input */}
               <input 
+                id="pager-slider"
                 type="range" 
                 min="5" 
                 max="50" 
                 value={pagerCount} 
                 onChange={(e) => setPagerCount(parseInt(e.target.value))}
                 className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500" 
+                aria-label="Bilangan Pager Fizikal"
               />
               
-              <div className="flex justify-between text-xs text-slate-500 font-bold">
+              <div className="flex justify-between text-xs text-slate-400 font-bold">
                 <span>5 Pager</span>
                 <span>25 Pager</span>
                 <span>50 Pager</span>
@@ -531,20 +534,20 @@ export default function LandingPageClient() {
             {/* Calculations Output */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
               <div className="space-y-2">
-                <p className="text-xs text-slate-500 font-bold uppercase">Harga Set Pager Fizikal:</p>
+                <p className="text-xs text-slate-400 font-bold uppercase">Harga Set Pager Fizikal:</p>
                 <p className="text-2xl font-black text-red-500">
                   RM {physicalCost.toLocaleString()}
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     (Anggaran RM250/pager + RM600 Transmitter base)
                   </span>
                 </p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs text-slate-500 font-bold uppercase">Harga Beepme.pro:</p>
+                <p className="text-xs text-slate-400 font-bold uppercase">Harga Beepme.pro:</p>
                 <p className="text-2xl font-black text-green-400">
-                  RM 0 <span className="text-xs text-slate-500 font-medium">/ Selamanya Percuma</span>
-                  <span className="text-xs text-slate-500 font-medium block">
+                  RM 0 <span className="text-xs text-slate-400 font-medium">/ Selamanya Percuma</span>
+                  <span className="text-xs text-slate-400 font-medium block">
                     (Atau upgrade ke Premium serendah RM49/bulan)
                   </span>
                 </p>
@@ -625,21 +628,21 @@ export default function LandingPageClient() {
               <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md max-w-md space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/5 blur-[40px] rounded-full" />
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-white text-sm">Rating Kedai Anda</h4>
-                  <span className="text-xs text-slate-500">Kemaskini Real-Time</span>
+                  <div className="font-bold text-white text-sm">Rating Kedai Anda</div>
+                  <span className="text-xs text-slate-400">Kemaskini Real-Time</span>
                 </div>
                 
                 <div className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-white/5">
                   <div className="text-center border-r border-white/10 pr-6">
-                    <h5 className="text-4xl font-black text-white">4.9</h5>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Purata Skor</p>
+                    <div className="text-4xl font-black text-white">4.9</div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Purata Skor</p>
                   </div>
                   <div className="space-y-1 flex-1">
                     <div className="flex gap-1 text-yellow-400">
                       {[1,2,3,4,5].map((s) => <Star key={s} size={12} className="fill-yellow-400" />)}
                     </div>
                     <p className="text-xs text-slate-300 font-bold">248 review baru bulan ini</p>
-                    <p className="text-[10px] text-slate-500">+115% peningkatan berbanding bulan lepas</p>
+                    <p className="text-[10px] text-slate-400">+115% peningkatan berbanding bulan lepas</p>
                   </div>
                 </div>
 
@@ -684,7 +687,7 @@ export default function LandingPageClient() {
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <p className="text-slate-500 font-bold">URL Webhook Unik Kedai Anda:</p>
+                  <p className="text-slate-400 font-bold">URL Webhook Unik Kedai Anda:</p>
                   <div className="p-3 rounded-xl bg-black/60 border border-white/5 text-[10px] font-mono text-indigo-400 break-all select-all">
                     https://beepme.pro/api/webhooks/loyverse?merchant_id=9a7c...
                   </div>
@@ -696,7 +699,7 @@ export default function LandingPageClient() {
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-bold text-white">Loyverse API Connector</p>
-                    <p className="text-[10px] text-slate-500">Sync automatik jualan sale aktif</p>
+                    <p className="text-[10px] text-slate-400">Sync automatik jualan sale aktif</p>
                   </div>
                 </div>
               </div>
@@ -722,13 +725,13 @@ export default function LandingPageClient() {
             <div className="p-8 rounded-[36px] bg-white/[0.02] border border-white/5 flex flex-col justify-between space-y-8 relative overflow-hidden">
               <div className="space-y-6">
                 <div>
-                  <p className="text-xs font-black uppercase text-slate-500 tracking-wider">Pelan Asas</p>
+                  <p className="text-xs font-black uppercase text-slate-400 tracking-wider">Pelan Asas</p>
                   <h4 className="text-2xl font-black text-white mt-1">Selamanya Percuma</h4>
                 </div>
 
                 <div className="flex items-baseline text-white">
                   <span className="text-5xl font-black">RM 0</span>
-                  <span className="text-xs text-slate-500 ml-2 font-bold">/ selamanya</span>
+                  <span className="text-xs text-slate-400 ml-2 font-bold">/ selamanya</span>
                 </div>
 
                 <ul className="space-y-4 text-xs font-semibold text-slate-400 border-t border-white/5 pt-6">
@@ -770,7 +773,7 @@ export default function LandingPageClient() {
 
                 <div className="flex items-baseline text-white">
                   <span className="text-5xl font-black">RM 49</span>
-                  <span className="text-xs text-slate-500 ml-2 font-bold">/ sebulan</span>
+                  <span className="text-xs text-slate-400 ml-2 font-bold">/ sebulan</span>
                 </div>
 
                 <ul className="space-y-4 text-xs font-semibold text-slate-300 border-t border-white/5 pt-6">
@@ -797,13 +800,13 @@ export default function LandingPageClient() {
                 </ul>
               </div>
 
-              <Link href="/login" className="w-full py-4 text-center rounded-2xl bg-orange-500 text-white font-black text-sm hover:bg-orange-400 transition-all active:scale-95 shadow-xl shadow-orange-500/20">
+              <Link href="/login" className="w-full py-4 text-center rounded-2xl bg-orange-700 text-white font-black text-sm hover:bg-orange-600 transition-all active:scale-95 shadow-xl shadow-orange-700/20">
                 Langgan Premium Sekarang
               </Link>
             </div>
           </div>
 
-          <p className="text-center text-xs text-slate-500 font-medium">
+          <p className="text-center text-xs text-slate-400 font-medium">
             *Tiada kontrak diikat. Anda boleh membatalkan langganan premium anda pada bila-bila masa sahaja.
           </p>
         </div>
@@ -830,9 +833,9 @@ export default function LandingPageClient() {
                 <div className="flex justify-between items-center gap-4">
                   <div className="text-left">
                     <h4 className="font-bold text-white text-sm sm:text-base">{faq.q_bm}</h4>
-                    <p className="text-[10px] text-slate-500 italic font-medium mt-0.5">{faq.q_en}</p>
+                    <p className="text-[10px] text-slate-400 italic font-medium mt-0.5">{faq.q_en}</p>
                   </div>
-                  <div className="text-slate-500 flex-shrink-0">
+                  <div className="text-slate-400 flex-shrink-0">
                     {activeFaq === idx ? <Minus size={18} /> : <Plus size={18} />}
                   </div>
                 </div>
@@ -847,7 +850,7 @@ export default function LandingPageClient() {
                       className="overflow-hidden mt-4 pt-4 border-t border-white/5 text-left text-xs sm:text-sm text-slate-400 space-y-2 leading-relaxed"
                     >
                       <p>{faq.a_bm}</p>
-                      <p className="text-slate-500 italic">{faq.a_en}</p>
+                      <p className="text-slate-400 italic">{faq.a_en}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -871,7 +874,7 @@ export default function LandingPageClient() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/login" className="px-10 py-5 rounded-2xl bg-orange-500 text-white font-black text-lg hover:bg-orange-400 shadow-xl shadow-orange-500/20 transition-all active:scale-95">
+            <Link href="/login" className="px-10 py-5 rounded-2xl bg-orange-700 text-white font-black text-lg hover:bg-orange-600 shadow-xl shadow-orange-700/20 transition-all active:scale-95">
               Daftar Percuma Sekarang
             </Link>
             
@@ -894,8 +897,8 @@ export default function LandingPageClient() {
         </div>
 
         <footer className="mt-20 pt-10 border-t border-white/5 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">© 2026 BEEPME.PRO. HAK CIPTA TERPELIHARA.</p>
-          <div className="flex flex-wrap justify-center gap-6 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 BEEPME.PRO. HAK CIPTA TERPELIHARA.</p>
+          <div className="flex flex-wrap justify-center gap-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">
              <Link href="/privacy" className="hover:text-white transition-colors">Polisi Privasi</Link>
              <Link href="/partner/terms" className="hover:text-white transition-colors">Terma & Syarat</Link>
              <Link href="/partner" className="hover:text-white transition-colors">Program Affiliate</Link>
@@ -904,6 +907,7 @@ export default function LandingPageClient() {
           </div>
         </footer>
       </section>
+      </main>
 
       {/* Floating WhatsApp Help Widget */}
       <a 

@@ -1,5 +1,19 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, VT323 } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const vt323 = VT323({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-vt323",
+});
 
 export const viewport: Viewport = {
   themeColor: "#020203",
@@ -78,7 +92,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="antialiased">
+      <body className={`${inter.variable} ${vt323.variable} antialiased`}>
         <LanguageProvider>
           {children}
         </LanguageProvider>
