@@ -1219,18 +1219,6 @@ export default function AdminPage() {
         {/* Ads Network View */}
         {activeTab === 'ads' && (
           <div className="space-y-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Ad Campaigns</h2>
-                <p className="text-[10px] font-bold text-slate-600">Central rotation for Always Free pagers.</p>
-              </div>
-              <button
-                onClick={() => setIsAddingAd(true)}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all active:scale-95"
-              >
-                <Plus size={16} /> New Ad
-              </button>
-            </div>
 
             {/* Ads Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -1664,16 +1652,6 @@ export default function AdminPage() {
         {/* Infra Usage View */}
         {activeTab === 'infra' && (
           <div className="space-y-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">System Infrastructure</h2>
-                <p className="text-[10px] font-bold text-slate-600">Near real-time resource utilization (Updated every 60s)</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${infraLoading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{infraLoading ? 'Syncing...' : 'Live System'}</span>
-              </div>
-            </div>
 
             <div className={`transition-opacity duration-300 ${infraLoading && infraData ? 'opacity-60 pointer-events-none' : ''}`}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1722,21 +1700,7 @@ export default function AdminPage() {
       {/* BEHAVIOR TAB                            */}
       {/* ─────────────────────────────────────── */}
       {activeTab === 'behavior' && (
-        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Customer Behavior Analytics</h2>
-              <p className="text-[10px] font-bold text-slate-600">How customers interact with the virtual pager page.</p>
-            </div>
-            <button
-              onClick={fetchBehaviorData}
-              disabled={behaviorLoading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600/10 border border-violet-500/20 text-xs font-black text-violet-400 hover:bg-violet-600 hover:text-white transition-all disabled:opacity-50"
-            >
-              {behaviorLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Refresh
-            </button>
-          </div>
+        <div className="space-y-8 animate-fade-in">
 
           <div className={`transition-opacity duration-300 ${behaviorLoading && behaviorStats ? 'opacity-60 pointer-events-none' : ''}`}>
             {/* ── Stat Cards ── */}
@@ -1989,21 +1953,7 @@ export default function AdminPage() {
       {/* VISITORS TAB                            */}
       {/* ─────────────────────────────────────── */}
       {activeTab === 'visitors' && (
-        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Page Visitor Analytics</h2>
-              <p className="text-[10px] font-bold text-slate-600">Track and monitor custom page view metrics directly from Supabase.</p>
-            </div>
-            <button
-              onClick={fetchVisitorsData}
-              disabled={visitorLoading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600/10 border border-teal-500/20 text-xs font-black text-teal-400 hover:bg-teal-600 hover:text-white transition-all disabled:opacity-50"
-            >
-              {visitorLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Refresh
-            </button>
-          </div>
+        <div className="space-y-8 animate-fade-in">
 
           <div className={`transition-opacity duration-300 ${visitorLoading && visitorStats ? 'opacity-60 pointer-events-none' : ''}`}>
             {/* ── Stat Cards ── */}
@@ -2498,21 +2448,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'partners' && (
-        <div className="max-w-7xl mx-auto relative z-10 mt-0 space-y-8 animate-fade-in">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Partner &amp; Commission Console</h2>
-              <p className="text-[10px] font-bold text-slate-600">Urus komisen rakan kongsi dan rekod payout.</p>
-            </div>
-            <button
-              onClick={fetchPartnersData}
-              disabled={partnersLoading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600/10 border border-violet-500/20 text-xs font-black text-violet-400 hover:bg-violet-600 hover:text-white transition-all disabled:opacity-50"
-            >
-              {partnersLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Refresh
-            </button>
-          </div>
+        <div className="space-y-8 animate-fade-in">
 
           {partnersLoading && partners.length === 0 ? (
             <div className="text-center py-12 text-slate-600"><Loader2 size={24} className="mx-auto animate-spin mb-2" />Memuatkan data partner...</div>
@@ -2706,34 +2642,35 @@ function StatCard({ icon, label, value, color, trend, isLoading }: { icon: React
   const badgeBg = color === 'indigo' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : color === 'amber' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
 
   return (
-    <div className="relative group p-6 rounded-[28px] bg-[#121422]/90 border border-white/10 backdrop-blur-3xl transition-all duration-500 hover:border-violet-500/40 hover:scale-[1.01] flex flex-col justify-between shadow-xl">
+    <div className="relative group p-5 rounded-[24px] bg-[#121422]/90 border border-white/10 backdrop-blur-3xl transition-all duration-300 hover:border-violet-500/40 hover:scale-[1.01] flex flex-col justify-between shadow-xl min-w-0 overflow-hidden">
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-violet-400 transition-transform duration-500 group-hover:scale-110">
-              {icon}
-            </div>
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-            </div>
+        {/* Top Row: Icon + Trend Badge */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-violet-400 shrink-0 transition-transform duration-500 group-hover:scale-110">
+            {icon}
           </div>
-          <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border ${badgeBg}`}>
-            <ArrowUpRight size={12} />
-            {isLoading ? <Skeleton className="w-8 h-3" /> : trend}
-          </div>
+          {trend && (
+            <div className={`flex items-center gap-1 text-[9px] font-black px-2.5 py-0.5 rounded-full border shrink-0 max-w-[70%] ${badgeBg}`}>
+              <ArrowUpRight size={10} className="shrink-0" />
+              <span className="truncate">{isLoading ? <Skeleton className="w-6 h-2.5" /> : trend}</span>
+            </div>
+          )}
         </div>
-        <div className="mt-2">
+
+        {/* Middle Row: Label & Value */}
+        <div className="space-y-1 min-w-0">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 truncate">{label}</p>
           {isLoading ? (
-            <Skeleton className="w-28 h-9" />
+            <Skeleton className="w-20 h-7" />
           ) : (
-            <p className="text-3xl font-black text-white tracking-tight">{value}</p>
+            <p className="text-2xl xl:text-3xl font-black text-white tracking-tight truncate">{value}</p>
           )}
         </div>
       </div>
 
       {/* Sparkline curve */}
-      <div className="mt-4 pt-2 border-t border-white/5">
-        <svg className="w-full h-8 opacity-80" viewBox="0 0 100 30" fill="none">
+      <div className="mt-3 pt-2 border-t border-white/5">
+        <svg className="w-full h-7 opacity-80" viewBox="0 0 100 30" fill="none">
           <path
             d="M0 22 Q 15 8, 30 18 T 60 5 T 80 15 T 100 8"
             stroke={strokeColor}
