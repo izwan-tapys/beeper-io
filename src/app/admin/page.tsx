@@ -612,160 +612,324 @@ export default function AdminPage() {
   if (!isAdmin) return null
 
   return (
-    <div className="min-h-screen bg-[#020203] text-slate-200 p-4 md:p-12 relative overflow-hidden font-sans selection:bg-indigo-500/30">
-      {/* Dynamic Background Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/10 blur-[120px] rounded-full pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Top Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-16">
-          <div className="flex items-center gap-6">
+    <div className="min-h-screen bg-[#07090e] text-slate-200 font-sans flex selection:bg-violet-500/30 relative overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="fixed top-[-10%] left-[-10%] w-[45%] h-[45%] bg-violet-600/10 blur-[140px] rounded-full pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] bg-indigo-600/10 blur-[140px] rounded-full pointer-events-none" />
+
+      {/* Left Sidebar (Stakent Style) */}
+      <aside className="w-72 bg-[#0c0e18]/90 border-r border-white/10 backdrop-blur-2xl flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0 z-40 hidden md:flex">
+        <div className="space-y-8">
+          {/* Logo & Header */}
+          <div className="flex items-center gap-4">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl">
-                <ShieldCheck size={36} className="text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500"></div>
+              <div className="relative w-12 h-12 rounded-2xl bg-[#121422] border border-white/15 flex items-center justify-center shadow-xl">
+                <ShieldCheck size={26} className="text-violet-400" />
               </div>
             </div>
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-1">
-                Beepme <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">Core</span>
+              <h1 className="text-xl font-black uppercase tracking-tight text-white">
+                Beepme <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400">Core</span>
               </h1>
-              <div className="flex items-center gap-3">
-                <span className="flex h-2 w-2 relative">
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="flex h-1.5 w-1.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                 </span>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">Administrator Oversight System</p>
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Admin Platform</span>
               </div>
             </div>
           </div>
 
-          <div className="relative group max-w-xl flex-1">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition duration-500"></div>
-            <div className="relative flex items-center">
-              <Search className="absolute left-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={20} />
-              <input 
-                type="text"
-                placeholder="Search global directory..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 rounded-2xl bg-white/[0.03] border border-white/10 outline-none focus:border-indigo-500/50 focus:bg-white/[0.05] transition-all font-medium text-sm text-white placeholder:text-slate-600 backdrop-blur-xl"
-              />
+          {/* Navigation Menu */}
+          <div className="space-y-2">
+            <p className="px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Core Modules</p>
+            
+            <button
+              onClick={() => setActiveTab('merchants')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'merchants' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Store size={18} className={activeTab === 'merchants' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>{lang === 'bm' ? 'Direktori' : 'Directory'}</span>
+              </div>
+              {stats.totalMerchants > 0 && (
+                <span className="text-[10px] font-extrabold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{stats.totalMerchants}</span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ads')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'ads' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Tv size={18} className={activeTab === 'ads' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>{lang === 'bm' ? 'Rangkaian Iklan' : 'Ad Network'}</span>
+              </div>
+              {pendingAds.length > 0 && (
+                <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-md">{pendingAds.length}</span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('infra')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'infra' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <BarChart3 size={18} className={activeTab === 'infra' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>Infra Usage</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('behavior')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'behavior' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Activity size={18} className={activeTab === 'behavior' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>Behavior</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('visitors')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'visitors' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Users size={18} className={activeTab === 'visitors' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>Visitors</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('partners'); fetchPartnersData() }}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${activeTab === 'partners' ? 'bg-[#181a2e] text-white border border-violet-500/30 shadow-lg shadow-violet-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              <div className="flex items-center gap-3">
+                <DollarSign size={18} className={activeTab === 'partners' ? 'text-violet-400' : 'text-slate-500'} />
+                <span>Partners</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="pt-6 border-t border-white/10 space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-black text-xs shrink-0">
+              AD
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-xs font-bold text-white truncate">{ADMIN_EMAIL}</p>
+              <p className="text-[9px] font-black uppercase text-violet-400 tracking-wider">Super Administrator</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="grid grid-cols-2 gap-2">
             <button 
               onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all"
             >
-              <ArrowLeft size={16} />
-              {lang === 'bm' ? 'Papan Pemuka' : 'Dashboard'}
+              <ArrowLeft size={14} />
+              Dashboard
             </button>
             <button 
               onClick={async () => {
                 await supabase.auth.signOut()
                 router.push('/login')
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[11px] font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
             >
-              <LogOut size={16} />
-              {lang === 'bm' ? 'Log Keluar' : 'Sign Out'}
+              <LogOut size={14} />
+              Sign Out
             </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto z-10">
+        {/* Mobile Nav Top Bar */}
+        <div className="md:hidden p-4 bg-[#0c0e18] border-b border-white/10 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={24} className="text-violet-400" />
+            <span className="font-black text-white text-sm uppercase">Beepme Core</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.push('/dashboard')} className="p-2 rounded-xl bg-white/5 text-slate-400"><ArrowLeft size={16} /></button>
+            <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} className="p-2 rounded-xl bg-rose-500/10 text-rose-400"><LogOut size={16} /></button>
+          </div>
+        </div>
+
+        {/* Mobile Tab Scroll Bar */}
+        <div className="md:hidden flex items-center gap-2 p-3 overflow-x-auto bg-[#080a12] border-b border-white/5">
+          {(['merchants', 'ads', 'infra', 'behavior', 'visitors', 'partners'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab)
+                if (tab === 'partners') fetchPartnersData()
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black capitalize whitespace-nowrap ${activeTab === tab ? 'bg-violet-600 text-white' : 'bg-white/5 text-slate-400'}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Top Navigation Bar Header */}
+        <header className="p-6 md:p-8 pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative group max-w-lg w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-violet-400 transition-colors" size={18} />
+            <input 
+              type="text"
+              placeholder="Search global directory, emails, phone, or ad IDs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-5 py-3.5 rounded-full bg-[#121422]/90 border border-white/10 outline-none focus:border-violet-500/50 focus:bg-[#16192b] transition-all font-medium text-xs text-white placeholder:text-slate-500 shadow-inner backdrop-blur-xl"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                fetchStats()
+                if (activeTab === 'ads') fetchAds()
+                if (activeTab === 'infra') fetchInfraData()
+                if (activeTab === 'behavior') fetchBehaviorData()
+                if (activeTab === 'visitors') fetchVisitorsData()
+                if (activeTab === 'partners') fetchPartnersData()
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#121422] border border-white/10 text-xs font-bold text-slate-300 hover:text-white hover:border-violet-500/30 transition-all active:scale-95 shadow-md"
+            >
+              <Zap size={14} className="text-violet-400" />
+              <span>Refresh</span>
+            </button>
+            
+            <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+
+            <div className="hidden md:flex items-center gap-3 pl-2">
+              <span className="text-xs font-bold text-slate-400">Status:</span>
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Sync
+              </span>
+            </div>
           </div>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-4 mb-10 p-2 bg-white/[0.02] border border-white/5 rounded-3xl w-max mx-auto md:mx-0 shadow-inner">
-          <button
-            onClick={() => setActiveTab('merchants')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'merchants' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <Store size={16} /> {lang === 'bm' ? 'Direktori' : 'Directory'}
-          </button>
-          <button
-            onClick={() => setActiveTab('ads')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <Tv size={16} /> {lang === 'bm' ? 'Rangkaian Iklan' : 'Ad Network'}
-            {pendingAds.length > 0 && activeTab !== 'ads' && (
-              <span className="ml-1 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingAds.length}</span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('infra')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'infra' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <BarChart3 size={16} /> Infra Usage
-          </button>
-          <button
-            onClick={() => setActiveTab('behavior')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'behavior' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <Activity size={16} /> Behavior
-          </button>
-          <button
-            onClick={() => setActiveTab('visitors')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'visitors' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <Users size={16} /> Visitors
-          </button>
-          <button
-            onClick={() => { setActiveTab('partners'); fetchPartnersData() }}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'partners' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/25' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <DollarSign size={16} /> Partners
-          </button>
-        </div>
+        {/* Dashboard Main Grid Area */}
+        <div className="p-6 md:p-8 space-y-8">
+          {/* Top Asset & Hero Cards Row (Crypto Dashboard style) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard 
+              icon={<Store size={22} />} 
+              label="Total Merchants" 
+              value={stats.totalMerchants} 
+              color="indigo" 
+              trend="+12% total"
+              isLoading={loading && merchants.length === 0}
+            />
+            <StatCard 
+              icon={<Zap size={22} />} 
+              label="Total Pagers" 
+              value={stats.totalOrders.toLocaleString()} 
+              color="amber" 
+              trend="All time"
+              isLoading={loading && merchants.length === 0}
+            />
+            <StatCard 
+              icon={<TrendingUp size={22} />} 
+              label="Orders Today" 
+              value={stats.ordersToday} 
+              color="emerald" 
+              trend="Live pulse"
+              isLoading={loading && merchants.length === 0}
+            />
 
-        {/* Global Stats Grid */}
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16 ${activeTab !== 'merchants' ? 'hidden' : ''}`}>
-          <StatCard 
-            icon={<Store size={24} />} 
-            label="Total Merchants" 
-            value={stats.totalMerchants} 
-            color="indigo" 
-            trend="+12% this month"
-          />
-          <StatCard 
-            icon={<Zap size={24} />} 
-            label="Total Pagers" 
-            value={stats.totalOrders.toLocaleString()} 
-            color="amber" 
-            trend="Active all time"
-          />
-          <StatCard 
-            icon={<TrendingUp size={24} />} 
-            label="Orders Today" 
-            value={stats.ordersToday} 
-            color="emerald" 
-            trend="Live pulse"
-          />
-          <StatCard 
-            icon={<BarChart3 size={24} />} 
-            label="Est. Revenue" 
-            value={`RM${stats.estimatedRevenue}`} 
-            color="rose" 
-            trend="MRR potential"
-          />
-        </div>
+            {/* Stakent Styled Featured Hero Card ("Liquid Staking Portfolio") */}
+            <div className="relative group p-6 rounded-[28px] bg-gradient-to-br from-violet-950/70 via-[#141727] to-[#0c0e18] border border-violet-500/30 backdrop-blur-3xl transition-all duration-500 hover:border-violet-500/50 hover:scale-[1.01] flex flex-col justify-between shadow-2xl overflow-hidden">
+              {/* Star / Particle Accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/20 blur-2xl rounded-full pointer-events-none" />
+              
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-0.5 rounded-full">
+                    Liquid Engine
+                  </span>
+                  <div className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+                </div>
+                <h3 className="text-lg font-black text-white mb-1 tracking-tight">Ad & Partner Network</h3>
+                <p className="text-xs text-slate-400 leading-snug">
+                  Real-time ad impression bidding, geolocation push alerts & partner commissions.
+                </p>
+              </div>
 
-        {/* Merchants View */}
-        <div className={`mb-8 flex items-center justify-between px-2 ${activeTab !== 'merchants' ? 'hidden' : ''}`}>
-          <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Merchant Directory</h2>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-            <span className="text-slate-500">Sort:</span>
-            <select
-              value={merchantSort}
-              onChange={(e) => setMerchantSort(e.target.value as any)}
-              className="bg-transparent text-white font-black uppercase outline-none cursor-pointer pr-1"
-            >
-              <option value="latest" className="bg-[#0a0b0f] text-white">Latest Joined</option>
-              <option value="today" className="bg-[#0a0b0f] text-white">Today's Pagers</option>
-              <option value="monthly" className="bg-[#0a0b0f] text-white">Monthly Pagers</option>
-            </select>
+              <div className="mt-5 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setActiveTab('ads')
+                    setIsAddingAd(true)
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-violet-600/30 transition-all active:scale-95"
+                >
+                  <Plus size={14} />
+                  New Campaign
+                </button>
+                {pendingAds.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('ads')
+                      setAdsSubTab('pending')
+                    }}
+                    className="px-3 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-black hover:bg-amber-500 hover:text-black transition-all"
+                  >
+                    {pendingAds.length} Pending
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Main Card Container View */}
+          <div className="bg-[#0c0e18]/90 border border-white/10 rounded-[32px] p-6 md:p-8 backdrop-blur-2xl shadow-2xl space-y-6">
+            {/* Tab Header inside main card */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400">
+                  {activeTab === 'merchants' && <Store size={20} />}
+                  {activeTab === 'ads' && <Tv size={20} />}
+                  {activeTab === 'infra' && <BarChart3 size={20} />}
+                  {activeTab === 'behavior' && <Activity size={20} />}
+                  {activeTab === 'visitors' && <Users size={20} />}
+                  {activeTab === 'partners' && <DollarSign size={20} />}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-tight capitalize">
+                    {activeTab === 'merchants' ? 'Merchant Directory' : activeTab === 'ads' ? 'Ad Network Management' : activeTab === 'infra' ? 'Infrastructure Health & Metrics' : activeTab === 'behavior' ? 'User Behavior Analytics' : activeTab === 'visitors' ? 'Real-time Visitor Logs' : 'Partner Commission & Payouts'}
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {activeTab === 'merchants' ? 'Manage registered merchants, geofencing & verification status' : activeTab === 'ads' ? 'Review advertiser campaigns, CPV bids, and active push notifications' : activeTab === 'infra' ? 'Monitor CloudRun containers, connection pools & API latency' : activeTab === 'behavior' ? 'Inspect user interactions, alarm dismissals & device stats' : activeTab === 'visitors' ? 'Track incoming IP locations, web clients and active sessions' : 'Calculate partner referral payouts and approve monthly disbursements'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Specific controls per tab */}
+              {activeTab === 'merchants' && (
+                <div className="flex items-center gap-2 bg-[#121422] border border-white/10 px-4 py-2 rounded-2xl text-xs font-bold text-slate-300">
+                  <span className="text-slate-500 uppercase tracking-widest text-[10px]">Sort:</span>
+                  <select
+                    value={merchantSort}
+                    onChange={(e) => setMerchantSort(e.target.value as any)}
+                    className="bg-transparent text-white font-black uppercase outline-none cursor-pointer"
+                  >
+                    <option value="latest" className="bg-[#0c0e18] text-white">Latest Joined</option>
+                    <option value="today" className="bg-[#0c0e18] text-white">Today's Pagers</option>
+                    <option value="monthly" className="bg-[#0c0e18] text-white">Monthly Pagers</option>
+                  </select>
+                </div>
+              )}
+            </div>
 
         {activeTab === 'merchants' && (
           <div className={`transition-opacity duration-300 ${loading && merchants.length > 0 ? 'opacity-60 pointer-events-none' : ''}`}>
@@ -1553,7 +1717,6 @@ export default function AdminPage() {
             </div>
           </div>
         )}
-      </div>
 
       {/* ─────────────────────────────────────── */}
       {/* BEHAVIOR TAB                            */}
@@ -2330,7 +2493,6 @@ export default function AdminPage() {
                 </button>
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -2527,7 +2689,10 @@ export default function AdminPage() {
         </div>
       )}
     </div>
-  )
+  </div>
+</main>
+</div>
+)
 }
 
 function Skeleton({ className }: { className?: string }) {
@@ -2537,35 +2702,61 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 function StatCard({ icon, label, value, color, trend, isLoading }: { icon: React.ReactNode, label: string, value: string | number, color: string, trend: string, isLoading?: boolean }) {
-  const colors: any = {
-    indigo: 'from-indigo-500/20 to-indigo-500/5 text-indigo-400 border-indigo-500/20',
-    amber: 'from-amber-500/20 to-amber-500/5 text-amber-400 border-amber-500/20',
-    emerald: 'from-emerald-500/20 to-emerald-500/5 text-emerald-500 border-emerald-500/20',
-    rose: 'from-rose-500/20 to-rose-500/5 text-rose-500 border-rose-500/20'
-  }
+  const strokeColor = color === 'indigo' ? '#a855f7' : color === 'amber' ? '#f59e0b' : color === 'emerald' ? '#10b981' : '#f43f5e'
+  const badgeBg = color === 'indigo' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : color === 'amber' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
 
   return (
-    <div className={`relative group p-8 rounded-[32px] bg-gradient-to-br border backdrop-blur-3xl transition-all duration-500 hover:scale-[1.02] ${colors[color]}`}>
-      <div className="flex items-start justify-between mb-4">
-        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 transition-transform duration-500 group-hover:rotate-12">
-          {icon}
-        </div>
-        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest opacity-60">
-          <ArrowUpRight size={12} />
-          {isLoading ? <Skeleton className="w-10 h-3" /> : trend}
-        </div>
-      </div>
+    <div className="relative group p-6 rounded-[28px] bg-[#121422]/90 border border-white/10 backdrop-blur-3xl transition-all duration-500 hover:border-violet-500/40 hover:scale-[1.01] flex flex-col justify-between shadow-xl">
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">{label}</p>
-        {isLoading ? (
-          <Skeleton className="w-24 h-8 mt-1" />
-        ) : (
-          <p className="text-3xl font-black text-white tracking-tighter">{value}</p>
-        )}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-violet-400 transition-transform duration-500 group-hover:scale-110">
+              {icon}
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
+            </div>
+          </div>
+          <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border ${badgeBg}`}>
+            <ArrowUpRight size={12} />
+            {isLoading ? <Skeleton className="w-8 h-3" /> : trend}
+          </div>
+        </div>
+        <div className="mt-2">
+          {isLoading ? (
+            <Skeleton className="w-28 h-9" />
+          ) : (
+            <p className="text-3xl font-black text-white tracking-tight">{value}</p>
+          )}
+        </div>
       </div>
-      
-      {/* Subtle Bottom Glow */}
-      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-1 blur-md opacity-40 group-hover:opacity-100 transition-opacity ${color === 'indigo' ? 'bg-indigo-500' : color === 'amber' ? 'bg-amber-500' : color === 'emerald' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+
+      {/* Sparkline curve */}
+      <div className="mt-4 pt-2 border-t border-white/5">
+        <svg className="w-full h-8 opacity-80" viewBox="0 0 100 30" fill="none">
+          <path
+            d="M0 22 Q 15 8, 30 18 T 60 5 T 80 15 T 100 8"
+            stroke={strokeColor}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d="M0 22 Q 15 8, 30 18 T 60 5 T 80 15 T 100 8 L 100 30 L 0 30 Z"
+            fill={`url(#gradient-${color})`}
+            opacity="0.2"
+          />
+          <defs>
+            <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={strokeColor} />
+              <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* Glowing Bottom Bar */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/3 h-[2px] bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>
   )
 }
